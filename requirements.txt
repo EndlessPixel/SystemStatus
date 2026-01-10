@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+psutil
+py3nvml
+python-multipart
+python-dotenv
