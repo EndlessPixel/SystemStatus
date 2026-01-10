@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统信息监控面板</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- 引入ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>系统信息监控面板</h1>
+
+        <!-- 硬件基础信息 -->
+        <div class="hardware-info">
+            <h2>硬件基础信息</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>CPU</h3>
+                    <p id="cpu-model">加载中...</p>
+                    <p>核心数: <span id="cpu-cores">加载中...</span></p>
+                </div>
+                <div class="info-card">
+                    <h3>内存</h3>
+                    <p id="mem-model">加载中...</p>
+                    <p>总容量: <span id="mem-total">加载中...</span> GB</p>
+                </div>
+                <div class="info-card">
+                    <h3>显卡</h3>
+                    <p id="gpu-model">加载中...</p>
+                    <p>状态: <span id="gpu-status">加载中...</span></p>
+                </div>
+                <div class="info-card">
+                    <h3>网卡</h3>
+                    <div id="network-info">加载中...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 实时占用折线图 -->
+        <div class="chart-section">
+            <h2>2分钟实时占用率</h2>
+            <div id="usage-chart" class="usage-chart2"></div>
+        </div>
+
+        <!-- CPU核心占用 -->
+        <div class="cpu-cores-section">
+            <h2>CPU核心实时占用</h2>
+            <div id="cpu-cores-container" class="cores-grid">加载中...</div>
+        </div>
+
+        <!-- 硬盘占用进度条 -->
+        <div class="disk-section">
+            <h2>硬盘占用率</h2>
+            <div id="disk-container" class="disk-grid">加载中...</div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
