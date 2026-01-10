@@ -69,7 +69,7 @@ python main.py
 - 按 F12 打开控制台，查看是否有接口请求失败
 
 ## 许可证
-本项目基于 **MIT License** 开源，你可以自由使用、修改和分发。
+本项目基于 ** Apache License Version 2.0** 开源
 
 ## 贡献指南
 欢迎提交 Issue 反馈 Bug 或需求，也可以直接提交 Pull Request 改进代码~
