@@ -4,58 +4,85 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统信息监控面板</title>
+    <title>SystemStatus 系统监控</title>
+    <!-- 引入本地资源 -->
     <link rel="stylesheet" href="style.css">
-    <script src="echarts.min.js"></script>
+    <script src="echarts.js"></script>
 </head>
 
 <body>
     <div class="container">
-        <h1>系统信息监控面板</h1>
-        <div class="hardware-info">
+        <h1>SystemStatus 系统监控面板</h1>
+
+        <!-- 状态提示 -->
+        <div id="status-tip" class="status-tip tip-success">
+            正在连接后端服务...
+        </div>
+
+        <!-- 硬件基础信息 -->
+        <div class="section">
             <h2>硬件基础信息</h2>
-            <div class="info-grid">
-                <div class="info-card">
+            <div class="hardware-info">
+                <!-- CPU信息 -->
+                <div class="hardware-item">
                     <h3>CPU</h3>
                     <p id="cpu-model">加载中...</p>
                     <p>核心数: <span id="cpu-cores">加载中...</span></p>
                 </div>
-                <div class="info-card">
+                <!-- 内存信息 -->
+                <div class="hardware-item">
                     <h3>内存</h3>
                     <p id="mem-model">加载中...</p>
                     <p>总容量: <span id="mem-total">加载中...</span> GB</p>
                 </div>
-                <div class="info-card">
+                <!-- 显卡信息 -->
+                <div class="hardware-item">
                     <h3>显卡</h3>
                     <p id="gpu-model">加载中...</p>
                     <p>状态: <span id="gpu-status">加载中...</span></p>
                 </div>
-                <div class="info-card">
+                <!-- 网卡信息 -->
+                <div class="hardware-item">
                     <h3>网卡</h3>
                     <div id="network-info">加载中...</div>
                 </div>
             </div>
         </div>
 
-        <!-- 实时占用折线图 -->
-        <div class="chart-section">
-            <h2>2分钟实时占用率</h2>
-            <div id="usage-chart" class="usage-chart2"></div>
-        </div>
-
-        <!-- CPU核心占用 -->
-        <div class="cpu-cores-section">
+        <!-- CPU核心实时占用 -->
+        <div class="section">
             <h2>CPU核心实时占用</h2>
-            <div id="cpu-cores-container" class="cores-grid">加载中...</div>
+            <div id="cpu-cores-container" class="cpu-cores-container">
+                加载中...
+            </div>
         </div>
 
-        <!-- 硬盘占用进度条 -->
-        <div class="disk-section">
+        <!-- 硬盘占用率 -->
+        <div class="section">
             <h2>硬盘占用率</h2>
-            <div id="disk-container" class="disk-grid">加载中...</div>
+            <div id="disk-container" class="disk-container">
+                加载中...
+            </div>
+        </div>
+
+        <!-- 网卡流量监控 -->
+        <div class="section">
+            <h2>网卡流量监控</h2>
+            <div class="net-speed">
+                <p>实时上传速度: <span id="net-upload-speed">0 KB/s</span></p>
+                <p>实时下载速度: <span id="net-download-speed">0 KB/s</span></p>
+            </div>
+            <div id="net-chart" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+        </div>
+
+        <!-- 系统资源趋势 -->
+        <div class="section">
+            <h2>系统资源趋势</h2>
+            <div id="usage-chart" style="width: 100%; height: 400px;"></div>
         </div>
     </div>
 
+    <!-- 最后引入JS -->
     <script src="script.js"></script>
 </body>
 
