@@ -1,14 +1,31 @@
-/* 全局样式 */
+/* Apple风格核心样式：极简、通透、圆角、细腻阴影、浅灰主调 */
+:root {
+    --apple-bg: #f5f5f7;
+    --apple-card-bg: #ffffff;
+    --apple-text-primary: #1d1d1f;
+    --apple-text-secondary: #86868b;
+    --apple-accent: #0071e3;
+    --apple-accent-hover: #0077ed;
+    --apple-border: #e6e6e8;
+    --apple-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --apple-shadow-hover: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --apple-success: #34c759;
+    --apple-warning: #ff9500;
+    --apple-error: #ff3b30;
+}
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Microsoft YaHei", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 body {
+    background-color: var(--apple-bg);
+    color: var(--apple-text-primary);
+    line-height: 1.5;
     padding: 20px;
-    background-color: #f5f5f5;
 }
 
 .container {
@@ -16,169 +33,484 @@ body {
     margin: 0 auto;
 }
 
+/* 头部样式 */
+/* 让头部悬浮+玻璃效果，下滑时仍可见 */
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: rgba(245, 245, 247, 0.75);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--apple-border);
+    margin: -20px -20px 30px -20px;
+    /* 抵消 body padding */
+    padding: 20px 20px 0 20px;
+}
+
+.header h1 {
+    font-size: 32px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--apple-text-primary);
+}
+
+.header .sub-title {
+    font-size: 16px;
+    color: var(--apple-text-secondary);
+}
+
+/* 分支切换样式 */
+.branch-switcher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.branch-switcher label {
+    font-size: 14px;
+    color: var(--apple-text-secondary);
+}
+
+.branch-switcher select {
+    padding: 8px 16px;
+    border: 1px solid var(--apple-border);
+    border-radius: 20px;
+    background-color: var(--apple-card-bg);
+    font-size: 14px;
+    min-width: 200px;
+    outline: none;
+    transition: all 0.2s ease;
+}
+
+.branch-switcher select:focus {
+    border-color: var(--apple-accent);
+    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2);
+}
+
+.branch-switcher button {
+    padding: 8px 24px;
+    background-color: var(--apple-accent);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.branch-switcher button:hover {
+    background-color: var(--apple-accent-hover);
+}
+
+/* 修复下拉框黑色问题 + 完善原生样式覆盖 */
+.branch-switcher select {
+    padding: 8px 16px;
+    border: 1px solid var(--apple-border);
+    border-radius: 20px;
+    background-color: var(--apple-card-bg);
+    font-size: 14px;
+    min-width: 200px;
+    outline: none;
+    transition: all 0.2s ease;
+    /* 关键修复：覆盖浏览器原生黑色样式 */
+    color: var(--apple-text-primary);
+    -webkit-appearance: none;
+    /* 移除Safari原生样式 */
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2386868b' d='M10.8 0.8L6 5.6L1.2 0.8L0 2L6 8L12 2L10.8 0.8Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+.branch-switcher select option {
+    /* 修复选项黑色问题 */
+    color: var(--apple-text-primary);
+    background-color: var(--apple-card-bg);
+    padding: 8px 16px;
+}
+
+.branch-switcher select:focus {
+    border-color: var(--apple-accent);
+    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2);
+}
+
 /* 状态提示 */
 .status-tip {
-    padding: 10px;
-    border-radius: 6px;
-    margin-bottom: 20px;
+    padding: 12px 20px;
+    border-radius: 10px;
+    margin-bottom: 24px;
     text-align: center;
-    font-weight: bold;
+    font-size: 14px;
+    font-weight: 500;
+    background-color: var(--apple-card-bg);
+    border: 1px solid var(--apple-border);
 }
 
 .tip-success {
-    background-color: #f0f9ff;
-    color: #409EFF;
+    color: var(--apple-success);
+    border-color: rgba(52, 199, 89, 0.2);
+    background-color: rgba(52, 199, 89, 0.05);
 }
 
 .tip-warning {
-    background-color: #fdf6ec;
-    color: #E6A23C;
+    color: var(--apple-warning);
+    border-color: rgba(255, 149, 0, 0.2);
+    background-color: rgba(255, 149, 0, 0.05);
 }
 
 .tip-error {
-    background-color: #fef0f0;
-    color: #F56C6C;
+    color: var(--apple-error);
+    border-color: rgba(255, 59, 48, 0.2);
+    background-color: rgba(255, 59, 48, 0.05);
 }
 
-/* 板块样式 */
-.section {
-    background: white;
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 20px;
-}
-
-h2 {
-    color: #409EFF;
-    margin-bottom: 15px;
-    border-left: 4px solid #409EFF;
-    padding-left: 10px;
-}
-
-/* 硬件信息样式 */
-.hardware-info {
+/* 卡片容器（硬件信息） */
+.card-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background-color: var(--apple-card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow: var(--apple-shadow);
+    transition: box-shadow 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: var(--apple-shadow-hover);
+}
+
+.card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--apple-text-primary);
+    border-bottom: 1px solid var(--apple-border);
+    padding-bottom: 8px;
+}
+
+.card-content {
+    font-size: 14px;
+    margin: 8px 0;
+    color: var(--apple-text-primary);
+}
+
+/* 面板样式（CPU核心/硬盘/图表） */
+.panel {
+    background-color: var(--apple-card-bg);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 30px;
+    box-shadow: var(--apple-shadow);
+}
+
+.panel-title {
+    font-size: 20px;
+    font-weight: 600;
     margin-bottom: 20px;
+    color: var(--apple-text-primary);
+    border-bottom: 1px solid var(--apple-border);
+    padding-bottom: 12px;
 }
 
-.hardware-item {
-    padding: 15px;
-    border: 1px solid #e6e6e6;
-    border-radius: 6px;
-}
-
-.hardware-item h3 {
-    color: #666;
-    margin-bottom: 10px;
-    font-size: 16px;
-}
-
-.hardware-item p {
-    margin: 5px 0;
-    color: #333;
+/* 卡片按下去微微内陷，点按反馈更真实 */
+.card:active {
+    transform: scale(0.98);
+    box-shadow: var(--apple-shadow);
 }
 
 /* CPU核心样式 */
 .cpu-cores-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 10px;
-    margin-top: 15px;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
 }
 
 .core-box {
-    padding: 10px;
-    border-radius: 6px;
+    padding: 16px 8px;
+    border-radius: 12px;
     text-align: center;
     color: white;
+    font-weight: 500;
+    transition: transform 0.2s ease;
+}
+
+.core-box:hover {
+    transform: translateY(-2px);
 }
 
 .core-box.low {
-    background-color: #67C23A;
+    background-color: var(--apple-success);
 }
 
 .core-box.medium {
-    background-color: #E6A23C;
+    background-color: var(--apple-warning);
 }
 
 .core-box.high {
-    background-color: #F56C6C;
+    background-color: var(--apple-error);
 }
 
 .core-num {
-    font-size: 14px;
-    margin-bottom: 5px;
+    font-size: 12px;
+    margin-bottom: 4px;
+    opacity: 0.9;
 }
 
 .core-usage {
     font-size: 18px;
-    font-weight: bold;
+    font-weight: 600;
 }
 
 /* 硬盘样式 */
 .disk-container {
-    margin-top: 15px;
+    margin-top: 16px;
 }
 
 .disk-item {
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .disk-item h4 {
-    color: #666;
+    font-size: 14px;
+    color: var(--apple-text-secondary);
     margin-bottom: 8px;
 }
 
 .progress-bar {
     width: 100%;
-    height: 20px;
-    background-color: #e6e6e6;
-    border-radius: 10px;
+    height: 6px;
+    background-color: var(--apple-border);
+    border-radius: 3px;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
-    border-radius: 10px;
+    border-radius: 3px;
     transition: width 0.5s ease;
 }
 
 .low-fill {
-    background-color: #67C23A;
+    background-color: var(--apple-success);
 }
 
 .medium-fill {
-    background-color: #E6A23C;
+    background-color: var(--apple-warning);
 }
 
 .high-fill {
-    background-color: #F56C6C;
+    background-color: var(--apple-error);
 }
 
 .disk-info {
-    margin-top: 5px;
-    color: #666;
-    font-size: 14px;
+    margin-top: 8px;
+    color: var(--apple-text-secondary);
+    font-size: 13px;
 }
 
 /* 网卡流量样式 */
 .net-speed {
     display: flex;
-    gap: 20px;
-    margin-bottom: 10px;
-    font-size: 16px;
+    gap: 24px;
+    margin-bottom: 16px;
+    font-size: 14px;
 }
 
 .net-speed span {
-    color: #409EFF;
-    font-weight: bold;
+    color: var(--apple-accent);
+    font-weight: 600;
 }
+
+/* 图表容器 */
+.chart-container {
+    width: 100%;
+    height: 400px;
+    margin-top: 16px;
+    border-radius: 8px;
+}
+
+/* 响应式适配 */
+@media (max-width: 768px) {
+    .card-container {
+        grid-template-columns: 1fr;
+    }
+
+    .branch-switcher {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .net-speed {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .chart-container {
+        height: 300px;
+    }
+}
+
+/* 补充：增加全局间距，优化Apple简约风格 */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    /* 增加容器内边距 */
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 40px;
+    /* 增加头部底部间距 */
+    padding: 30px 0;
+    /* 增加头部内边距 */
+}
+
+/* 分支切换区域增加间距 */
+.branch-switcher {
+    margin-bottom: 30px;
+    /* 增加底部间距 */
+    padding: 10px 0;
+}
+
+/* 状态提示增加间距 */
+.status-tip {
+    margin-bottom: 35px;
+    /* 增加底部间距 */
+}
+
+/* 卡片容器增加间距 */
+.card-container {
+    gap: 25px;
+    /* 增加卡片间距 */
+    margin-bottom: 40px;
+    /* 增加底部间距 */
+}
+
+/* 卡片内增加间距 */
+.card {
+    padding: 30px;
+    /* 增加卡片内边距 */
+    margin-bottom: 10px;
+}
+
+.card-title {
+    margin-bottom: 20px;
+    /* 增加标题底部间距 */
+}
+
+.card-content {
+    margin: 12px 0;
+    /* 增加内容行间距 */
+}
+
+/* 面板增加间距 */
+.panel {
+    margin-bottom: 40px;
+    /* 增加面板间距 */
+    padding: 30px;
+    /* 增加面板内边距 */
+}
+
+.panel-title {
+    margin-bottom: 25px;
+    /* 增加面板标题间距 */
+}
+
+/* CPU核心容器增加间距 */
+.cpu-cores-container {
+    gap: 15px;
+    /* 增加核心卡片间距 */
+    margin-top: 20px;
+}
+
+/* 硬盘信息优化 */
+.disk-item {
+    margin-bottom: 25px;
+    /* 增加硬盘项间距 */
+}
+
+.disk-item h4 {
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+
+.progress-bar {
+    margin: 12px 0;
+    /* 增加进度条上下间距 */
+    height: 8px;
+    /* 进度条更细，更简约 */
+}
+
+.disk-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.disk-percent {
+    color: var(--apple-accent);
+    font-weight: 500;
+}
+
+/* 网卡速度区域优化 */
+.net-speed {
+    margin-bottom: 25px;
+    /* 增加底部间距 */
+    padding: 10px 0;
+}
+
+/* 图表容器增加间距 */
+.chart-container {
+    margin-top: 25px;
+    /* 增加图表顶部间距 */
+    height: 420px;
+    /* 增加图表高度 */
+}
+
+/* 响应式优化 */
+@media (max-width: 768px) {
+    .card-container {
+        gap: 20px;
+    }
+
+    .panel {
+        padding: 20px;
+    }
+
+    .chart-container {
+        height: 350px;
+    }
+}
+
+footer {
+    margin-top: 80px;
+    padding: 26px 0 34px;
+    text-align: center;
+    font-size: 11px;
+    line-height: 1.4;
+    letter-spacing: .08em;
+    color: #6e6e73;
+    background: #f5f5f7;
+    border-top: 1px solid #d2d2d7;
+}
+
+footer .project {
+    font-weight: 600;
+    text-transform: uppercase;
+    /* 项目名大写，Apple 爱用 */
+    margin-bottom: 4px;
+}
+
+footer .studio {
+    font-weight: 400;
+    text-transform: none; }

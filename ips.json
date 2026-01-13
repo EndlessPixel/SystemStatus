@@ -1,4 +1,21 @@
 {
-    "api": "127.0.0.1",
-    "port": 8000
+    "note": {
+        "line1": "前端获取信息选项 - 多服务器分支配置",
+        "line2": "branches对象中可添加多个服务器配置",
+        "line3": "default_branch指定默认选中的服务器分支key",
+        "line4": "每个分支包含name(显示名)、api(服务器IP)、port(端口)"
+    },
+    "default_branch": "local_server",
+    "branches": {
+        "local_server": {
+            "name": "本地服务器",
+            "api": "127.0.0.1",
+            "port": 8000
+        },
+        "local_server2": {
+            "name": "本地服务器2",
+            "api": "127.255.255.255",
+            "port": 8000
+        }
+    }
 }

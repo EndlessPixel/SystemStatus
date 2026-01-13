@@ -1,3 +1,10 @@
+# 在程序最顶部（任何 import wmi / pythoncom 之前）加两行
+import os
+os.environ["PYTHONFAULTHANDLER"] = "0"          # 可选
+import sys
+if sys.platform == "win32":
+    import win32api
+    win32api.SetConsoleCtrlHandler(None, 0)     # 屏蔽部分无用调试
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import psutil
@@ -86,26 +93,55 @@ def get_memory_model() -> str:
         return "DDR Series"
 
 def get_gpu_info() -> Dict:
-    """获取GPU信息（Intel核显 + NVIDIA独显）"""
+    """
+    获取 GPU 信息（Windows：Intel 核显 / NVIDIA 独显）
+    返回: {"model": "显卡名称", "available": bool}
+    """
     gpu_info = {"model": "Unknown", "available": False}
-    try:
-        # Intel核显检测
-        if platform.system() == "Windows":
+
+    # ===== 1. Windows 平台优先用 wmi 取 Intel 核显 =====
+    if platform.system() == "Windows":
+        try:
+            import pythoncom              # COM 初始化
+            pythoncom.CoInitialize()      # 必须在 wmi 之前调用
+            import wmi
             c = wmi.WMI()
             for adapter in c.Win32_VideoController():
                 if "Intel" in adapter.Name:
-                    gpu_info = {
-                        "model": adapter.Name.strip(),
-                        "available": True
-                    }
+                    gpu_info = {"model": adapter.Name.strip(), "available": True}
                     break
-        # NVIDIA独显检测
-        if gpu_info["model"] == "Unknown" and NVML_AVAILABLE:
-            handle = nvml.nvmlDeviceGetHandleByIndex(0)
-            gpu_name = nvml.nvmlDeviceGetName(handle).decode("utf-8")
-            gpu_info = {"model": gpu_name, "available": True}
-    except Exception as e:
-        print(f"GPU检测失败: {e}")
+        except Exception as e:
+            # 仅打印一次，避免刷屏
+            print("wmi 检测失败:", repr(e))
+        finally:
+            try:
+                pythoncom.CoUninitialize()
+            except Exception:
+                pass
+
+    # 如果已找到 Intel 核显，直接返回
+    if gpu_info["available"]:
+        return gpu_info
+
+    # ===== 2. 尝试 NVIDIA 独显 =====
+    global NVML_AVAILABLE               # 允许修改全局开关
+    if NVML_AVAILABLE:
+        try:
+            nvml.nvmlInit()
+            device_count = nvml.nvmlDeviceGetCount()
+            if device_count > 0:
+                handle = nvml.nvmlDeviceGetHandleByIndex(0)
+                name = nvml.nvmlDeviceGetName(handle).decode("utf-8")
+                gpu_info = {"model": name, "available": True}
+        except Exception as e:
+            print("NVML 检测失败:", repr(e))
+            NVML_AVAILABLE = False      # 以后不再尝试 NVML
+        finally:
+            try:
+                nvml.nvmlShutdown()
+            except Exception:
+                pass
+
     return gpu_info
 
 def get_hardware_info() -> Dict:
