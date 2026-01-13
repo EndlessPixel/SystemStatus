@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 import json
 import platform
 import os
+import wmi  # Intel核显检测
 try:
     import py3nvml.py3nvml as nvml
     NVML_AVAILABLE = True
@@ -16,194 +17,189 @@ except ImportError:
 # 初始化FastAPI
 app = FastAPI(title="System Monitor API")
 
-# 配置跨域（解决前端跨域问题）
+# 配置跨域
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # 生产环境请替换为具体前端域名
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# 数据缓存（存储2分钟内的监控数据，按时间戳排序）
+# 数据缓存（新增网卡流量）
 DATA_CACHE = {
-    "cpu_usage": [],  # [(timestamp, usage), ...]
-    "mem_usage": [],  # [(timestamp, usage), ...]
-    "gpu_usage": [],  # [(timestamp, usage), ...]
-    "cpu_core_usage": [],  # 每个核心的占用率（纯列表，不参与时间缓存）
+    "cpu_usage": [],          # [(timestamp, usage), ...]
+    "mem_usage": [],          # [(timestamp, usage), ...]
+    "gpu_usage": [],          # [(timestamp, usage), ...]
+    "cpu_core_usage": [],     # 每个核心的占用率
+    "net_upload_speed": [],   # 上传速度 (KB/s)
+    "net_download_speed": [], # 下载速度 (KB/s)
 }
-CACHE_DURATION = 120  # 2分钟（秒）
-CACHE_FILE = "tmp.json"  # 缓存文件路径
+CACHE_DURATION = 120  # 2分钟缓存
+CACHE_FILE = "tmp.json"
 
-# 初始化显卡监控
-if NVML_AVAILABLE:
-    try:
-        nvml.nvmlInit()
-    except:
-        NVML_AVAILABLE = False
+# 网卡流量初始值（用于计算速度）
+net_io_counters = psutil.net_io_counters()
+last_net_bytes_sent = net_io_counters.bytes_sent
+last_net_bytes_recv = net_io_counters.bytes_recv
+last_net_time = time.time()
 
-def get_memory_model() -> str:
-    """获取内存型号（Windows/Linux兼容）"""
+# ========== 硬件信息获取 ==========
+def get_cpu_model() -> str:
+    """获取CPU型号"""
     try:
         if platform.system() == "Windows":
-            # Windows通过wmic获取内存信息
             import subprocess
             output = subprocess.check_output(
-                'wmic memorychip get devicelocator,manufacturer,partnumber,capacity',
-                shell=True,
-                text=True,
-                stderr=subprocess.DEVNULL
+                'wmic cpu get name', shell=True, text=True, stderr=subprocess.DEVNULL
             )
             lines = [line.strip() for line in output.split('\n') if line.strip()]
-            if len(lines) > 1:
-                # 提取第一条内存信息
-                parts = lines[1].split()
-                if len(parts) >= 3:
-                    return f"{parts[0]} {parts[1]} {parts[2]}"
-            return "DDR (Windows)"
+            return lines[1] if len(lines) > 1 else "Unknown CPU"
         elif platform.system() == "Linux":
-            # Linux通过dmidecode获取（需安装dmidecode）
-            output = subprocess.check_output(
-                'dmidecode -t memory | grep -E "Manufacturer|Part Number|Size"',
-                shell=True,
-                text=True,
-                stderr=subprocess.DEVNULL
-            )
-            return output.strip()[:100]  # 截取前100字符
-        return "Unknown Memory"
+            with open('/proc/cpuinfo', 'r') as f:
+                for line in f:
+                    if line.startswith('model name'):
+                        return line.split(':')[1].strip()
+        return f"CPU ({psutil.cpu_count(logical=False)}核{psutil.cpu_count(logical=True)}线程)"
     except:
-        return "DDR Series"  # 兜底
+        return "Unknown CPU Model"
+
+def get_memory_model() -> str:
+    """获取内存型号"""
+    try:
+        if platform.system() == "Windows":
+            import subprocess
+            output = subprocess.check_output(
+                'wmic memorychip get devicelocator,manufacturer,partnumber',
+                shell=True, text=True, stderr=subprocess.DEVNULL
+            )
+            lines = [line.strip() for line in output.split('\n') if line.strip()]
+            return lines[1] if len(lines) > 1 else "DDR Series"
+        elif platform.system() == "Linux":
+            output = subprocess.check_output(
+                'dmidecode -t memory | grep -E "Manufacturer|Part Number"',
+                shell=True, text=True, stderr=subprocess.DEVNULL
+            )
+            return output.strip()[:100]
+        return "DDR Series"
+    except:
+        return "DDR Series"
+
+def get_gpu_info() -> Dict:
+    """获取GPU信息（Intel核显 + NVIDIA独显）"""
+    gpu_info = {"model": "Unknown", "available": False}
+    try:
+        # Intel核显检测
+        if platform.system() == "Windows":
+            c = wmi.WMI()
+            for adapter in c.Win32_VideoController():
+                if "Intel" in adapter.Name:
+                    gpu_info = {
+                        "model": adapter.Name.strip(),
+                        "available": True
+                    }
+                    break
+        # NVIDIA独显检测
+        if gpu_info["model"] == "Unknown" and NVML_AVAILABLE:
+            handle = nvml.nvmlDeviceGetHandleByIndex(0)
+            gpu_name = nvml.nvmlDeviceGetName(handle).decode("utf-8")
+            gpu_info = {"model": gpu_name, "available": True}
+    except Exception as e:
+        print(f"GPU检测失败: {e}")
+    return gpu_info
 
 def get_hardware_info() -> Dict:
-    """获取硬件基础信息（兼容新版psutil）"""
-    info = {}
-    
-    # CPU信息（兼容修复）
-    info["cpu"] = {
+    """获取完整硬件信息"""
+    # CPU
+    cpu_info = {
         "model": get_cpu_model(),
         "cores": psutil.cpu_count(logical=True),
         "physical_cores": psutil.cpu_count(logical=False)
     }
-    
-    # 内存信息（补充型号）
+    # 内存
     mem = psutil.virtual_memory()
-    info["memory"] = {
-        "total": round(mem.total / (1024**3), 2),  # GB
-        "model": get_memory_model()  # 替换为实际内存型号
+    mem_info = {
+        "total": round(mem.total / (1024**3), 2),
+        "model": get_memory_model()
     }
-    
-    # 硬盘信息
+    # 硬盘
     disks = []
     for part in psutil.disk_partitions(all=False):
         if "cdrom" in part.opts or part.fstype == "":
             continue
         try:
             usage = psutil.disk_usage(part.mountpoint)
+            disks.append({
+                "device": part.device,
+                "mountpoint": part.mountpoint,
+                "fstype": part.fstype,
+                "total": round(usage.total / (1024**3), 2),
+                "used": round(usage.used / (1024**3), 2),
+                "usage_percent": round(usage.percent, 1)
+            })
         except:
             continue
-        disks.append({
-            "device": part.device,
-            "mountpoint": part.mountpoint,
-            "fstype": part.fstype,
-            "total": round(usage.total / (1024**3), 2),
-            "used": round(usage.used / (1024**3), 2),
-            "usage_percent": round(usage.percent, 1)
-        })
-    info["disks"] = disks
-    
-    # 显卡信息
-    info["gpu"] = {"model": "Unknown", "available": False}
-    if NVML_AVAILABLE:
-        try:
-            handle = nvml.nvmlDeviceGetHandleByIndex(0)
-            gpu_name = nvml.nvmlDeviceGetName(handle).decode("utf-8")
-            info["gpu"] = {
-                "model": gpu_name,
-                "available": True
-            }
-        except:
-            pass
-    
-    # 网卡信息
+    # 显卡
+    gpu_info = get_gpu_info()
+    # 网卡（基础信息）
     net_ifaces = []
     for iface, addrs in psutil.net_if_addrs().items():
         if iface == "lo":
             continue
         net_ifaces.append({
             "name": iface,
-            "addresses": [addr.address for addr in addrs if addr.family == 2]  # IPv4
+            "addresses": [addr.address for addr in addrs if addr.family == 2]
         })
-    info["network"] = net_ifaces
+    return {
+        "cpu": cpu_info,
+        "memory": mem_info,
+        "disks": disks,
+        "gpu": gpu_info,
+        "network": net_ifaces
+    }
+
+# ========== 数据采集 + 缓存 ==========
+def calculate_net_speed():
+    """计算网卡上传/下载速度（KB/s）"""
+    global last_net_bytes_sent, last_net_bytes_recv, last_net_time
+    current_time = time.time()
+    time_diff = current_time - last_net_time
     
-    return info
-
-def get_cpu_model() -> str:
-    """兼容不同系统和psutil版本的CPU型号获取"""
-    try:
-        # Windows系统
-        if platform.system() == "Windows":
-            import subprocess
-            output = subprocess.check_output(
-                'wmic cpu get name',
-                shell=True,
-                text=True,
-                stderr=subprocess.DEVNULL
-            )
-            lines = [line.strip() for line in output.split('\n') if line.strip()]
-            if len(lines) > 1:
-                return lines[1]
-        # Linux系统
-        elif platform.system() == "Linux":
-            with open('/proc/cpuinfo', 'r') as f:
-                for line in f:
-                    if line.startswith('model name'):
-                        return line.split(':')[1].strip()
-        # 备用方案（psutil兼容）
-        return f"CPU ({psutil.cpu_count(logical=False)}核{psutil.cpu_count(logical=True)}线程)"
-    except:
-        return "Unknown CPU Model"
-
-def update_cache_file():
-    """更新tmp.json缓存文件（包含硬件信息+最新实时数据）"""
-    try:
-        # 组装完整缓存数据
-        cache_data = {
-            "hardware_info": get_hardware_info(),
-            "real_time_data": {
-                "cpu_usage": DATA_CACHE["cpu_usage"][-1][1] if DATA_CACHE["cpu_usage"] else 0,
-                "mem_usage": DATA_CACHE["mem_usage"][-1][1] if DATA_CACHE["mem_usage"] else 0,
-                "gpu_usage": DATA_CACHE["gpu_usage"][-1][1] if DATA_CACHE["gpu_usage"] else 0,
-                "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
-                "timestamp": time.time()
-            },
-            "disk_usage": get_hardware_info()["disks"]
-        }
-        
-        # 写入缓存文件
-        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"更新缓存文件失败: {e}")
+    if time_diff < 0.1:  # 避免除以0
+        return 0, 0
+    
+    # 获取当前流量
+    current_net = psutil.net_io_counters()
+    sent_diff = current_net.bytes_sent - last_net_bytes_sent
+    recv_diff = current_net.bytes_recv - last_net_bytes_recv
+    
+    # 转换为KB/s
+    upload_speed = round(sent_diff / 1024 / time_diff, 2)
+    download_speed = round(recv_diff / 1024 / time_diff, 2)
+    
+    # 更新上次值
+    last_net_bytes_sent = current_net.bytes_sent
+    last_net_bytes_recv = current_net.bytes_recv
+    last_net_time = current_time
+    
+    return upload_speed, download_speed
 
 def collect_real_time_data():
-    """定时采集实时数据（每秒一次）"""
-    cache_update_counter = 0  # 每10秒更新一次缓存文件
+    """定时采集所有实时数据（含网卡流量）"""
+    cache_update_counter = 0
     while True:
         timestamp = time.time()
         
-        # 只清理带时间戳的缓存数据（排除cpu_core_usage）
-        for key in ["cpu_usage", "mem_usage", "gpu_usage"]:
+        # 1. 清理过期缓存
+        for key in ["cpu_usage", "mem_usage", "gpu_usage", "net_upload_speed", "net_download_speed"]:
             DATA_CACHE[key] = [item for item in DATA_CACHE[key] if timestamp - item[0] <= CACHE_DURATION]
         
-        # CPU整体占用率
-        cpu_usage = psutil.cpu_percent(interval=None)
-        DATA_CACHE["cpu_usage"].append((timestamp, cpu_usage))
+        # 2. 采集基础数据
+        DATA_CACHE["cpu_usage"].append((timestamp, psutil.cpu_percent(interval=None)))
+        DATA_CACHE["mem_usage"].append((timestamp, psutil.virtual_memory().percent))
+        DATA_CACHE["cpu_core_usage"] = psutil.cpu_percent(interval=None, percpu=True)
         
-        # 内存占用率
-        mem_usage = psutil.virtual_memory().percent
-        DATA_CACHE["mem_usage"].append((timestamp, mem_usage))
-        
-        # GPU占用率
+        # 3. GPU占用率
         gpu_usage = 0
         if NVML_AVAILABLE:
             try:
@@ -213,11 +209,12 @@ def collect_real_time_data():
                 pass
         DATA_CACHE["gpu_usage"].append((timestamp, gpu_usage))
         
-        # CPU核心占用率（纯列表，不存储时间戳）
-        cpu_core_usage = psutil.cpu_percent(interval=None, percpu=True)
-        DATA_CACHE["cpu_core_usage"] = cpu_core_usage  # 直接覆盖为最新值
+        # 4. 网卡流量速度
+        upload_speed, download_speed = calculate_net_speed()
+        DATA_CACHE["net_upload_speed"].append((timestamp, upload_speed))
+        DATA_CACHE["net_download_speed"].append((timestamp, download_speed))
         
-        # 每10秒更新一次缓存文件
+        # 5. 每10秒更新缓存文件
         cache_update_counter += 1
         if cache_update_counter >= 10:
             update_cache_file()
@@ -225,33 +222,35 @@ def collect_real_time_data():
         
         time.sleep(1)
 
-# 初始化缓存文件（启动时立即生成）
-update_cache_file()
-
-# 启动数据采集线程
-collect_thread = threading.Thread(target=collect_real_time_data, daemon=True)
-collect_thread.start()
-
-# API接口：新增获取缓存文件接口
-@app.get("/api/cache")
-async def get_cache():
-    """获取缓存文件数据"""
+def update_cache_file():
+    """更新缓存文件（含网卡流量）"""
     try:
-        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return {"error": "缓存文件不存在"}
+        cache_data = {
+            "hardware_info": get_hardware_info(),
+            "real_time_data": {
+                "cpu_usage": DATA_CACHE["cpu_usage"][-1][1] if DATA_CACHE["cpu_usage"] else 0,
+                "mem_usage": DATA_CACHE["mem_usage"][-1][1] if DATA_CACHE["mem_usage"] else 0,
+                "gpu_usage": DATA_CACHE["gpu_usage"][-1][1] if DATA_CACHE["gpu_usage"] else 0,
+                "net_upload_speed": DATA_CACHE["net_upload_speed"][-1][1] if DATA_CACHE["net_upload_speed"] else 0,
+                "net_download_speed": DATA_CACHE["net_download_speed"][-1][1] if DATA_CACHE["net_download_speed"] else 0,
+                "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
+                "timestamp": time.time()
+            },
+            "disk_usage": get_hardware_info()["disks"]
+        }
+        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cache_data, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        print(f"缓存更新失败: {e}")
 
-# 原有API接口保持不变
+# ========== API接口 ==========
 @app.get("/api/hardware-info")
 async def hardware_info():
-    """获取硬件基础信息"""
     return get_hardware_info()
 
 @app.get("/api/real-time-data")
 async def real_time_data():
-    """获取实时监控数据"""
-    # 格式化时间戳为前端可用格式
+    """实时数据（含网卡流量）"""
     def format_data(data: List) -> List:
         return [[round(t, 0), val] for t, val in data]
     
@@ -259,15 +258,31 @@ async def real_time_data():
         "cpu_usage": format_data(DATA_CACHE["cpu_usage"]),
         "mem_usage": format_data(DATA_CACHE["mem_usage"]),
         "gpu_usage": format_data(DATA_CACHE["gpu_usage"]),
+        "net_upload_speed": format_data(DATA_CACHE["net_upload_speed"]),
+        "net_download_speed": format_data(DATA_CACHE["net_download_speed"]),
         "cpu_core_usage": DATA_CACHE["cpu_core_usage"],
         "timestamp": time.time()
     }
 
 @app.get("/api/disk-usage")
 async def disk_usage():
-    """获取硬盘占用信息"""
     return get_hardware_info()["disks"]
 
+@app.get("/api/cache")
+async def get_cache():
+    try:
+        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except:
+        return {"error": "缓存文件不存在"}
+
+# ========== 启动 ==========
 if __name__ == "__main__":
+    # 初始化缓存
+    update_cache_file()
+    # 启动采集线程
+    collect_thread = threading.Thread(target=collect_real_time_data, daemon=True)
+    collect_thread.start()
+    # 启动服务
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
