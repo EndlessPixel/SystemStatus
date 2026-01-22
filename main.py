@@ -33,7 +33,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 数据缓存（新增网卡流量）
+# 数据缓存（新增网卡流量及其他监控项）
 DATA_CACHE = {
     "cpu_usage": [],          # [(timestamp, usage), ...]
     "mem_usage": [],          # [(timestamp, usage), ...]
@@ -41,6 +41,11 @@ DATA_CACHE = {
     "cpu_core_usage": [],     # 每个核心的占用率
     "net_upload_speed": [],   # 上传速度 (KB/s)
     "net_download_speed": [], # 下载速度 (KB/s)
+    "system_load": [],        # 系统负载
+    "process_count": [],      # 进程数量
+    "boot_time": 0,           # 开机时间
+    "battery_info": {},       # 电池状态
+    "cpu_temperature": [],    # CPU温度
 }
 CACHE_DURATION = 120  # 2分钟缓存
 CACHE_FILE = "tmp.json"
@@ -92,6 +97,9 @@ def get_memory_model() -> str:
     except:
         return "DDR Series"
 
+# NVML全局变量
+NVML_HANDLE = None
+
 def get_gpu_info() -> Dict:
     """
     获取 GPU 信息（Windows：Intel 核显 / NVIDIA 独显）
@@ -124,23 +132,13 @@ def get_gpu_info() -> Dict:
         return gpu_info
 
     # ===== 2. 尝试 NVIDIA 独显 =====
-    global NVML_AVAILABLE               # 允许修改全局开关
-    if NVML_AVAILABLE:
+    global NVML_AVAILABLE, NVML_HANDLE  # 允许修改全局开关
+    if NVML_AVAILABLE and NVML_HANDLE is not None:
         try:
-            nvml.nvmlInit()
-            device_count = nvml.nvmlDeviceGetCount()
-            if device_count > 0:
-                handle = nvml.nvmlDeviceGetHandleByIndex(0)
-                name = nvml.nvmlDeviceGetName(handle).decode("utf-8")
-                gpu_info = {"model": name, "available": True}
+            name = nvml.nvmlDeviceGetName(NVML_HANDLE).decode("utf-8")
+            gpu_info = {"model": name, "available": True}
         except Exception as e:
-            print("NVML 检测失败:", repr(e))
-            NVML_AVAILABLE = False      # 以后不再尝试 NVML
-        finally:
-            try:
-                nvml.nvmlShutdown()
-            except Exception:
-                pass
+            print("NVML 获取设备名称失败:", repr(e))
 
     return gpu_info
 
@@ -223,11 +221,17 @@ def calculate_net_speed():
 def collect_real_time_data():
     """定时采集所有实时数据（含网卡流量）"""
     cache_update_counter = 0
+    nvml_recovery_counter = 0
+    NVML_RECOVERY_INTERVAL = 60  # 60秒尝试恢复一次NVML
+    
+    # 设置开机时间（只需一次）
+    DATA_CACHE["boot_time"] = psutil.boot_time()
+    
     while True:
         timestamp = time.time()
         
         # 1. 清理过期缓存
-        for key in ["cpu_usage", "mem_usage", "gpu_usage", "net_upload_speed", "net_download_speed"]:
+        for key in ["cpu_usage", "mem_usage", "gpu_usage", "net_upload_speed", "net_download_speed", "system_load", "process_count", "cpu_temperature"]:
             DATA_CACHE[key] = [item for item in DATA_CACHE[key] if timestamp - item[0] <= CACHE_DURATION]
         
         # 2. 采集基础数据
@@ -237,12 +241,13 @@ def collect_real_time_data():
         
         # 3. GPU占用率
         gpu_usage = 0
-        if NVML_AVAILABLE:
+        if NVML_AVAILABLE and NVML_HANDLE is not None:
             try:
-                handle = nvml.nvmlDeviceGetHandleByIndex(0)
-                gpu_usage = nvml.nvmlDeviceGetUtilizationRates(handle).gpu
-            except:
-                pass
+                gpu_usage = nvml.nvmlDeviceGetUtilizationRates(NVML_HANDLE).gpu
+            except Exception as e:
+                print("获取GPU占用率失败:", repr(e))
+                # NVML可能失效，关闭它以便后续尝试恢复
+                shutdown_nvml()
         DATA_CACHE["gpu_usage"].append((timestamp, gpu_usage))
         
         # 4. 网卡流量速度
@@ -250,19 +255,75 @@ def collect_real_time_data():
         DATA_CACHE["net_upload_speed"].append((timestamp, upload_speed))
         DATA_CACHE["net_download_speed"].append((timestamp, download_speed))
         
-        # 5. 每10秒更新缓存文件
+        # 5. 新增监控项：系统负载
+        if hasattr(psutil, 'getloadavg'):
+            load_avg = psutil.getloadavg()[0]  # 获取1分钟负载
+            DATA_CACHE["system_load"].append((timestamp, round(load_avg, 2)))
+        
+        # 6. 新增监控项：进程数量
+        process_count = len(psutil.pids())
+        DATA_CACHE["process_count"].append((timestamp, process_count))
+        
+        # 7. 新增监控项：电池状态
+        if hasattr(psutil, 'sensors_battery'):
+            battery = psutil.sensors_battery()
+            if battery:
+                DATA_CACHE["battery_info"] = {
+                    "percent": battery.percent,
+                    "plugged": battery.power_plugged,
+                    "secsleft": battery.secsleft
+                }
+        
+        # 8. 新增监控项：CPU温度
+        if hasattr(psutil, 'sensors_temperatures'):
+            temps = psutil.sensors_temperatures()
+            if 'coretemp' in temps:
+                # Linux系统核心温度
+                cpu_temp = temps['coretemp'][0].current
+                DATA_CACHE["cpu_temperature"].append((timestamp, round(cpu_temp, 1)))
+            elif 'acpitz' in temps:
+                # 备用温度传感器
+                cpu_temp = temps['acpitz'][0].current
+                DATA_CACHE["cpu_temperature"].append((timestamp, round(cpu_temp, 1)))
+            elif 'k10temp' in temps:
+                # AMD处理器温度
+                cpu_temp = temps['k10temp'][0].current
+                DATA_CACHE["cpu_temperature"].append((timestamp, round(cpu_temp, 1)))
+            elif hasattr(psutil, 'win32'):
+                # Windows系统，尝试获取CPU温度
+                try:
+                    import wmi
+                    c = wmi.WMI()
+                    for sensor in c.Win32_TemperatureProbe():
+                        if sensor.Name and "CPU" in sensor.Name:
+                            DATA_CACHE["cpu_temperature"].append((timestamp, round(sensor.CurrentReading, 1)))
+                            break
+                except Exception as e:
+                    pass
+        
+        # 9. 每10秒更新缓存文件
         cache_update_counter += 1
         if cache_update_counter >= 10:
             update_cache_file()
             cache_update_counter = 0
+        
+        # 10. NVML恢复机制：每60秒尝试恢复一次
+        nvml_recovery_counter += 1
+        if nvml_recovery_counter >= NVML_RECOVERY_INTERVAL and not NVML_AVAILABLE:
+            print("尝试恢复NVML...")
+            init_nvml()
+            nvml_recovery_counter = 0
         
         time.sleep(1)
 
 def update_cache_file():
     """更新缓存文件（含网卡流量）"""
     try:
+        # 只调用一次get_hardware_info()，避免重复系统调用
+        hardware_info = get_hardware_info()
+        
         cache_data = {
-            "hardware_info": get_hardware_info(),
+            "hardware_info": hardware_info,
             "real_time_data": {
                 "cpu_usage": DATA_CACHE["cpu_usage"][-1][1] if DATA_CACHE["cpu_usage"] else 0,
                 "mem_usage": DATA_CACHE["mem_usage"][-1][1] if DATA_CACHE["mem_usage"] else 0,
@@ -270,9 +331,14 @@ def update_cache_file():
                 "net_upload_speed": DATA_CACHE["net_upload_speed"][-1][1] if DATA_CACHE["net_upload_speed"] else 0,
                 "net_download_speed": DATA_CACHE["net_download_speed"][-1][1] if DATA_CACHE["net_download_speed"] else 0,
                 "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
+                "system_load": DATA_CACHE["system_load"][-1][1] if DATA_CACHE["system_load"] else 0,
+                "process_count": DATA_CACHE["process_count"][-1][1] if DATA_CACHE["process_count"] else 0,
+                "cpu_temperature": DATA_CACHE["cpu_temperature"][-1][1] if DATA_CACHE["cpu_temperature"] else 0,
+                "boot_time": DATA_CACHE["boot_time"],
+                "battery_info": DATA_CACHE["battery_info"],
                 "timestamp": time.time()
             },
-            "disk_usage": get_hardware_info()["disks"]
+            "disk_usage": hardware_info["disks"]
         }
         with open(CACHE_FILE, 'w', encoding='utf-8') as f:
             json.dump(cache_data, f, ensure_ascii=False, indent=2)
@@ -296,7 +362,12 @@ async def real_time_data():
         "gpu_usage": format_data(DATA_CACHE["gpu_usage"]),
         "net_upload_speed": format_data(DATA_CACHE["net_upload_speed"]),
         "net_download_speed": format_data(DATA_CACHE["net_download_speed"]),
+        "system_load": format_data(DATA_CACHE["system_load"]),
+        "process_count": format_data(DATA_CACHE["process_count"]),
+        "cpu_temperature": format_data(DATA_CACHE["cpu_temperature"]),
         "cpu_core_usage": DATA_CACHE["cpu_core_usage"],
+        "boot_time": DATA_CACHE["boot_time"],
+        "battery_info": DATA_CACHE["battery_info"],
         "timestamp": time.time()
     }
 
@@ -312,13 +383,54 @@ async def get_cache():
     except:
         return {"error": "缓存文件不存在"}
 
+# ========== NVML初始化和关闭函数 ==========
+def init_nvml():
+    """初始化NVML并获取设备句柄"""
+    global NVML_AVAILABLE, NVML_HANDLE
+    if not NVML_AVAILABLE:
+        return False
+    
+    try:
+        nvml.nvmlInit()
+        device_count = nvml.nvmlDeviceGetCount()
+        if device_count > 0:
+            NVML_HANDLE = nvml.nvmlDeviceGetHandleByIndex(0)
+            print(f"NVML初始化成功，检测到 {device_count} 个NVIDIA设备")
+            return True
+        else:
+            print("NVML初始化成功，但未检测到NVIDIA设备")
+            NVML_AVAILABLE = False
+            return False
+    except Exception as e:
+        print(f"NVML初始化失败: {repr(e)}")
+        NVML_AVAILABLE = False
+        return False
+
+def shutdown_nvml():
+    """关闭NVML"""
+    global NVML_AVAILABLE, NVML_HANDLE
+    if NVML_AVAILABLE:
+        try:
+            nvml.nvmlShutdown()
+            NVML_HANDLE = None
+            print("NVML已关闭")
+        except Exception as e:
+            print(f"关闭NVML时出错: {repr(e)}")
+
 # ========== 启动 ==========
 if __name__ == "__main__":
+    # 初始化NVML
+    init_nvml()
+    
     # 初始化缓存
     update_cache_file()
     # 启动采集线程
     collect_thread = threading.Thread(target=collect_real_time_data, daemon=True)
     collect_thread.start()
     # 启动服务
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    try:
+        import uvicorn
+        uvicorn.run(app, host="0.0.0.0", port=8000)
+    finally:
+        # 确保在程序结束时关闭NVML
+        shutdown_nvml()

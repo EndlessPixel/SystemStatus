@@ -4,43 +4,76 @@ let isLocalAddress = false;
 const LOCAL_CACHE_KEY = "system_monitor_cache";
 let chart = null;
 let netChart = null;
+let systemChart = null;
 let currentBranch = "";
 let branchConfig = {};
 // 数字动画相关配置
 const ANIMATION_DURATION = 800; // 动画时长(ms)
 const ANIMATION_FRAME = 16;     // 动画帧率(ms)
+// 全局定时器变量
+let realTimeDataInterval = null;
+let diskUsageInterval = null;
+let hardwareInfoInterval = null;
 
 // ========== 工具函数：数字动画 ==========
 function animateNumber(element, targetValue, isPercent = true) {
     if (!element) return;
 
     // 清空原有动画
-    if (element.animationTimer) {
-        clearInterval(element.animationTimer);
+    if (element.animationFrame) {
+        cancelAnimationFrame(element.animationFrame);
     }
 
-    const startValue = parseFloat(element.textContent.replace(/[^0-9.]/g, "")) || 0;
-    const diff = targetValue - startValue;
-    const step = diff / (ANIMATION_DURATION / ANIMATION_FRAME);
+    // 优化起始值获取，避免正则表达式
+    const currentText = element.textContent;
+    const startValue = parseFloat(currentText) || 0;
+    
+    // 如果目标值与当前值相差很小，直接设置并返回
+    if (Math.abs(targetValue - startValue) < 0.1) {
+        if (isPercent) {
+            element.textContent = `${targetValue.toFixed(1)}%`;
+        } else {
+            element.textContent = `${targetValue.toFixed(1)}`;
+        }
+        return;
+    }
+
+    const startTime = performance.now();
     let currentValue = startValue;
 
-    element.animationTimer = setInterval(() => {
-        currentValue += step;
-
-        // 边界处理
-        if ((step > 0 && currentValue >= targetValue) || (step < 0 && currentValue <= targetValue)) {
-            currentValue = targetValue;
-            clearInterval(element.animationTimer);
-            delete element.animationTimer;
-        }
+    // 使用requestAnimationFrame替代setInterval
+    const animate = (currentTime) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
+        
+        // 使用缓动函数，使动画更自然
+        const easedProgress = 1 - Math.pow(1 - progress, 3);
+        
+        currentValue = startValue + (targetValue - startValue) * easedProgress;
 
         // 格式化显示
+        let displayText;
         if (isPercent) {
-            element.textContent = `${currentValue.toFixed(1)}%`;
+            displayText = `${currentValue.toFixed(1)}%`;
         } else {
-            element.textContent = `${currentValue.toFixed(1)}`;
+            displayText = `${currentValue.toFixed(1)}`;
         }
-    }, ANIMATION_FRAME);
+        
+        // 只有当文本发生变化时才更新DOM
+        if (element.textContent !== displayText) {
+            element.textContent = displayText;
+        }
+
+        if (progress < 1) {
+            element.animationFrame = requestAnimationFrame(animate);
+        } else {
+            // 确保最终值准确
+            element.textContent = isPercent ? `${targetValue.toFixed(1)}%` : `${targetValue.toFixed(1)}`;
+            delete element.animationFrame;
+        }
+    };
+
+    element.animationFrame = requestAnimationFrame(animate);
 }
 
 // ========== 加载分支配置 ==========
@@ -181,19 +214,34 @@ async function switchBranch() {
     currentBranch = newBranch;
     initBranchAPI(currentBranch);
 
+    // 清空旧数据，加载新数据
+    clearOldData();
+    await loadFromCache();
+    
     // 重新检测后端状态并加载数据
     const backendAvailable = await checkBackendStatus();
     if (backendAvailable) {
         updateStatusTip(`已成功切换到【${branchConfig[newBranch].name || newBranch}】`, "success");
-        // 清空旧数据，加载新数据
-        clearOldData();
-        await loadFromCache();
+        
+        // 清除现有定时器
+        clearAllIntervals();
+        
+        // 立即更新最新数据
         getHardwareInfo();
         updateRealTimeData();
         updateDiskUsage();
+        
+        // 启动定时更新
+        realTimeDataInterval = setInterval(updateRealTimeData, 2000); // 2秒更新一次，避免动画频繁
+        diskUsageInterval = setInterval(updateDiskUsage, 10000);
+        hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
+        
+        // 隐藏重试按钮
+        hideRetryButton();
     } else {
         updateStatusTip(`切换到【${branchConfig[newBranch].name || newBranch}】失败，后端不可用`, "error");
-        await loadFromCache();
+        // 显示重试按钮
+        showRetryButton();
     }
 }
 
@@ -210,6 +258,11 @@ function clearOldData() {
             series: [{ data: [] }, { data: [] }]
         });
     }
+    if (systemChart) {
+        systemChart.setOption({
+            series: [{ data: [] }, { data: [] }, { data: [] }]
+        });
+    }
 
     // 清空硬件信息（重置为初始状态）
     const resetElements = [
@@ -220,7 +273,11 @@ function clearOldData() {
         { id: 'gpu-model', text: '加载中...' },
         { id: 'gpu-status', text: '加载中...' },
         { id: 'net-upload-speed', text: '0 KB/s' },
-        { id: 'net-download-speed', text: '0 KB/s' }
+        { id: 'net-download-speed', text: '0 KB/s' },
+        { id: 'system-load', text: '0.00' },
+        { id: 'process-count', text: '0' },
+        { id: 'cpu-temperature', text: '0°C' },
+        { id: 'boot-time', text: '0天0小时0分钟' }
     ];
 
     resetElements.forEach(item => {
@@ -232,8 +289,19 @@ function clearOldData() {
                 clearInterval(el.animationTimer);
                 delete el.animationTimer;
             }
+            // 清除animationFrame
+            if (el.animationFrame) {
+                cancelAnimationFrame(el.animationFrame);
+                delete el.animationFrame;
+            }
         }
     });
+
+    // 重置电池信息
+    const batteryInfoEl = document.getElementById('battery-info');
+    if (batteryInfoEl) {
+        batteryInfoEl.textContent = '电池状态: 未检测到电池信息';
+    }
 
     // 清空复杂元素
     const networkEl = document.getElementById('network-info');
@@ -413,6 +481,101 @@ function initChart() {
                     lineStyle: { width: 2 },
                     areaStyle: { opacity: 0.1 },
                     itemStyle: { color: '#34c759' }
+                }
+            ]
+        });
+    }
+
+    // 3. 系统负载图表
+    const systemChartDom = document.getElementById('system-chart');
+    if (systemChartDom) {
+        systemChart = echarts.init(systemChartDom);
+        systemChart.setOption({
+            backgroundColor: 'transparent',
+            title: {
+                text: '系统负载趋势',
+                textStyle: { color: '#86868b', fontSize: 16, fontWeight: 500 },
+                left: 'center',
+                padding: [0, 0, 20, 0]
+            },
+            tooltip: {
+                trigger: 'axis',
+                padding: 12,
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderColor: '#e6e6e8',
+                borderWidth: 1,
+                textStyle: { color: '#1d1d1f', fontSize: 14 }
+            },
+            legend: {
+                data: ['系统负载', '进程数', 'CPU温度'],
+                textStyle: { color: '#86868b', fontSize: 14 },
+                bottom: 10,
+                left: 'center'
+            },
+            grid: {
+                left: '5%',
+                right: '5%',
+                top: '15%',
+                bottom: '20%',
+                containLabel: true
+            },
+            xAxis: {
+                type: 'time',
+                name: '时间',
+                nameTextStyle: { color: '#86868b', padding: [0, 0, 10, 0] },
+                axisLine: { lineStyle: { color: '#e6e6e8' } },
+                axisLabel: { color: '#86868b', fontSize: 12 },
+                splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+            },
+            yAxis: [
+                {
+                    type: 'value',
+                    min: 0,
+                    name: '系统负载/进程数',
+                    nameTextStyle: { color: '#86868b', padding: [0, 10, 0, 0] },
+                    axisLine: { lineStyle: { color: '#e6e6e8' } },
+                    axisLabel: { color: '#86868b', fontSize: 12 },
+                    splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+                },
+                {
+                    type: 'value',
+                    min: 0,
+                    max: 100,
+                    name: 'CPU温度(°C)',
+                    nameTextStyle: { color: '#86868b', padding: [0, 10, 0, 0] },
+                    axisLine: { lineStyle: { color: '#e6e6e8' } },
+                    axisLabel: { color: '#86868b', fontSize: 12 },
+                    splitLine: { show: false }
+                }
+            ],
+            series: [
+                {
+                    name: '系统负载',
+                    type: 'line',
+                    data: [],
+                    smooth: true,
+                    lineStyle: { width: 2 },
+                    areaStyle: { opacity: 0.1 },
+                    itemStyle: { color: '#0071e3' }
+                },
+                {
+                    name: '进程数',
+                    type: 'line',
+                    data: [],
+                    smooth: true,
+                    lineStyle: { width: 2 },
+                    areaStyle: { opacity: 0.1 },
+                    itemStyle: { color: '#34c759' }
+                },
+                {
+                    name: 'CPU温度',
+                    type: 'line',
+                    yAxisIndex: 1,
+                    data: [],
+                    smooth: true,
+                    lineStyle: { width: 2 },
+                    areaStyle: { opacity: 0.1 },
+                    itemStyle: { color: '#ff9500' }
                 }
             ]
         });
@@ -706,6 +869,17 @@ async function updateRealTimeData() {
             });
         }
 
+        // 更新系统负载图表
+        if (systemChart) {
+            systemChart.setOption({
+                series: [
+                    { data: data.system_load },
+                    { data: data.process_count },
+                    { data: data.cpu_temperature }
+                ]
+            });
+        }
+
         // 更新CPU核心占用（带动画）
         updateCPUCores(data.cpu_core_usage, true);
 
@@ -713,6 +887,68 @@ async function updateRealTimeData() {
         const uploadSpeed = data.net_upload_speed.length > 0 ? data.net_upload_speed[data.net_upload_speed.length - 1][1] : 0;
         const downloadSpeed = data.net_download_speed.length > 0 ? data.net_download_speed[data.net_download_speed.length - 1][1] : 0;
         updateNetSpeedDisplay(uploadSpeed, downloadSpeed);
+
+        // 更新系统负载、进程数、CPU温度等数据
+        const systemLoad = data.system_load.length > 0 ? data.system_load[data.system_load.length - 1][1] : 0;
+        const processCount = data.process_count.length > 0 ? data.process_count[data.process_count.length - 1][1] : 0;
+        const cpuTemperature = data.cpu_temperature.length > 0 ? data.cpu_temperature[data.cpu_temperature.length - 1][1] : 0;
+        
+        // 更新系统负载显示
+        const systemLoadEl = document.getElementById('system-load');
+        if (systemLoadEl) {
+            animateNumber(systemLoadEl, systemLoad, false);
+        }
+        
+        // 更新进程数显示
+        const processCountEl = document.getElementById('process-count');
+        if (processCountEl) {
+            animateNumber(processCountEl, processCount, false);
+        }
+        
+        // 更新CPU温度显示
+        const cpuTemperatureEl = document.getElementById('cpu-temperature');
+        if (cpuTemperatureEl) {
+            animateNumber(cpuTemperatureEl, cpuTemperature, false);
+            // 确保温度单位显示
+            setTimeout(() => {
+                const currentText = cpuTemperatureEl.textContent;
+                if (!currentText.includes('°C')) {
+                    cpuTemperatureEl.textContent = `${cpuTemperatureEl.textContent}°C`;
+                }
+            }, ANIMATION_DURATION);
+        }
+        
+        // 更新开机时间
+        const bootTimeEl = document.getElementById('boot-time');
+        if (bootTimeEl && data.boot_time) {
+            const bootTime = new Date(data.boot_time * 1000);
+            const now = new Date();
+            const diffMs = now - bootTime;
+            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            bootTimeEl.textContent = `${diffDays}天${diffHours}小时${diffMinutes}分钟`;
+        }
+        
+        // 更新电池信息
+        const batteryInfoEl = document.getElementById('battery-info');
+        if (batteryInfoEl && data.battery_info) {
+            const battery = data.battery_info;
+            if (battery.percent !== undefined) {
+                if (battery.plugged) {
+                    batteryInfoEl.textContent = `电池状态: 已充电 ${battery.percent.toFixed(0)}% (已连接电源)`;
+                } else {
+                    const secsLeft = battery.secsleft;
+                    let timeLeft = '';
+                    if (secsLeft > 0) {
+                        const hours = Math.floor(secsLeft / 3600);
+                        const minutes = Math.floor((secsLeft % 3600) / 60);
+                        timeLeft = `，预计剩余 ${hours}小时${minutes}分钟`;
+                    }
+                    batteryInfoEl.textContent = `电池状态: ${battery.percent.toFixed(0)}% (未连接电源${timeLeft})`;
+                }
+            }
+        }
 
         // 更新本地缓存
         const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
@@ -722,6 +958,11 @@ async function updateRealTimeData() {
             gpu_usage: data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0,
             net_upload_speed: uploadSpeed,
             net_download_speed: downloadSpeed,
+            system_load: systemLoad,
+            process_count: processCount,
+            cpu_temperature: cpuTemperature,
+            boot_time: data.boot_time,
+            battery_info: data.battery_info,
             cpu_core_usage: data.cpu_core_usage,
             timestamp: data.timestamp
         };
@@ -737,41 +978,140 @@ function updateCPUCores(coreUsages, withAnimation = false) {
     const container = document.getElementById('cpu-cores-container');
     if (!container) return;
 
-    container.innerHTML = '';
-
     if (!coreUsages || coreUsages.length === 0) {
         container.innerHTML = "<p>未检测到CPU核心信息</p>";
         return;
     }
 
-    coreUsages.forEach((usage, index) => {
-        const coreBox = document.createElement('div');
-        coreBox.className = 'core-box';
+    // 获取当前已存在的核心元素
+    const existingCoreBoxes = container.querySelectorAll('.core-box');
+    const existingCount = existingCoreBoxes.length;
+    const newCount = coreUsages.length;
 
+    // 如果核心数量变化，重新创建所有元素
+    if (existingCount !== newCount) {
+        container.innerHTML = '';
+        
+        coreUsages.forEach((usage, index) => {
+            const coreBox = document.createElement('div');
+            coreBox.className = 'core-box';
+            
+            // 创建核心数字元素
+            const coreNumEl = document.createElement('div');
+            coreNumEl.className = 'core-num';
+            coreNumEl.textContent = `核心 ${index + 1}`;
+
+            const coreUsageEl = document.createElement('div');
+            coreUsageEl.className = 'core-usage';
+            coreUsageEl.textContent = `${usage.toFixed(1)}%`;
+
+            coreBox.appendChild(coreNumEl);
+            coreBox.appendChild(coreUsageEl);
+            container.appendChild(coreBox);
+        });
+    }
+
+    // 更新现有元素的样式和内容
+    coreUsages.forEach((usage, index) => {
+        const coreBox = container.children[index];
+        if (!coreBox) return;
+        
+        // 更新核心使用率
+        const coreUsageEl = coreBox.querySelector('.core-usage');
+        if (coreUsageEl) {
+            if (withAnimation) {
+                animateNumber(coreUsageEl, usage, true);
+            } else {
+                coreUsageEl.textContent = `${usage.toFixed(1)}%`;
+            }
+        }
+        
+        // 更新样式类
+        coreBox.className = 'core-box';
         if (usage < 30) coreBox.classList.add('low');
         else if (usage < 70) coreBox.classList.add('medium');
         else coreBox.classList.add('high');
-
-        // 创建核心数字元素
-        const coreNumEl = document.createElement('div');
-        coreNumEl.className = 'core-num';
-        coreNumEl.textContent = `核心 ${index + 1}`;
-
-        const coreUsageEl = document.createElement('div');
-        coreUsageEl.className = 'core-usage';
-        coreUsageEl.textContent = '0%';
-
-        coreBox.appendChild(coreNumEl);
-        coreBox.appendChild(coreUsageEl);
-        container.appendChild(coreBox);
-
-        // 数字动画
-        if (withAnimation) {
-            animateNumber(coreUsageEl, usage, true);
-        } else {
-            coreUsageEl.textContent = `${usage.toFixed(1)}%`;
-        }
     });
+}
+
+// ========== 自动重试机制 ==========
+let autoRetryInterval = null;
+let retryCount = 0;
+const MAX_RETRY_COUNT = 5;
+
+// 重试连接后端
+async function retryBackendConnection() {
+    updateStatusTip("正在尝试重新连接后端...", "warning");
+    hideRetryButton();
+    
+    const backendAvailable = await checkBackendStatus();
+    
+    if (backendAvailable) {
+        updateStatusTip(`已成功连接【${branchConfig[currentBranch].name || currentBranch}】`, "success");
+        // 加载缓存（快速显示）
+        await loadFromCache();
+        // 立即更新最新数据
+        getHardwareInfo();
+        updateRealTimeData();
+        updateDiskUsage();
+        
+        // 清除现有定时器
+        clearAllIntervals();
+        
+        // 启动定时更新
+        realTimeDataInterval = setInterval(updateRealTimeData, 2000); // 2秒更新一次，避免动画频繁
+        diskUsageInterval = setInterval(updateDiskUsage, 10000);
+        hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
+        
+        // 清除自动重试
+        if (autoRetryInterval) {
+            clearInterval(autoRetryInterval);
+            autoRetryInterval = null;
+        }
+        retryCount = 0;
+    } else {
+        retryCount++;
+        if (retryCount < MAX_RETRY_COUNT) {
+            updateStatusTip(`连接失败，${MAX_RETRY_COUNT - retryCount}秒后自动重试...`, "error");
+            // 延迟重试
+            setTimeout(retryBackendConnection, 1000);
+        } else {
+            updateStatusTip("后端连接失败，已达到最大重试次数", "error");
+            showRetryButton();
+        }
+    }
+}
+
+// 显示重试按钮
+function showRetryButton() {
+    const retryContainer = document.getElementById('retry-container');
+    if (retryContainer) {
+        retryContainer.style.display = 'flex';
+    }
+}
+
+// 隐藏重试按钮
+function hideRetryButton() {
+    const retryContainer = document.getElementById('retry-container');
+    if (retryContainer) {
+        retryContainer.style.display = 'none';
+    }
+}
+
+// 清除所有定时器
+function clearAllIntervals() {
+    if (realTimeDataInterval) {
+        clearInterval(realTimeDataInterval);
+        realTimeDataInterval = null;
+    }
+    if (diskUsageInterval) {
+        clearInterval(diskUsageInterval);
+        diskUsageInterval = null;
+    }
+    if (hardwareInfoInterval) {
+        clearInterval(hardwareInfoInterval);
+        hardwareInfoInterval = null;
+    }
 }
 
 // ========== 更新硬盘占用进度条 ==========
@@ -802,26 +1142,39 @@ async function init() {
     // 2. 加载分支配置（优先保证下拉框有数据）
     await loadBranchConfig();
 
-    // 3. 检测后端状态
+    // 3. 绑定重试按钮事件
+    const retryBtn = document.getElementById('retry-btn');
+    if (retryBtn) {
+        retryBtn.addEventListener('click', retryBackendConnection);
+    }
+
+    // 4. 检测后端状态
     const backendAvailable = await checkBackendStatus();
 
     if (backendAvailable) {
-        updateStatusTip(`已成功连接【${branchConfig[currentBranch].name || currentBranch}】`, "success");
-        // 加载缓存（快速显示）
-        await loadFromCache();
-        // 立即更新最新数据
-        getHardwareInfo();
-        updateRealTimeData();
-        updateDiskUsage();
+            updateStatusTip(`已成功连接【${branchConfig[currentBranch].name || currentBranch}】`, "success");
+            // 加载缓存（快速显示）
+            await loadFromCache();
+            // 立即更新最新数据
+            getHardwareInfo();
+            updateRealTimeData();
+            updateDiskUsage();
 
-        // 定时更新（降低更新频率，更流畅）
-        setInterval(updateRealTimeData, 2000); // 2秒更新一次，避免动画频繁
-        setInterval(updateDiskUsage, 10000);
-        setInterval(getHardwareInfo, 30000);
-    } else {
-        // 后端不可用，尝试加载缓存
-        await loadFromCache();
-    }
+            // 清除现有定时器
+            clearAllIntervals();
+            
+            // 定时更新（降低更新频率，更流畅）
+            realTimeDataInterval = setInterval(updateRealTimeData, 2000); // 2秒更新一次，避免动画频繁
+            diskUsageInterval = setInterval(updateDiskUsage, 10000);
+            hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
+        } else {
+            // 后端不可用，尝试加载缓存
+            await loadFromCache();
+            // 显示重试按钮
+            showRetryButton();
+            // 开始自动重试
+            retryBackendConnection();
+        }
 }
 
 // 确保DOM完全加载后执行初始化
