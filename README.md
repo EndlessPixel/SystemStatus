@@ -21,10 +21,11 @@
 ## 项目结构
 ```
 SystemStatus/
+├── ips.json         # 存储 IP 地址的 JSON 文件
 ├── main.py          # 后端 FastAPI 服务
 ├── index.html       # 前端监控页面
 ├── script.js        # 前端交互逻辑
-├── LICENSE          # MIT 开源许可证
+├── LICENSE          # Apache License Version 2.0 开源许可证
 ├── README.md        # 项目说明文档
 └── tmp.json         # 自动生成的缓存文件
 ```

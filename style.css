@@ -75,7 +75,7 @@ body {
 }
 
 .branch-switcher select {
-    padding: 8px 16px;
+    padding: 8px 32px 8px 16px;
     border: 1px solid var(--apple-border);
     border-radius: 20px;
     background-color: var(--apple-card-bg);
@@ -83,6 +83,21 @@ body {
     min-width: 200px;
     outline: none;
     transition: all 0.2s ease;
+    /* 关键修复：覆盖浏览器原生黑色样式 */
+    color: var(--apple-text-primary);
+    -webkit-appearance: none;
+    /* 移除Safari原生样式 */
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2386868b' d='M10.8 0.8L6 5.6L1.2 0.8L0 2L6 8L12 2L10.8 0.8Z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+}
+
+.branch-switcher select option {
+    /* 修复选项黑色问题 */
+    color: var(--apple-text-primary);
+    background-color: var(--apple-card-bg);
+    padding: 8px 16px;
 }
 
 .branch-switcher select:focus {
@@ -103,39 +118,6 @@ body {
 
 .branch-switcher button:hover {
     background-color: var(--apple-accent-hover);
-}
-
-/* 修复下拉框黑色问题 + 完善原生样式覆盖 */
-.branch-switcher select {
-    padding: 8px 16px;
-    border: 1px solid var(--apple-border);
-    border-radius: 20px;
-    background-color: var(--apple-card-bg);
-    font-size: 14px;
-    min-width: 200px;
-    outline: none;
-    transition: all 0.2s ease;
-    /* 关键修复：覆盖浏览器原生黑色样式 */
-    color: var(--apple-text-primary);
-    -webkit-appearance: none;
-    /* 移除Safari原生样式 */
-    appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2386868b' d='M10.8 0.8L6 5.6L1.2 0.8L0 2L6 8L12 2L10.8 0.8Z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    padding-right: 32px;
-}
-
-.branch-switcher select option {
-    /* 修复选项黑色问题 */
-    color: var(--apple-text-primary);
-    background-color: var(--apple-card-bg);
-    padding: 8px 16px;
-}
-
-.branch-switcher select:focus {
-    border-color: var(--apple-accent);
-    box-shadow: 0 0 0 2px rgba(0, 113, 227, 0.2);
 }
 
 /* 状态提示 */
@@ -330,33 +312,29 @@ body {
     font-weight: 600;
 }
 
+.system-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.system-info p {
+    margin: 8px 0;
+}
+
+.system-info span {
+    color: var(--apple-accent);
+    font-weight: 600;
+}
+
 /* 图表容器 */
 .chart-container {
     width: 100%;
     height: 400px;
     margin-top: 16px;
     border-radius: 8px;
-}
-
-/* 响应式适配 */
-@media (max-width: 768px) {
-    .card-container {
-        grid-template-columns: 1fr;
-    }
-
-    .branch-switcher {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .net-speed {
-        flex-direction: column;
-        gap: 8px;
-    }
-
-    .chart-container {
-        height: 300px;
-    }
 }
 
 /* 补充：增加全局间距，优化Apple简约风格 */
@@ -480,16 +458,49 @@ body {
 /* 响应式优化 */
 @media (max-width: 768px) {
     .card-container {
+        grid-template-columns: 1fr;
         gap: 20px;
     }
 
-    .panel {
-        padding: 20px;
+    .branch-switcher {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .net-speed {
+        flex-direction: column;
+        gap: 8px;
     }
 
     .chart-container {
         height: 350px;
     }
+
+    .panel {
+        padding: 20px;
+    }
+}
+
+/* 重试按钮样式 */
+.retry-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 24px;
+}
+
+.retry-btn {
+    padding: 12px 24px;
+    background-color: var(--apple-accent);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+.retry-btn:hover {
+    background-color: var(--apple-accent-hover);
 }
 
 footer {
