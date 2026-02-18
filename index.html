@@ -67,25 +67,48 @@
             </div>
         </div>
 
+        <!-- 一键展开/折叠按钮 -->
+        <div class="toggle-all-container">
+            <button id="toggle-all-btn" class="toggle-btn toggle-all-btn">
+                <span class="toggle-icon">▼</span>
+                <span class="toggle-text">折叠所有图表</span>
+            </button>
+        </div>
+
         <!-- CPU核心实时占用 -->
-        <div class="panel">
-            <h2 class="panel-title">CPU核心实时占用</h2>
-            <div id="cpu-cores-container" class="cpu-cores-container">
+        <div class="panel chart-panel" data-chart-id="cpu-cores-container">
+            <div class="panel-header">
+                <h2 class="panel-title">CPU核心实时占用</h2>
+                <button class="toggle-btn chart-toggle-btn" data-target="cpu-cores-container">
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
+            <div id="cpu-cores-container" class="cpu-cores-container chart-container">
                 加载中...
             </div>
         </div>
 
         <!-- 硬盘占用率 -->
-        <div class="panel">
-            <h2 class="panel-title">硬盘占用率</h2>
-            <div id="disk-container" class="disk-container">
+        <div class="panel chart-panel" data-chart-id="disk-container">
+            <div class="panel-header">
+                <h2 class="panel-title">硬盘占用率</h2>
+                <button class="toggle-btn chart-toggle-btn" data-target="disk-container">
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
+            <div id="disk-container" class="disk-container chart-container">
                 加载中...
             </div>
         </div>
 
         <!-- 网卡流量监控 -->
-        <div class="panel">
-            <h2 class="panel-title">网卡流量监控</h2>
+        <div class="panel chart-panel" data-chart-id="net-chart">
+            <div class="panel-header">
+                <h2 class="panel-title">网卡流量监控</h2>
+                <button class="toggle-btn chart-toggle-btn" data-target="net-chart">
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
             <div class="net-speed">
                 <p>实时上传速度: <span id="net-upload-speed">0 KB/s</span></p>
                 <p>实时下载速度: <span id="net-download-speed">0 KB/s</span></p>
@@ -94,8 +117,13 @@
         </div>
 
         <!-- 系统负载监控 -->
-        <div class="panel">
-            <h2 class="panel-title">系统负载监控</h2>
+        <div class="panel chart-panel" data-chart-id="system-chart">
+            <div class="panel-header">
+                <h2 class="panel-title">系统负载监控</h2>
+                <button class="toggle-btn chart-toggle-btn" data-target="system-chart">
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
             <div class="system-info">
                 <p>1分钟系统负载: <span id="system-load">0.00</span></p>
                 <p>当前进程数: <span id="process-count">0</span></p>
@@ -107,8 +135,18 @@
         </div>
 
         <!-- 系统资源趋势 -->
-        <div class="panel">
-            <h2 class="panel-title">系统资源趋势</h2>
+        <div class="panel chart-panel" data-chart-id="usage-chart">
+            <div class="panel-header">
+                <h2 class="panel-title">系统资源趋势</h2>
+                <button class="toggle-btn chart-toggle-btn" data-target="usage-chart">
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
+            <div class="usage-info">
+                <p>CPU占用率: <span id="cpu-usage-current">0%</span></p>
+                <p>内存占用率: <span id="mem-usage-current">0%</span></p>
+                <p>GPU占用率: <span id="gpu-usage-current">0%</span></p>
+            </div>
             <div id="usage-chart" class="chart-container"></div>
         </div>
     </div>

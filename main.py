@@ -99,6 +99,7 @@ def get_memory_model() -> str:
 
 # NVML全局变量
 NVML_HANDLE = None
+NVML_PERMANENTLY_DISABLED = False  # 永久禁用NVML的标志
 
 def get_gpu_info() -> Dict:
     """
@@ -118,9 +119,9 @@ def get_gpu_info() -> Dict:
                 if "Intel" in adapter.Name:
                     gpu_info = {"model": adapter.Name.strip(), "available": True}
                     break
-        except Exception as e:
-            # 仅打印一次，避免刷屏
-            print("wmi 检测失败:", repr(e))
+        except Exception:
+            # 不再打印错误，避免刷屏
+            pass
         finally:
             try:
                 pythoncom.CoUninitialize()
@@ -137,8 +138,9 @@ def get_gpu_info() -> Dict:
         try:
             name = nvml.nvmlDeviceGetName(NVML_HANDLE).decode("utf-8")
             gpu_info = {"model": name, "available": True}
-        except Exception as e:
-            print("NVML 获取设备名称失败:", repr(e))
+        except Exception:
+            # 不再打印错误，避免刷屏
+            pass
 
     return gpu_info
 
@@ -221,8 +223,6 @@ def calculate_net_speed():
 def collect_real_time_data():
     """定时采集所有实时数据（含网卡流量）"""
     cache_update_counter = 0
-    nvml_recovery_counter = 0
-    NVML_RECOVERY_INTERVAL = 60  # 60秒尝试恢复一次NVML
     
     # 设置开机时间（只需一次）
     DATA_CACHE["boot_time"] = psutil.boot_time()
@@ -245,8 +245,7 @@ def collect_real_time_data():
             try:
                 gpu_usage = nvml.nvmlDeviceGetUtilizationRates(NVML_HANDLE).gpu
             except Exception as e:
-                print("获取GPU占用率失败:", repr(e))
-                # NVML可能失效，关闭它以便后续尝试恢复
+                # NVML可能失效，关闭它
                 shutdown_nvml()
         DATA_CACHE["gpu_usage"].append((timestamp, gpu_usage))
         
@@ -289,30 +288,12 @@ def collect_real_time_data():
                 # AMD处理器温度
                 cpu_temp = temps['k10temp'][0].current
                 DATA_CACHE["cpu_temperature"].append((timestamp, round(cpu_temp, 1)))
-            elif hasattr(psutil, 'win32'):
-                # Windows系统，尝试获取CPU温度
-                try:
-                    import wmi
-                    c = wmi.WMI()
-                    for sensor in c.Win32_TemperatureProbe():
-                        if sensor.Name and "CPU" in sensor.Name:
-                            DATA_CACHE["cpu_temperature"].append((timestamp, round(sensor.CurrentReading, 1)))
-                            break
-                except Exception as e:
-                    pass
         
         # 9. 每10秒更新缓存文件
         cache_update_counter += 1
         if cache_update_counter >= 10:
             update_cache_file()
             cache_update_counter = 0
-        
-        # 10. NVML恢复机制：每60秒尝试恢复一次
-        nvml_recovery_counter += 1
-        if nvml_recovery_counter >= NVML_RECOVERY_INTERVAL and not NVML_AVAILABLE:
-            print("尝试恢复NVML...")
-            init_nvml()
-            nvml_recovery_counter = 0
         
         time.sleep(1)
 
@@ -386,7 +367,12 @@ async def get_cache():
 # ========== NVML初始化和关闭函数 ==========
 def init_nvml():
     """初始化NVML并获取设备句柄"""
-    global NVML_AVAILABLE, NVML_HANDLE
+    global NVML_AVAILABLE, NVML_HANDLE, NVML_PERMANENTLY_DISABLED
+    
+    # 如果已经永久禁用，直接返回
+    if NVML_PERMANENTLY_DISABLED:
+        return False
+    
     if not NVML_AVAILABLE:
         return False
     
@@ -400,10 +386,12 @@ def init_nvml():
         else:
             print("NVML初始化成功，但未检测到NVIDIA设备")
             NVML_AVAILABLE = False
+            NVML_PERMANENTLY_DISABLED = True  # 永久禁用，不再尝试
             return False
     except Exception as e:
         print(f"NVML初始化失败: {repr(e)}")
         NVML_AVAILABLE = False
+        NVML_PERMANENTLY_DISABLED = True  # 永久禁用，不再尝试
         return False
 
 def shutdown_nvml():

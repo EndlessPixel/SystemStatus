@@ -16,7 +16,7 @@ let diskUsageInterval = null;
 let hardwareInfoInterval = null;
 
 // ========== 工具函数：数字动画 ==========
-function animateNumber(element, targetValue, isPercent = true) {
+function animateNumber(element, targetValue, isPercent = true, suffix = '') {
     if (!element) return;
 
     // 清空原有动画
@@ -31,9 +31,9 @@ function animateNumber(element, targetValue, isPercent = true) {
     // 如果目标值与当前值相差很小，直接设置并返回
     if (Math.abs(targetValue - startValue) < 0.1) {
         if (isPercent) {
-            element.textContent = `${targetValue.toFixed(1)}%`;
+            element.textContent = `${targetValue.toFixed(1)}%${suffix}`;
         } else {
-            element.textContent = `${targetValue.toFixed(1)}`;
+            element.textContent = `${targetValue.toFixed(1)}${suffix}`;
         }
         return;
     }
@@ -54,9 +54,9 @@ function animateNumber(element, targetValue, isPercent = true) {
         // 格式化显示
         let displayText;
         if (isPercent) {
-            displayText = `${currentValue.toFixed(1)}%`;
+            displayText = `${currentValue.toFixed(1)}%${suffix}`;
         } else {
-            displayText = `${currentValue.toFixed(1)}`;
+            displayText = `${currentValue.toFixed(1)}${suffix}`;
         }
         
         // 只有当文本发生变化时才更新DOM
@@ -68,7 +68,7 @@ function animateNumber(element, targetValue, isPercent = true) {
             element.animationFrame = requestAnimationFrame(animate);
         } else {
             // 确保最终值准确
-            element.textContent = isPercent ? `${targetValue.toFixed(1)}%` : `${targetValue.toFixed(1)}`;
+            element.textContent = isPercent ? `${targetValue.toFixed(1)}%${suffix}` : `${targetValue.toFixed(1)}${suffix}`;
             delete element.animationFrame;
         }
     };
@@ -749,53 +749,97 @@ function renderHardwareInfo(data) {
     }
 }
 
-// ========== 渲染硬盘信息（进度条动画） ==========
+// ========== 渲染硬盘信息（增量更新） ==========
 function renderDiskUsage(disks) {
     const container = document.getElementById('disk-container');
     if (!container) return;
-
-    container.innerHTML = '';
 
     if (!disks || disks.length === 0) {
         container.innerHTML = "<p>未检测到硬盘信息</p>";
         return;
     }
 
-    disks.forEach(disk => {
-        const diskItem = document.createElement('div');
-        diskItem.className = 'disk-item';
+    // 获取已有的硬盘元素
+    const existingItems = container.querySelectorAll('.disk-item');
+    const existingCount = existingItems.length;
+    const newCount = disks.length;
 
-        let fillClass = 'low-fill';
-        if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill';
-        else if (disk.usage_percent >= 70) fillClass = 'high-fill';
+    // 如果硬盘数量变化，完全重新渲染
+    if (existingCount !== newCount) {
+        container.innerHTML = '';
+        disks.forEach(disk => {
+            createDiskItem(container, disk, true);
+        });
+        return;
+    }
 
-        // 创建进度条元素
-        const progressBar = document.createElement('div');
-        progressBar.className = 'progress-bar';
+    // 增量更新现有硬盘元素
+    disks.forEach((disk, index) => {
+        const diskItem = existingItems[index];
+        updateDiskItem(diskItem, disk);
+    });
+}
 
-        const progressFill = document.createElement('div');
-        progressFill.className = `progress-fill ${fillClass}`;
-        progressFill.style.width = '0%'; // 初始宽度为0
-        progressBar.appendChild(progressFill);
+// 创建硬盘元素
+function createDiskItem(container, disk, withAnimation = false) {
+    const diskItem = document.createElement('div');
+    diskItem.className = 'disk-item';
+    diskItem.dataset.device = disk.device;
+    diskItem.dataset.mountpoint = disk.mountpoint;
 
-        // 进度条动画
+    let fillClass = 'low-fill';
+    if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill';
+    else if (disk.usage_percent >= 70) fillClass = 'high-fill';
+
+    // 创建进度条元素
+    const progressBar = document.createElement('div');
+    progressBar.className = 'progress-bar';
+
+    const progressFill = document.createElement('div');
+    progressFill.className = `progress-fill ${fillClass}`;
+    if (withAnimation) {
+        progressFill.style.width = '0%';
         setTimeout(() => {
             progressFill.style.width = `${disk.usage_percent}%`;
         }, 100);
+    } else {
+        progressFill.style.width = `${disk.usage_percent}%`;
+    }
+    progressBar.appendChild(progressFill);
 
-        diskItem.innerHTML = `
-            <h4>${disk.device} (${disk.mountpoint})</h4>
-            <div class="disk-info">
-                已用: ${disk.used} GB / 总计: ${disk.total} GB 
-                <span class="disk-percent">(${disk.usage_percent.toFixed(1)}%)</span>
-            </div>
+    diskItem.innerHTML = `
+        <h4>${disk.device} (${disk.mountpoint})</h4>
+        <div class="disk-info">
+            <span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span>
+        </div>
+    `;
+
+    diskItem.insertBefore(progressBar, diskItem.querySelector('.disk-info').nextSibling);
+    container.appendChild(diskItem);
+}
+
+// 更新硬盘元素
+function updateDiskItem(diskItem, disk) {
+    if (!diskItem) return;
+
+    // 更新进度条颜色
+    const progressFill = diskItem.querySelector('.progress-fill');
+    if (progressFill) {
+        let fillClass = 'low-fill';
+        if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill';
+        else if (disk.usage_percent >= 70) fillClass = 'high-fill';
+        
+        progressFill.className = `progress-fill ${fillClass}`;
+        progressFill.style.width = `${disk.usage_percent}%`;
+    }
+
+    // 更新文本信息
+    const diskInfo = diskItem.querySelector('.disk-info');
+    if (diskInfo) {
+        diskInfo.innerHTML = `
+            <span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span>
         `;
-
-        // 插入进度条（放在信息下方，增加间距）
-        diskItem.insertBefore(progressBar, diskItem.querySelector('.disk-info').nextSibling);
-
-        container.appendChild(diskItem);
-    });
+    }
 }
 
 // ========== 更新网卡速度显示（带动画） ==========
@@ -804,19 +848,11 @@ function updateNetSpeedDisplay(upload, download) {
     const downloadEl = document.getElementById('net-download-speed');
 
     if (uploadEl) {
-        // 数字动画
-        animateNumber(uploadEl, upload, false);
-        // 确保单位显示（动画结束后）
-        setTimeout(() => {
-            uploadEl.textContent = `${upload.toFixed(1)} KB/s`;
-        }, ANIMATION_DURATION);
+        animateNumber(uploadEl, upload, false, ' KB/s');
     }
 
     if (downloadEl) {
-        animateNumber(downloadEl, download, false);
-        setTimeout(() => {
-            downloadEl.textContent = `${download.toFixed(1)} KB/s`;
-        }, ANIMATION_DURATION);
+        animateNumber(downloadEl, download, false, ' KB/s');
     }
 }
 
@@ -880,6 +916,19 @@ async function updateRealTimeData() {
             });
         }
 
+        // 更新系统资源趋势实时信息
+        const cpuUsage = data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0;
+        const memUsage = data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0;
+        const gpuUsage = data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0;
+        
+        const cpuUsageEl = document.getElementById('cpu-usage-current');
+        const memUsageEl = document.getElementById('mem-usage-current');
+        const gpuUsageEl = document.getElementById('gpu-usage-current');
+        
+        if (cpuUsageEl) animateNumber(cpuUsageEl, cpuUsage, true);
+        if (memUsageEl) animateNumber(memUsageEl, memUsage, true);
+        if (gpuUsageEl) animateNumber(gpuUsageEl, gpuUsage, true);
+
         // 更新CPU核心占用（带动画）
         updateCPUCores(data.cpu_core_usage, true);
 
@@ -908,14 +957,7 @@ async function updateRealTimeData() {
         // 更新CPU温度显示
         const cpuTemperatureEl = document.getElementById('cpu-temperature');
         if (cpuTemperatureEl) {
-            animateNumber(cpuTemperatureEl, cpuTemperature, false);
-            // 确保温度单位显示
-            setTimeout(() => {
-                const currentText = cpuTemperatureEl.textContent;
-                if (!currentText.includes('°C')) {
-                    cpuTemperatureEl.textContent = `${cpuTemperatureEl.textContent}°C`;
-                }
-            }, ANIMATION_DURATION);
+            animateNumber(cpuTemperatureEl, cpuTemperature, false, '°C');
         }
         
         // 更新开机时间
@@ -1142,13 +1184,16 @@ async function init() {
     // 2. 加载分支配置（优先保证下拉框有数据）
     await loadBranchConfig();
 
-    // 3. 绑定重试按钮事件
+    // 3. 初始化折叠按钮事件
+    initToggleButtons();
+
+    // 4. 绑定重试按钮事件
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.addEventListener('click', retryBackendConnection);
     }
 
-    // 4. 检测后端状态
+    // 5. 检测后端状态
     const backendAvailable = await checkBackendStatus();
 
     if (backendAvailable) {
@@ -1175,6 +1220,98 @@ async function init() {
             // 开始自动重试
             retryBackendConnection();
         }
+}
+
+// ========== 图表折叠功能 ==========
+let allChartsCollapsed = false;
+
+// 初始化折叠按钮事件
+function initToggleButtons() {
+    // 单个图表折叠按钮
+    const toggleBtns = document.querySelectorAll('.chart-toggle-btn');
+    toggleBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetId = btn.dataset.target;
+            toggleChart(targetId, btn);
+        });
+    });
+
+    // 一键折叠/展开所有按钮
+    const toggleAllBtn = document.getElementById('toggle-all-btn');
+    if (toggleAllBtn) {
+        toggleAllBtn.addEventListener('click', toggleAllCharts);
+    }
+}
+
+// 折叠/展开单个图表
+function toggleChart(chartId, btn) {
+    const chartContainer = document.getElementById(chartId);
+    const panel = chartContainer?.closest('.chart-panel');
+    
+    if (!chartContainer || !panel) return;
+
+    const isCollapsed = chartContainer.classList.toggle('collapsed');
+    btn.classList.toggle('collapsed', isCollapsed);
+    panel.classList.toggle('collapsed', isCollapsed);
+
+    // 如果展开图表，等待动画完成后调用 resize 确保图表正确显示
+    if (!isCollapsed) {
+        setTimeout(() => {
+            resizeChart(chartId);
+        }, 450);
+    }
+}
+
+// 折叠/展开所有图表
+function toggleAllCharts() {
+    allChartsCollapsed = !allChartsCollapsed;
+    const toggleAllBtn = document.getElementById('toggle-all-btn');
+    const toggleBtns = document.querySelectorAll('.chart-toggle-btn');
+    const chartContainers = document.querySelectorAll('.chart-container');
+    const panels = document.querySelectorAll('.chart-panel');
+
+    // 更新一键按钮状态
+    if (toggleAllBtn) {
+        toggleAllBtn.classList.toggle('collapsed', allChartsCollapsed);
+        const textEl = toggleAllBtn.querySelector('.toggle-text');
+        if (textEl) {
+            textEl.textContent = allChartsCollapsed ? '展开所有图表' : '折叠所有图表';
+        }
+    }
+
+    // 更新所有图表和按钮
+    toggleBtns.forEach(btn => {
+        btn.classList.toggle('collapsed', allChartsCollapsed);
+    });
+
+    chartContainers.forEach(container => {
+        container.classList.toggle('collapsed', allChartsCollapsed);
+    });
+
+    panels.forEach(panel => {
+        panel.classList.toggle('collapsed', allChartsCollapsed);
+    });
+
+    // 如果展开所有图表，等待动画完成后调用 resize
+    if (!allChartsCollapsed) {
+        setTimeout(() => {
+            ['net-chart', 'system-chart', 'usage-chart'].forEach(resizeChart);
+        }, 450);
+    }
+}
+
+// 调整图表大小
+function resizeChart(chartId) {
+    let chartInstance = null;
+    if (chartId === 'usage-chart') chartInstance = chart;
+    else if (chartId === 'net-chart') chartInstance = netChart;
+    else if (chartId === 'system-chart') chartInstance = systemChart;
+
+    if (chartInstance) {
+        setTimeout(() => {
+            chartInstance.resize();
+        }, 50);
+    }
 }
 
 // 确保DOM完全加载后执行初始化

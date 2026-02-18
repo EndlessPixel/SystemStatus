@@ -194,6 +194,26 @@ body {
     box-shadow: var(--apple-shadow);
 }
 
+/* 图表面板专用的panel-header */
+.chart-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--apple-border);
+    padding-bottom: 12px;
+}
+
+.chart-panel .panel-title {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 0;
+    color: var(--apple-text-primary);
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* 普通面板标题 */
 .panel-title {
     font-size: 20px;
     font-weight: 600;
@@ -201,6 +221,102 @@ body {
     color: var(--apple-text-primary);
     border-bottom: 1px solid var(--apple-border);
     padding-bottom: 12px;
+}
+
+/* 折叠按钮样式 */
+.toggle-all-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background-color: var(--apple-card-bg);
+    border: 1px solid var(--apple-border);
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--apple-text-primary);
+    transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+    background-color: var(--apple-accent);
+    color: white;
+    border-color: var(--apple-accent);
+}
+
+.toggle-all-btn {
+    font-weight: 500;
+}
+
+.chart-toggle-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.toggle-icon {
+    transition: transform 0.3s ease;
+    display: inline-block;
+}
+
+.toggle-btn.collapsed .toggle-icon {
+    transform: rotate(-90deg);
+}
+
+/* 图表折叠样式 */
+.chart-container {
+    overflow: hidden;
+    max-height: 2000px;
+    opacity: 1;
+    transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
+}
+
+.chart-container.collapsed {
+    max-height: 0;
+    opacity: 0;
+    margin-top: 0;
+}
+
+.chart-panel.collapsed .panel-header {
+    margin-bottom: 0;
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* 对于没有信息区域的面板（CPU核心、硬盘），折叠时进一步减小间距 */
+.chart-panel[data-chart-id="cpu-cores-container"],
+.chart-panel[data-chart-id="disk-container"] {
+    transition: padding 0.4s ease;
+}
+
+.chart-panel[data-chart-id="cpu-cores-container"].collapsed,
+.chart-panel[data-chart-id="disk-container"].collapsed {
+    padding-top: 15px !important;
+    padding-bottom: 15px !important;
+}
+
+.chart-panel[data-chart-id="cpu-cores-container"]:not(.collapsed),
+.chart-panel[data-chart-id="disk-container"]:not(.collapsed) {
+    padding-top: 30px !important;
+    padding-bottom: 30px !important;
+}
+
+.chart-panel[data-chart-id="cpu-cores-container"].collapsed .panel-header,
+.chart-panel[data-chart-id="disk-container"].collapsed .panel-header {
+    margin-bottom: 0;
+}
+
+/* 确保信息在折叠时仍然显示 */
+.chart-panel.collapsed .net-speed,
+.chart-panel.collapsed .system-info,
+.chart-panel.collapsed .usage-info {
+    display: flex;
+    margin-bottom: 0;
 }
 
 /* 卡片按下去微微内陷，点按反馈更真实 */
@@ -255,10 +371,13 @@ body {
 /* 硬盘样式 */
 .disk-container {
     margin-top: 16px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
 }
 
 .disk-item {
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 .disk-item h4 {
@@ -329,12 +448,47 @@ body {
     font-weight: 600;
 }
 
+/* 系统资源趋势信息样式 */
+.usage-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    margin-bottom: 16px;
+    font-size: 14px;
+}
+
+.usage-info p {
+    margin: 8px 0;
+}
+
+.usage-info span {
+    color: var(--apple-accent);
+    font-weight: 600;
+}
+
 /* 图表容器 */
 .chart-container {
     width: 100%;
-    height: 400px;
     margin-top: 16px;
     border-radius: 8px;
+}
+
+/* 只有真正的ECharts图表容器才设置固定高度 */
+#net-chart,
+#system-chart,
+#usage-chart {
+    height: 400px;
+}
+
+/* CPU核心和硬盘容器不设置固定高度，但设置合适的max-height用于动画 */
+#cpu-cores-container {
+    max-height: 1000px;
+    height: auto;
+}
+
+#disk-container {
+    max-height: 1000px;
+    height: auto;
 }
 
 /* 补充：增加全局间距，优化Apple简约风格 */
@@ -412,11 +566,6 @@ body {
 }
 
 /* 硬盘信息优化 */
-.disk-item {
-    margin-bottom: 25px;
-    /* 增加硬盘项间距 */
-}
-
 .disk-item h4 {
     margin-bottom: 10px;
     font-size: 15px;
@@ -431,13 +580,14 @@ body {
 
 .disk-info {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
 }
 
 .disk-percent {
     color: var(--apple-accent);
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 16px;
 }
 
 /* 网卡速度区域优化 */
@@ -460,6 +610,10 @@ body {
     .card-container {
         grid-template-columns: 1fr;
         gap: 20px;
+    }
+
+    .disk-container {
+        grid-template-columns: 1fr;
     }
 
     .branch-switcher {

@@ -13,6 +13,18 @@
 - 本地缓存文件 `tmp.json`，页面打开秒加载
 - 浏览器 localStorage 缓存，断网也能看历史数据
 - 每秒采集实时数据，折线图动态展示趋势
+- 无 NVIDIA 显卡时永久禁用 NVML，避免错误刷屏
+- 移除频繁的 WMI COM 接口调用，减少 Win32 IUnknown 异常
+- 硬盘占用率增量更新，避免每次完全重绘
+
+✅ **UI/UX 改进**
+- Apple 风格极简设计，通透、圆角、细腻阴影
+- 硬盘占用率默认 2 列布局，窄屏自动切换 1 列
+- 所有图表面板支持折叠/展开功能
+- 一键折叠/展开所有图表
+- 平滑的折叠/展开动画效果
+- 数字动画，更流畅的数值变化体验
+- 单位显示稳定，不会时有时无
 
 ✅ **跨平台兼容**
 - Windows 系统：通过 `wmic` 命令获取硬件详情
@@ -25,6 +37,8 @@ SystemStatus/
 ├── main.py          # 后端 FastAPI 服务
 ├── index.html       # 前端监控页面
 ├── script.js        # 前端交互逻辑
+├── style.css        # 前端样式文件
+├── echarts.js       # ECharts 图表库
 ├── LICENSE          # Apache License Version 2.0 开源许可证
 ├── README.md        # 项目说明文档
 └── tmp.json         # 自动生成的缓存文件
@@ -68,6 +82,10 @@ python main.py
 ### Q3: 折线图没有数据？
 - 检查后端服务是否正常运行
 - 按 F12 打开控制台，查看是否有接口请求失败
+
+### Q4: 没有 NVIDIA 显卡但报错？
+- 已优化，无 NVIDIA 显卡时会永久禁用 NVML，不再尝试恢复
+- 不会再出现持续的 NVMLError_LibraryNotFound 错误
 
 ## 许可证
 本项目基于 ** Apache License Version 2.0** 开源
