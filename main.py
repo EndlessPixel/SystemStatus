@@ -5,6 +5,7 @@ import sys
 if sys.platform == "win32":
     import win32api
     win32api.SetConsoleCtrlHandler(None, 0)     # 屏蔽部分无用调试
+    import wmi  # Intel核显检测（仅Windows）
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import psutil
@@ -13,8 +14,6 @@ import threading
 from typing import Dict, List, Optional
 import json
 import platform
-import os
-import wmi  # Intel核显检测
 try:
     import py3nvml.py3nvml as nvml
     NVML_AVAILABLE = True
