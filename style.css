@@ -588,6 +588,12 @@ body {
     color: var(--apple-accent);
     font-weight: 600;
     font-size: 16px;
+    margin-right: 24px;
+}
+
+.disk-size {
+    color: var(--apple-text-secondary);
+    font-size: 14px;
 }
 
 /* 网卡速度区域优化 */
@@ -679,3 +685,12 @@ footer .project {
 footer .studio {
     font-weight: 400;
     text-transform: none; }
+
+.github-link {
+    color: var(--apple-accent);
+    text-decoration: underline;
+    font-weight: 600;
+    margin-left: 8px;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}

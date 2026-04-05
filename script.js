@@ -79,12 +79,7 @@ function animateNumber(element, targetValue, isPercent = true, suffix = '') {
 // ========== 加载分支配置 ==========
 async function loadBranchConfig() {
     try {
-        // 等待DOM完全加载后再操作下拉框
-        await new Promise(resolve => {
-            if (document.readyState === "complete") resolve();
-            else document.addEventListener("DOMContentLoaded", resolve);
-        });
-
+        // 直接检查DOM是否加载完成，不使用Promise
         const selectEl = document.getElementById("branch-select");
         if (!selectEl) {
             console.error("下拉框DOM元素不存在");
@@ -97,7 +92,7 @@ async function loadBranchConfig() {
         let config = {};
         try {
             const response = await fetch("ips.json");
-            if (!response.ok) throw new Error("配置文件请求失败");
+            if (!response.ok) throw new Error(`配置文件请求失败: ${response.status} ${response.statusText}`);
             config = await response.json();
         } catch (e) {
             console.error("加载ips.json失败，使用默认配置:", e);
@@ -105,7 +100,7 @@ async function loadBranchConfig() {
 
         // 强制兜底配置
         branchConfig = config.branches || {
-            local_server: { name: "本地服务器", api: "127.0.0.1", port: 8000 }
+            local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 }
         };
         currentBranch = config.default_branch || Object.keys(branchConfig)[0] || "local_server";
 
@@ -117,7 +112,7 @@ async function loadBranchConfig() {
         // 填充分支下拉框
         const branchKeys = Object.keys(branchConfig);
         if (branchKeys.length === 0) {
-            branchConfig = { local_server: { name: "本地服务器", api: "127.0.0.1", port: 8000 } };
+            branchConfig = { local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 } };
             branchKeys.push("local_server");
             currentBranch = "local_server";
         }
@@ -148,7 +143,7 @@ async function loadBranchConfig() {
         console.error("加载分支配置失败，强制使用默认配置:", error);
         // 终极兜底
         branchConfig = {
-            local_server: { name: "本地服务器", api: "127.0.0.1", port: 8000 }
+            local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 }
         };
         currentBranch = "local_server";
 
@@ -171,10 +166,10 @@ async function loadBranchConfig() {
 
 // ========== 初始化分支API地址 ==========
 function initBranchAPI(branchKey) {
-    const branch = branchConfig[branchKey] || { api: "127.0.0.1", port: 8000 };
+    const branch = branchConfig[branchKey] || { api: "127.0.0.1", port: 8001 };
 
     const apiHost = branch.api || "127.0.0.1";
-    const apiPort = branch.port || 8000;
+    const apiPort = branch.port || 8001;
     API_BASE = `http://${apiHost}:${apiPort}/api`;
 
     // 判断是否为本地地址
@@ -811,6 +806,7 @@ function createDiskItem(container, disk, withAnimation = false) {
         <h4>${disk.device} (${disk.mountpoint})</h4>
         <div class="disk-info">
             <span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span>
+            <span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span>
         </div>
     `;
 
@@ -838,6 +834,7 @@ function updateDiskItem(diskItem, disk) {
     if (diskInfo) {
         diskInfo.innerHTML = `
             <span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span>
+            <span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span>
         `;
     }
 }
@@ -1316,5 +1313,3 @@ function resizeChart(chartId) {
 
 // 确保DOM完全加载后执行初始化
 document.addEventListener('DOMContentLoaded', init);
-// 兜底：如果DOMContentLoaded未触发，延迟执行
-setTimeout(init, 100);

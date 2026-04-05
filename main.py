@@ -2,18 +2,26 @@
 import os
 os.environ["PYTHONFAULTHANDLER"] = "0"          # 可选
 import sys
+# 禁用wmi以避免Win32 exception
 if sys.platform == "win32":
     import win32api
     win32api.SetConsoleCtrlHandler(None, 0)     # 屏蔽部分无用调试
-    import wmi  # Intel核显检测（仅Windows）
+    # 注释掉wmi导入以避免Win32 exception
+    # import wmi  # Intel核显检测（仅Windows）
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import HTMLResponse, Response
+from fastapi.staticfiles import StaticFiles
 import psutil
 import time
 import threading
 from typing import Dict, List, Optional
 import json
 import platform
+# 尝试导入NVML
+NVML_AVAILABLE = False
+NVML_PERMANENTLY_DISABLED = False
+NVML_HANDLE = None
 try:
     import py3nvml.py3nvml as nvml
     NVML_AVAILABLE = True
@@ -107,25 +115,26 @@ def get_gpu_info() -> Dict:
     """
     gpu_info = {"model": "Unknown", "available": False}
 
-    # ===== 1. Windows 平台优先用 wmi 取 Intel 核显 =====
+    # ===== 1. Windows 平台用 wmic 取 Intel 核显 =====
     if platform.system() == "Windows":
         try:
-            import pythoncom              # COM 初始化
-            pythoncom.CoInitialize()      # 必须在 wmi 之前调用
-            import wmi
-            c = wmi.WMI()
-            for adapter in c.Win32_VideoController():
-                if "Intel" in adapter.Name:
-                    gpu_info = {"model": adapter.Name.strip(), "available": True}
-                    break
+            import subprocess
+            result = subprocess.run(
+                ['wmic', 'path', 'win32_VideoController', 'get', 'Name'],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode == 0:
+                lines = result.stdout.strip().split('\n')[1:]  # 跳过第一行标题
+                for line in lines:
+                    line = line.strip()
+                    if line and "Intel" in line:
+                        gpu_info = {"model": line, "available": True}
+                        break
         except Exception:
-            # 不再打印错误，避免刷屏
+            # 不打印错误，避免刷屏
             pass
-        finally:
-            try:
-                pythoncom.CoUninitialize()
-            except Exception:
-                pass
 
     # 如果已找到 Intel 核显，直接返回
     if gpu_info["available"]:
@@ -240,12 +249,33 @@ def collect_real_time_data():
         
         # 3. GPU占用率
         gpu_usage = 0
+        # 先尝试NVIDIA GPU
         if NVML_AVAILABLE and NVML_HANDLE is not None:
             try:
                 gpu_usage = nvml.nvmlDeviceGetUtilizationRates(NVML_HANDLE).gpu
             except Exception as e:
                 # NVML可能失效，关闭它
                 shutdown_nvml()
+        # 如果没有NVIDIA GPU，尝试Intel核显
+        if gpu_usage == 0 and platform.system() == "Windows":
+            try:
+                import subprocess
+                result = subprocess.run(
+                    ['powershell', '-Command', '(Get-Counter "\\GPU Engine(*)% 3D Utilization").CounterSamples.CookedValue'],
+                    capture_output=True,
+                    text=True,
+                    timeout=3,
+                    encoding='utf-8',
+                    errors='ignore'
+                )
+                if result.returncode == 0:
+                    lines = result.stdout.strip().split('\n')
+                    values = [float(line.strip()) for line in lines if line.strip().replace('.', '', 1).isdigit()]
+                    if values:
+                        gpu_usage = round(max(values), 1)
+            except Exception:
+                # 不打印错误，避免刷屏
+                pass
         DATA_CACHE["gpu_usage"].append((timestamp, gpu_usage))
         
         # 4. 网卡流量速度
@@ -305,15 +335,15 @@ def update_cache_file():
         cache_data = {
             "hardware_info": hardware_info,
             "real_time_data": {
-                "cpu_usage": DATA_CACHE["cpu_usage"][-1][1] if DATA_CACHE["cpu_usage"] else 0,
-                "mem_usage": DATA_CACHE["mem_usage"][-1][1] if DATA_CACHE["mem_usage"] else 0,
-                "gpu_usage": DATA_CACHE["gpu_usage"][-1][1] if DATA_CACHE["gpu_usage"] else 0,
-                "net_upload_speed": DATA_CACHE["net_upload_speed"][-1][1] if DATA_CACHE["net_upload_speed"] else 0,
-                "net_download_speed": DATA_CACHE["net_download_speed"][-1][1] if DATA_CACHE["net_download_speed"] else 0,
+                "cpu_usage": DATA_CACHE["cpu_usage"],
+                "mem_usage": DATA_CACHE["mem_usage"],
+                "gpu_usage": DATA_CACHE["gpu_usage"],
+                "net_upload_speed": DATA_CACHE["net_upload_speed"],
+                "net_download_speed": DATA_CACHE["net_download_speed"],
                 "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
-                "system_load": DATA_CACHE["system_load"][-1][1] if DATA_CACHE["system_load"] else 0,
-                "process_count": DATA_CACHE["process_count"][-1][1] if DATA_CACHE["process_count"] else 0,
-                "cpu_temperature": DATA_CACHE["cpu_temperature"][-1][1] if DATA_CACHE["cpu_temperature"] else 0,
+                "system_load": DATA_CACHE["system_load"],
+                "process_count": DATA_CACHE["process_count"],
+                "cpu_temperature": DATA_CACHE["cpu_temperature"],
                 "boot_time": DATA_CACHE["boot_time"],
                 "battery_info": DATA_CACHE["battery_info"],
                 "timestamp": time.time()
@@ -324,6 +354,33 @@ def update_cache_file():
             json.dump(cache_data, f, ensure_ascii=False, indent=2)
     except Exception as e:
         print(f"缓存更新失败: {e}")
+
+def restore_from_cache():
+    """从缓存文件恢复数据"""
+    try:
+        if not os.path.exists(CACHE_FILE):
+            return
+        
+        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+            cache_data = json.load(f)
+        
+        if "real_time_data" in cache_data:
+            rt_data = cache_data["real_time_data"]
+            # 恢复历史数据
+            for key in ["cpu_usage", "mem_usage", "gpu_usage", "net_upload_speed", "net_download_speed", "system_load", "process_count", "cpu_temperature"]:
+                if key in rt_data and isinstance(rt_data[key], list):
+                    DATA_CACHE[key] = rt_data[key]
+            # 恢复当前值
+            if "cpu_core_usage" in rt_data:
+                DATA_CACHE["cpu_core_usage"] = rt_data["cpu_core_usage"]
+            if "boot_time" in rt_data:
+                DATA_CACHE["boot_time"] = rt_data["boot_time"]
+            if "battery_info" in rt_data:
+                DATA_CACHE["battery_info"] = rt_data["battery_info"]
+        
+        print("从缓存恢复数据成功")
+    except Exception as e:
+        print(f"从缓存恢复数据失败: {e}")
 
 # ========== API接口 ==========
 @app.get("/api/hardware-info")
@@ -396,18 +453,25 @@ def init_nvml():
 def shutdown_nvml():
     """关闭NVML"""
     global NVML_AVAILABLE, NVML_HANDLE
-    if NVML_AVAILABLE:
+    if NVML_AVAILABLE and NVML_HANDLE is not None:
         try:
             nvml.nvmlShutdown()
             NVML_HANDLE = None
             print("NVML已关闭")
         except Exception as e:
-            print(f"关闭NVML时出错: {repr(e)}")
+            # 不再打印错误，避免Win32 exception刷屏
+            pass
+
+# 挂载静态文件（必须放在所有API路由之后）
+app.mount("/", StaticFiles(directory=".", html=True), name="static")
 
 # ========== 启动 ==========
 if __name__ == "__main__":
     # 初始化NVML
     init_nvml()
+    
+    # 从缓存恢复数据
+    restore_from_cache()
     
     # 初始化缓存
     update_cache_file()
@@ -417,7 +481,7 @@ if __name__ == "__main__":
     # 启动服务
     try:
         import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=8000)
+        uvicorn.run(app, host="0.0.0.0", port=8001)
     finally:
         # 确保在程序结束时关闭NVML
         shutdown_nvml()
