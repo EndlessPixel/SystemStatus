@@ -1634,7 +1634,7 @@ async function updateRealTimeData() {
             const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
             const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            bootTimeEl.textContent = `${diffDays}天${diffHours}小时${diffMinutes}分钟`;
+            bootTimeEl.textContent = `${diffDays}${t('days')}${diffHours}${t('hoursShort')}${diffMinutes}${t('minutesShort')}`;
         }
 
         const batteryInfoEl = document.getElementById('battery-info');
@@ -1642,16 +1642,16 @@ async function updateRealTimeData() {
             const battery = data.battery_info;
             if (battery.percent !== undefined) {
                 if (battery.plugged) {
-                    batteryInfoEl.textContent = `电池状态: 已充电 ${battery.percent.toFixed(0)}% (已连接电源)`;
+                    batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${t('batteryCharging')} ${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;
                 } else {
                     const secsLeft = battery.secsleft;
                     let timeLeft = '';
                     if (secsLeft > 0) {
                         const hours = Math.floor(secsLeft / 3600);
                         const minutes = Math.floor((secsLeft % 3600) / 60);
-                        timeLeft = `，预计剩余 ${hours}小时${minutes}分钟`;
+                        timeLeft = `, ${t('estimatedTimeLeft')} ${hours}${t('hours')}${minutes}${t('minutes')}`;
                     }
-                    batteryInfoEl.textContent = `电池状态: ${battery.percent.toFixed(0)}% (未连接电源${timeLeft})`;
+                    batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${battery.percent.toFixed(0)}% (${t('batteryUnplugged')}${timeLeft})`;
                 }
             }
         }
