@@ -401,6 +401,9 @@ function updateSpecificTranslations() {
     if (footerCopyright) {
         footerCopyright.textContent = t('footerCopyright');
     }
+    
+    // 重新获取硬件信息以更新网络类型标签的翻译
+    getHardwareInfo();
 }
 
 function updateChartTranslations() {
