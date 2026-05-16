@@ -19,6 +19,7 @@ const I18N_KEY = "system_monitor_language";
 
 // 当前语言 - 直接从 window 对象获取翻译数据
 let currentLanguage = 'zh';
+let cachedHardwareInfo = null;  // 缓存硬件信息，避免重复请求
 
 function initI18n() {
     // 确保语言文件已加载
@@ -155,8 +156,8 @@ function updateSpecificTranslations() {
         footerCopyright.textContent = t('footerCopyright');
     }
     
-    // 重新获取硬件信息以更新网络类型标签的翻译
-    getHardwareInfo();
+    // 直接更新网络类型标签，避免重新发起网络请求
+    updateNetworkTypeLabels();
 }
 
 function updateChartTranslations() {
@@ -300,19 +301,42 @@ function updateThemeSelect() {
     const select = document.getElementById('theme-select');
     if (!select) return;
     
-    // 重新生成所有选项以更新翻译
-    select.innerHTML = '';
-    
-    Object.keys(window.THEME_CONFIG).forEach(themeKey => {
-        const theme = window.THEME_CONFIG[themeKey];
-        const option = document.createElement('option');
-        option.value = themeKey;
-        option.textContent = t(theme.labelKey);
-        select.appendChild(option);
-    });
-    
-    // 设置当前选中的主题
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    
+    // 检查是否真的需要重新生成选项
+    let needsRegenerate = false;
+    
+    // 如果选项数量不对，或者文本不匹配，就需要重新生成
+    if (select.options.length !== Object.keys(window.THEME_CONFIG).length) {
+        needsRegenerate = true;
+    } else {
+        // 检查每个选项的文本是否需要更新
+        let index = 0;
+        for (const themeKey of Object.keys(window.THEME_CONFIG)) {
+            const theme = window.THEME_CONFIG[themeKey];
+            const expectedText = t(theme.labelKey);
+            if (select.options[index]?.textContent !== expectedText) {
+                needsRegenerate = true;
+                break;
+            }
+            index++;
+        }
+    }
+    
+    if (needsRegenerate) {
+        // 重新生成所有选项以更新翻译
+        select.innerHTML = '';
+        
+        Object.keys(window.THEME_CONFIG).forEach(themeKey => {
+            const theme = window.THEME_CONFIG[themeKey];
+            const option = document.createElement('option');
+            option.value = themeKey;
+            option.textContent = t(theme.labelKey);
+            select.appendChild(option);
+        });
+    }
+    
+    // 总是设置选中的主题
     select.value = currentTheme;
 }
 
@@ -1161,6 +1185,9 @@ async function loadFromCache() {
 
 function renderHardwareInfo(data) {
     if (!data) return;
+    
+    // 缓存硬件信息以便在语言切换时更新
+    cachedHardwareInfo = data;
 
     const cpuModelEl = document.getElementById('cpu-model');
     const cpuCoresEl = document.getElementById('cpu-cores');
@@ -1208,6 +1235,53 @@ function renderHardwareInfo(data) {
         } else {
             netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
         }
+    }
+}
+
+// 更新网络类型标签和其他可能需要翻译的元素（不重新请求网络）
+function updateNetworkTypeLabels() {
+    if (!cachedHardwareInfo) return;
+    
+    // 更新CPU核心标签
+    const cpuCoresEl = document.getElementById('cpu-cores');
+    if (cpuCoresEl) {
+        cpuCoresEl.textContent = `${cachedHardwareInfo.cpu?.cores || 0} (${t('physicalCores')}: ${cachedHardwareInfo.cpu?.physical_cores || 0})`;
+    }
+    
+    // 更新GPU状态
+    const gpuStatusEl = document.getElementById('gpu-status');
+    if (gpuStatusEl) {
+        gpuStatusEl.textContent = cachedHardwareInfo.gpu?.available ? t('available') : t('unavailable');
+    }
+    
+    // 更新网络信息
+    const netContainer = document.getElementById('network-info');
+    if (netContainer && cachedHardwareInfo.network && cachedHardwareInfo.network.length > 0) {
+        netContainer.innerHTML = '';
+        const table = document.createElement('table');
+        table.className = 'network-table';
+        
+        cachedHardwareInfo.network.forEach(iface => {
+            const row = document.createElement('tr');
+            row.className = 'network-row';
+            
+            const icon = getNetworkIcon(iface.name);
+            const type = getNetworkType(iface.name);
+            const typeClass = getTypeClass(iface.name);
+            
+            row.innerHTML = `
+                <td class="network-icon">${icon}</td>
+                <td class="network-name">${iface.name}</td>
+                <td class="network-type ${typeClass}"><span>${type}</span></td>
+                <td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>
+            `;
+            
+            table.appendChild(row);
+        });
+        
+        netContainer.appendChild(table);
+    } else if (netContainer) {
+        netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
     }
 }
 
