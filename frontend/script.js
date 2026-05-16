@@ -153,6 +153,7 @@ const LANGUAGES = {
         localServer: "本地服务器",
         noDisk: "未检测到硬盘信息",
         core: "核心",
+        noCPUCores: "未检测到CPU核心信息",
     },
     en: {
         // 页面标题
@@ -287,6 +288,7 @@ const LANGUAGES = {
         localServer: "Local Server",
         noDisk: "No disk detected",
         core: "Core",
+        noCPUCores: "No CPU cores detected",
     }
 };
 
@@ -768,18 +770,18 @@ function clearOldData() {
     }
 
     const resetElements = [
-        { id: 'cpu-model', text: '加载中...' },
-        { id: 'cpu-cores', text: '加载中...' },
-        { id: 'mem-model', text: '加载中...' },
-        { id: 'mem-total', text: '加载中...' },
-        { id: 'gpu-model', text: '加载中...' },
-        { id: 'gpu-status', text: '加载中...' },
+        { id: 'cpu-model', text: t('loading') },
+        { id: 'cpu-cores', text: t('loading') },
+        { id: 'mem-model', text: t('loading') },
+        { id: 'mem-total', text: t('loading') },
+        { id: 'gpu-model', text: t('loading') },
+        { id: 'gpu-status', text: t('loading') },
         { id: 'net-upload-speed', text: '0 KB/s' },
         { id: 'net-download-speed', text: '0 KB/s' },
         { id: 'system-load', text: '0.00' },
         { id: 'process-count', text: '0' },
-        { id: 'cpu-temperature', text: '0°C' },
-        { id: 'boot-time', text: '0天0小时0分钟' }
+        { id: 'cpu-temperature', text: `0${currentLanguage === 'zh' ? '°C' : '°C'}` },
+        { id: 'boot-time', text: `0${t('days')}0${t('hoursShort')}0${t('minutesShort')}` }
     ];
 
     resetElements.forEach(item => {
@@ -1683,7 +1685,7 @@ function updateCPUCores(coreUsages, withAnimation = false) {
     if (!container) return;
 
     if (!coreUsages || coreUsages.length === 0) {
-        container.innerHTML = "<p>未检测到CPU核心信息</p>";
+        container.innerHTML = `<p>${t('noCPUCores')}</p>`;
         return;
     }
 
@@ -1700,7 +1702,7 @@ function updateCPUCores(coreUsages, withAnimation = false) {
 
             const coreNumEl = document.createElement('div');
             coreNumEl.className = 'core-num';
-            coreNumEl.textContent = `核心 ${index + 1}`;
+            coreNumEl.textContent = `${t('core')} ${index + 1}`;
 
             const coreUsageEl = document.createElement('div');
             coreUsageEl.className = 'core-usage';
@@ -1737,13 +1739,13 @@ let retryCount = 0;
 const MAX_RETRY_COUNT = 5;
 
 async function retryBackendConnection() {
-    updateStatusTip("正在尝试重新连接后端...", "warning");
+    updateStatusTip(t('retrying'), "warning");
     hideRetryButton();
 
     const backendAvailable = await checkBackendStatus();
 
     if (backendAvailable) {
-        updateStatusTip(`已成功连接【${branchConfig[currentBranch].name || currentBranch}】`, "success");
+        updateStatusTip(`${t('connected')}【${branchConfig[currentBranch].name || currentBranch}】`, "success");
         await loadFromCache();
         getHardwareInfo();
         updateRealTimeData();
@@ -1763,10 +1765,10 @@ async function retryBackendConnection() {
     } else {
         retryCount++;
         if (retryCount < MAX_RETRY_COUNT) {
-            updateStatusTip(`连接失败，${MAX_RETRY_COUNT - retryCount}秒后自动重试...`, "error");
+            updateStatusTip(t('retryInSeconds', { count: MAX_RETRY_COUNT - retryCount }), "error");
             setTimeout(retryBackendConnection, 1000);
         } else {
-            updateStatusTip("后端连接失败，已达到最大重试次数", "error");
+            updateStatusTip(t('maxRetriesReached'), "error");
             showRetryButton();
         }
     }
