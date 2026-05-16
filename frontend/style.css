@@ -158,6 +158,18 @@ body {
     margin-bottom: 30px;
 }
 
+/* 网卡卡片占据更多宽度 */
+.card-container .card:nth-child(4) {
+    grid-column: span 2;
+}
+
+/* 响应式：小屏幕上网卡卡片占满一行 */
+@media (max-width: 650px) {
+    .card-container .card:nth-child(4) {
+        grid-column: span 1;
+    }
+}
+
 .card {
     background-color: var(--apple-card-bg);
     border-radius: 16px;
@@ -183,6 +195,130 @@ body {
     font-size: 14px;
     margin: 8px 0;
     color: var(--apple-text-primary);
+}
+
+/* 网卡信息表格样式 */
+.network-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+
+.network-row {
+    border-bottom: 1px solid var(--apple-border);
+    transition: background-color 0.2s ease;
+}
+
+.network-row:hover {
+    background-color: rgba(0, 113, 227, 0.05);
+}
+
+.network-row:last-child {
+    border-bottom: none;
+}
+
+.network-row td {
+    padding: 10px 8px;
+    vertical-align: middle;
+}
+
+.network-icon {
+    width: 50px;
+    text-align: center;
+    font-size: 20px;
+}
+
+.network-name {
+    font-weight: 500;
+    color: var(--apple-text-primary);
+    white-space: nowrap;
+    max-width: 300px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.network-type {
+    width: 100px;
+    text-align: center;
+}
+
+.network-type span {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    background-color: var(--apple-accent);
+    color: white;
+}
+
+.type-wifi span {
+    background-color: #0071e3;
+}
+
+.type-ethernet span {
+    background-color: #34c759;
+}
+
+.type-vpn span {
+    background-color: #ff9500;
+}
+
+.type-bluetooth span {
+    background-color: #af52de;
+}
+
+.type-other span {
+    background-color: #86868b;
+}
+
+.network-ips {
+    font-family: 'SF Mono', Monaco, Consolas, monospace;
+    font-size: 13px;
+    color: var(--apple-text-secondary);
+}
+
+.network-ips .no-ip {
+    color: #ff3b30;
+    font-style: italic;
+}
+
+/* 响应式优化 */
+@media (max-width: 900px) {
+    .network-name {
+        max-width: 200px;
+    }
+}
+
+@media (max-width: 768px) {
+    .network-table {
+        font-size: 13px;
+    }
+    
+    .network-icon {
+        width: 35px;
+        font-size: 18px;
+    }
+    
+    .network-name {
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .network-type {
+        width: 80px;
+    }
+}
+
+@media (max-width: 550px) {
+    .network-type {
+        display: none;
+    }
+    
+    .network-name {
+        max-width: 200px;
+    }
 }
 
 /* 面板样式（CPU核心/硬盘/图表） */
@@ -606,9 +742,6 @@ body {
 /* 图表容器增加间距 */
 .chart-container {
     margin-top: 25px;
-    /* 增加图表顶部间距 */
-    height: 420px;
-    /* 增加图表高度 */
 }
 
 /* 响应式优化 */
@@ -630,10 +763,6 @@ body {
     .net-speed {
         flex-direction: column;
         gap: 8px;
-    }
-
-    .chart-container {
-        height: 350px;
     }
 
     .panel {

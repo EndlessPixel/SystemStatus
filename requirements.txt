@@ -1,7 +1,7 @@
-fastapi
-uvicorn
-psutil
-py3nvml
-python-multipart
-python-dotenv
-wmi
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+psutil==5.9.8
+py3nvml==0.2.7
+python-multipart==0.0.6
+python-dotenv==1.0.0
+wmi==1.5.1
