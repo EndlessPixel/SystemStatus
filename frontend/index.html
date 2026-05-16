@@ -10,6 +10,8 @@
     <title>SystemStatus 系统监控</title>
     <link rel="stylesheet" href="/static/style.css">
     <script src="/static/echarts.js"></script>
+    <!-- 引入语言翻译文件 -->
+    <script src="/static/translations.js"></script>
 </head>
 <body>
     <div class="container">
@@ -26,11 +28,9 @@
                 </button>
             </div>
 
-            <div class="language-toggle-container">
-                <button id="language-toggle" class="language-toggle-btn">
-                    <span id="lang-icon" class="lang-icon">🌐</span>
-                    <span id="lang-text">中</span>
-                </button>
+            <div class="language-select-container">
+                <select id="language-select" class="language-select">
+                </select>
             </div>
         </div>
 
