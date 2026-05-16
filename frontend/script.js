@@ -2,6 +2,7 @@
 let API_BASE = "";
 let isLocalAddress = false;
 const LOCAL_CACHE_KEY = "system_monitor_cache";
+const THEME_KEY = "system_monitor_theme";
 let chart = null;
 let netChart = null;
 let systemChart = null;
@@ -12,6 +13,102 @@ const ANIMATION_FRAME = 16;
 let realTimeDataInterval = null;
 let diskUsageInterval = null;
 let hardwareInfoInterval = null;
+
+// 主题管理功能
+function initTheme() {
+    const savedTheme = localStorage.getItem(THEME_KEY);
+    if (savedTheme) {
+        setTheme(savedTheme);
+    } else {
+        // 检测系统主题
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setTheme(prefersDark ? 'dark' : 'light');
+    }
+}
+
+function setTheme(theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
+    updateThemeButton(theme);
+    updateChartTheme(theme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    setTheme(newTheme);
+}
+
+function updateThemeButton(theme) {
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    
+    if (theme === 'dark') {
+        themeIcon.textContent = '☀️';
+        themeText.textContent = '浅色模式';
+    } else {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = '深色模式';
+    }
+}
+
+function updateChartTheme(theme) {
+    const textColor = theme === 'dark' ? '#f5f5f7' : '#1d1d1f';
+    const secondaryTextColor = theme === 'dark' ? '#98989d' : '#86868b';
+    const axisLineColor = theme === 'dark' ? '#38383a' : '#e6e6e8';
+    const splitLineColor = theme === 'dark' ? '#2c2c2e' : '#f5f5f7';
+
+    // 更新所有图表
+    [chart, netChart, systemChart].forEach(chartInstance => {
+        if (chartInstance) {
+            const option = {
+                title: {
+                    textStyle: { color: secondaryTextColor }
+                },
+                tooltip: {
+                    backgroundColor: theme === 'dark' ? 'rgba(28, 28, 30, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    borderColor: theme === 'dark' ? '#38383a' : '#e6e6e8',
+                    textStyle: { color: textColor }
+                },
+                legend: {
+                    textStyle: { color: secondaryTextColor }
+                },
+                xAxis: {
+                    nameTextStyle: { color: secondaryTextColor },
+                    axisLine: { lineStyle: { color: axisLineColor } },
+                    axisLabel: { color: secondaryTextColor },
+                    splitLine: { lineStyle: { color: splitLineColor } }
+                },
+                yAxis: {
+                    nameTextStyle: { color: secondaryTextColor },
+                    axisLine: { lineStyle: { color: axisLineColor } },
+                    axisLabel: { color: secondaryTextColor },
+                    splitLine: { lineStyle: { color: splitLineColor } }
+                }
+            };
+
+            // 只有systemChart有两个y轴
+            if (chartInstance === systemChart) {
+                option.yAxis = [
+                    {
+                        nameTextStyle: { color: secondaryTextColor },
+                        axisLine: { lineStyle: { color: axisLineColor } },
+                        axisLabel: { color: secondaryTextColor },
+                        splitLine: { lineStyle: { color: splitLineColor } }
+                    },
+                    {
+                        nameTextStyle: { color: secondaryTextColor },
+                        axisLine: { lineStyle: { color: axisLineColor } },
+                        axisLabel: { color: secondaryTextColor },
+                        splitLine: { show: false }
+                    }
+                ];
+            }
+
+            chartInstance.setOption(option);
+        }
+    });
+}
 
 function animateNumber(element, targetValue, isPercent = true, suffix = '') {
     if (!element) return;
@@ -1279,6 +1376,7 @@ async function updateDiskUsage() {
 }
 
 async function init() {
+    initTheme();
     initChart();
     adjustChartHeight();
 
@@ -1300,6 +1398,12 @@ async function init() {
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.addEventListener('click', retryBackendConnection);
+    }
+
+    // 主题切换按钮事件
+    const themeToggleBtn = document.getElementById('theme-toggle');
+    if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', toggleTheme);
     }
 
     const backendAvailable = await checkBackendStatus();
