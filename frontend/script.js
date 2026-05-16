@@ -535,15 +535,27 @@ function initBranchAPI(branchKey) {
     const branch = branchConfig[branchKey] || { api: "127.0.0.1", port: 8001 };
 
     const apiHost = branch.api || "127.0.0.1";
-    const apiPort = branch.port || 8001;
-    API_BASE = `http://${apiHost}:${apiPort}/api`;
+    const apiPort = branch.port;
+    
+    // 根据是否有端口构建API_BASE
+    if (apiPort !== undefined && apiPort !== null) {
+        API_BASE = `http://${apiHost}:${apiPort}/api`;
+    } else {
+        API_BASE = `http://${apiHost}/api`;
+    }
 
     isLocalAddress = apiHost === "localhost" ||
         apiHost.startsWith("127.") ||
         apiHost === "0.0.0.0" ||
         apiHost.startsWith("192.168.");
 
-    updateStatusTip(t('connected') + "【" + (branch.name || branchKey) + "】配置：" + apiHost + ":" + apiPort, "success");
+    // 构建显示用的地址字符串
+    let addressDisplay = apiHost;
+    if (apiPort !== undefined && apiPort !== null) {
+        addressDisplay += ":" + apiPort;
+    }
+    
+    updateStatusTip(t('connected') + "【" + (branch.name || branchKey) + "】配置：" + addressDisplay, "success");
     if (!isLocalAddress) {
         updateStatusTip(t('remoteAddressWarning'), "warning");
     }
