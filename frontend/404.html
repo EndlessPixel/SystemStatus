@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>404 - 页面未找到 | SystemStatus</title>
+    <title>404 Not Found</title>
     <style>
         * {
             margin: 0;
@@ -12,103 +13,53 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .container {
+            background: #f7f7f7;
+            font-family: Arial, sans-serif;
             text-align: center;
-            background: white;
-            padding: 60px 40px;
-            border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 500px;
-            width: 100%;
+            padding-top: 30px;
         }
 
-        .error-code {
-            font-size: 120px;
-            font-weight: 700;
-            color: #667eea;
-            line-height: 1;
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
             margin-bottom: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
         }
 
-        h1 {
-            font-size: 28px;
-            color: #1d1d1f;
-            margin-bottom: 16px;
-            font-weight: 600;
+        hr {
+            width: 800px;
+            border: none;
+            height: 1px;
+            background: #ccc;
+            margin: 0 auto 20px;
         }
 
-        p {
-            font-size: 16px;
-            color: #86868b;
-            line-height: 1.6;
-            margin-bottom: 32px;
+        .back-home {
+            margin-top: 30px;
         }
 
-        .home-btn {
+        .back-home a {
             display: inline-block;
-            padding: 14px 32px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 12px 24px;
+            background: #5865f2;
             color: white;
             text-decoration: none;
-            border-radius: 50px;
+            border-radius: 8px;
             font-size: 16px;
-            font-weight: 600;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
         }
 
-        .home-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        @media (max-width: 480px) {
-            .error-code {
-                font-size: 80px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .container {
-                padding: 40px 24px;
-            }
+        .back-home a:hover {
+            background: #4752c4;
         }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="icon">🔍</div>
-        <div class="error-code">404</div>
-        <h1>页面未找到</h1>
-        <p>抱歉，您访问的页面不存在或已被移除。<br>正在为您跳转到首页...</p>
-        <a href="/" class="home-btn">返回首页</a>
-    </div>
 
-    <script>
-        // 3秒后自动跳转到首页
-        setTimeout(function() {
-            window.location.href = '/';
-        }, 3000);
-    </script>
+<body>
+    <h1 class="title">404 Not Found</h1>
+    <hr>
+    <div class="back-home">
+        <a href="/">Back to Home Page </a>
+    </div>
 </body>
+
 </html>
