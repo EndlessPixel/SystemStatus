@@ -7,28 +7,24 @@ let netChart = null;
 let systemChart = null;
 let currentBranch = "";
 let branchConfig = {};
-// 数字动画相关配置
-const ANIMATION_DURATION = 800; // 动画时长(ms)
-const ANIMATION_FRAME = 16;     // 动画帧率(ms)
-// 全局定时器变量
+const ANIMATION_DURATION = 800;
+const ANIMATION_FRAME = 16;
 let realTimeDataInterval = null;
 let diskUsageInterval = null;
 let hardwareInfoInterval = null;
 
-// ========== 工具函数：数字动画 ==========
 function animateNumber(element, targetValue, isPercent = true, suffix = '') {
     if (!element) return;
 
-    // 清空原有动画
     if (element.animationFrame) {
         cancelAnimationFrame(element.animationFrame);
     }
 
-    // 优化起始值获取，避免正则表达式
+    targetValue = Number(targetValue) || 0;
+
     const currentText = element.textContent;
     const startValue = parseFloat(currentText) || 0;
-    
-    // 如果目标值与当前值相差很小，直接设置并返回
+
     if (Math.abs(targetValue - startValue) < 0.1) {
         if (isPercent) {
             element.textContent = `${targetValue.toFixed(1)}%${suffix}`;
@@ -41,25 +37,21 @@ function animateNumber(element, targetValue, isPercent = true, suffix = '') {
     const startTime = performance.now();
     let currentValue = startValue;
 
-    // 使用requestAnimationFrame替代setInterval
     const animate = (currentTime) => {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / ANIMATION_DURATION, 1);
-        
-        // 使用缓动函数，使动画更自然
+
         const easedProgress = 1 - Math.pow(1 - progress, 3);
-        
+
         currentValue = startValue + (targetValue - startValue) * easedProgress;
 
-        // 格式化显示
         let displayText;
         if (isPercent) {
             displayText = `${currentValue.toFixed(1)}%${suffix}`;
         } else {
             displayText = `${currentValue.toFixed(1)}${suffix}`;
         }
-        
-        // 只有当文本发生变化时才更新DOM
+
         if (element.textContent !== displayText) {
             element.textContent = displayText;
         }
@@ -67,7 +59,6 @@ function animateNumber(element, targetValue, isPercent = true, suffix = '') {
         if (progress < 1) {
             element.animationFrame = requestAnimationFrame(animate);
         } else {
-            // 确保最终值准确
             element.textContent = isPercent ? `${targetValue.toFixed(1)}%${suffix}` : `${targetValue.toFixed(1)}${suffix}`;
             delete element.animationFrame;
         }
@@ -76,40 +67,35 @@ function animateNumber(element, targetValue, isPercent = true, suffix = '') {
     element.animationFrame = requestAnimationFrame(animate);
 }
 
-// ========== 加载分支配置 ==========
 async function loadBranchConfig() {
     try {
-        // 直接检查DOM是否加载完成，不使用Promise
         const selectEl = document.getElementById("branch-select");
         if (!selectEl) {
             console.error("下拉框DOM元素不存在");
             throw new Error("下拉框元素未找到");
         }
 
-        // 先清空下拉框（避免重复）
         selectEl.innerHTML = "";
 
         let config = {};
         try {
-            const response = await fetch("ips.json");
-            if (!response.ok) throw new Error(`配置文件请求失败: ${response.status} ${response.statusText}`);
+            // 从API获取服务器配置
+            const response = await fetch("/api/servers");
+            if (!response.ok) throw new Error(`配置请求失败: ${response.status} ${response.statusText}`);
             config = await response.json();
         } catch (e) {
-            console.error("加载ips.json失败，使用默认配置:", e);
+            console.error("从API加载配置失败，使用默认配置:", e);
         }
 
-        // 强制兜底配置
         branchConfig = config.branches || {
             local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 }
         };
         currentBranch = config.default_branch || Object.keys(branchConfig)[0] || "local_server";
 
-        // 强制检查分支配置有效性
         if (!branchConfig[currentBranch]) {
             currentBranch = Object.keys(branchConfig)[0];
         }
 
-        // 填充分支下拉框
         const branchKeys = Object.keys(branchConfig);
         if (branchKeys.length === 0) {
             branchConfig = { local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 } };
@@ -126,10 +112,8 @@ async function loadBranchConfig() {
             selectEl.appendChild(option);
         });
 
-        // 初始化当前分支的API地址
         initBranchAPI(currentBranch);
 
-        // 绑定切换按钮事件
         const switchBtn = document.getElementById("switch-btn");
         if (switchBtn) {
             switchBtn.removeEventListener("click", switchBranch);
@@ -141,13 +125,11 @@ async function loadBranchConfig() {
         return true;
     } catch (error) {
         console.error("加载分支配置失败，强制使用默认配置:", error);
-        // 终极兜底
         branchConfig = {
             local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 }
         };
         currentBranch = "local_server";
 
-        // 手动填充分拉框
         const selectEl = document.getElementById("branch-select");
         if (selectEl) {
             selectEl.innerHTML = "";
@@ -164,7 +146,6 @@ async function loadBranchConfig() {
     }
 }
 
-// ========== 初始化分支API地址 ==========
 function initBranchAPI(branchKey) {
     const branch = branchConfig[branchKey] || { api: "127.0.0.1", port: 8001 };
 
@@ -172,20 +153,17 @@ function initBranchAPI(branchKey) {
     const apiPort = branch.port || 8001;
     API_BASE = `http://${apiHost}:${apiPort}/api`;
 
-    // 判断是否为本地地址
     isLocalAddress = apiHost === "localhost" ||
         apiHost.startsWith("127.") ||
         apiHost === "0.0.0.0" ||
         apiHost.startsWith("192.168.");
 
-    // 更新状态提示
     updateStatusTip(`已加载【${branch.name || branchKey}】配置：${apiHost}:${apiPort}`, "success");
     if (!isLocalAddress) {
         updateStatusTip(`当前连接【${branch.name || branchKey}】(远端地址)，无法使用缓存`, "warning");
     }
 }
 
-// ========== 切换分支 ==========
 async function switchBranch() {
     const selectEl = document.getElementById("branch-select");
     if (!selectEl) {
@@ -196,53 +174,41 @@ async function switchBranch() {
     const newBranch = selectEl.value;
     if (!newBranch || newBranch === currentBranch) return;
 
-    // 检查新分支是否有效
     if (!branchConfig[newBranch]) {
         updateStatusTip(`切换失败：分支【${newBranch}】配置不存在`, "error");
         return;
     }
 
-    // 重置状态提示
     updateStatusTip(`正在切换到【${branchConfig[newBranch].name || newBranch}】...`, "success");
 
-    // 初始化新分支
     currentBranch = newBranch;
     initBranchAPI(currentBranch);
 
-    // 清空旧数据，加载新数据
     clearOldData();
     await loadFromCache();
-    
-    // 重新检测后端状态并加载数据
+
     const backendAvailable = await checkBackendStatus();
     if (backendAvailable) {
         updateStatusTip(`已成功切换到【${branchConfig[newBranch].name || newBranch}】`, "success");
-        
-        // 清除现有定时器
+
         clearAllIntervals();
-        
-        // 立即更新最新数据
+
         getHardwareInfo();
         updateRealTimeData();
         updateDiskUsage();
-        
-        // 启动定时更新
-        realTimeDataInterval = setInterval(updateRealTimeData, 2000); // 2秒更新一次，避免动画频繁
+
+        realTimeDataInterval = setInterval(updateRealTimeData, 2000);
         diskUsageInterval = setInterval(updateDiskUsage, 10000);
         hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
-        
-        // 隐藏重试按钮
+
         hideRetryButton();
     } else {
         updateStatusTip(`切换到【${branchConfig[newBranch].name || newBranch}】失败，后端不可用`, "error");
-        // 显示重试按钮
         showRetryButton();
     }
 }
 
-// ========== 清空旧数据 ==========
 function clearOldData() {
-    // 清空图表数据
     if (chart) {
         chart.setOption({
             series: [{ data: [] }, { data: [] }, { data: [] }]
@@ -259,7 +225,6 @@ function clearOldData() {
         });
     }
 
-    // 清空硬件信息（重置为初始状态）
     const resetElements = [
         { id: 'cpu-model', text: '加载中...' },
         { id: 'cpu-cores', text: '加载中...' },
@@ -279,12 +244,10 @@ function clearOldData() {
         const el = document.getElementById(item.id);
         if (el) {
             el.textContent = item.text;
-            // 清除动画计时器
             if (el.animationTimer) {
                 clearInterval(el.animationTimer);
                 delete el.animationTimer;
             }
-            // 清除animationFrame
             if (el.animationFrame) {
                 cancelAnimationFrame(el.animationFrame);
                 delete el.animationFrame;
@@ -292,13 +255,11 @@ function clearOldData() {
         }
     });
 
-    // 重置电池信息
     const batteryInfoEl = document.getElementById('battery-info');
     if (batteryInfoEl) {
         batteryInfoEl.textContent = '电池状态: 未检测到电池信息';
     }
 
-    // 清空复杂元素
     const networkEl = document.getElementById('network-info');
     if (networkEl) networkEl.innerHTML = "加载中...";
 
@@ -309,23 +270,90 @@ function clearOldData() {
     if (diskEl) diskEl.innerHTML = "加载中...";
 }
 
-// ========== 更新状态提示 ==========
 function updateStatusTip(text, type = "success") {
     const tipEl = document.getElementById("status-tip");
     if (!tipEl) return;
 
     tipEl.textContent = text;
-    // 重置样式
     tipEl.className = "status-tip";
-    // 添加对应样式
     if (type === "success") tipEl.classList.add("tip-success");
     else if (type === "warning") tipEl.classList.add("tip-warning");
     else if (type === "error") tipEl.classList.add("tip-error");
 }
 
-// ========== 初始化双折线图（布局优化） ==========
+// 获取屏幕宽度对应的最大数据点数
+function getMaxDataPoints() {
+    const screenWidth = window.innerWidth;
+    // 根据屏幕宽度动态计算显示的数据点数量
+    // 每50px宽度显示约10个数据点
+    const minPoints = 15;  // 最小显示15个点
+    const maxPoints = 120; // 最大显示120个点
+    const calculatedPoints = Math.floor(screenWidth / 50 * 10);
+    return Math.min(Math.max(calculatedPoints, minPoints), maxPoints);
+}
+
+// 获取采样间隔（根据当前需要显示的数据点数量）
+function getSampleInterval() {
+    const maxPoints = getMaxDataPoints();
+    // CACHE_DURATION = 120秒，每秒1个数据点 = 120个数据点
+    const totalPoints = 120;
+    if (totalPoints <= maxPoints) {
+        return 1; // 数据点足够，不需要采样
+    }
+    return Math.ceil(totalPoints / maxPoints);
+}
+
+// 对图表数据进行采样，保留开头、结尾，中间均匀采样
+function sampleChartData(data, interval) {
+    if (!data || data.length === 0) return [];
+    if (interval <= 1 || data.length <= 30) return data;
+
+    const sampled = [];
+    for (let i = 0; i < data.length; i += interval) {
+        sampled.push(data[i]);
+    }
+    // 确保最后一个数据点被包含
+    if (sampled[sampled.length - 1] !== data[data.length - 1]) {
+        sampled.push(data[data.length - 1]);
+    }
+    return sampled;
+}
+
+// 根据屏幕宽度动态调整图表高度
+function adjustChartHeight() {
+    const screenWidth = window.innerWidth;
+    let chartHeight;
+
+    // 根据屏幕宽度计算图表高度
+    if (screenWidth < 480) {
+        chartHeight = Math.floor(screenWidth * 0.5);  // 手机：50%宽度
+    } else if (screenWidth < 768) {
+        chartHeight = Math.floor(screenWidth * 0.6);  // 平板：60%宽度
+    } else if (screenWidth < 1024) {
+        chartHeight = 400; // 小屏幕：固定400px
+    } else {
+        chartHeight = 420; // 大屏幕：固定420px
+    }
+
+    // 限制最小和最大高度
+    chartHeight = Math.min(Math.max(chartHeight, 200), 500);
+
+    // 更新图表容器高度
+    const chartIds = ['usage-chart', 'net-chart', 'system-chart'];
+    chartIds.forEach(id => {
+        const chartDom = document.getElementById(id);
+        if (chartDom) {
+            chartDom.style.height = `${chartHeight}px`;
+        }
+    });
+
+    // 调整ECharts实例大小
+    if (chart) chart.resize();
+    if (netChart) netChart.resize();
+    if (systemChart) systemChart.resize();
+}
+
 function initChart() {
-    // 1. CPU/内存/GPU 图表
     const chartDom = document.getElementById('usage-chart');
     if (chartDom) {
         chart = echarts.init(chartDom);
@@ -335,7 +363,7 @@ function initChart() {
                 text: 'CPU/内存/GPU 占用率趋势',
                 textStyle: { color: '#86868b', fontSize: 16, fontWeight: 500 },
                 left: 'center',
-                padding: [0, 0, 20, 0] // 增加标题下方间距
+                padding: [0, 0, 20, 0]
             },
             tooltip: {
                 trigger: 'axis',
@@ -348,14 +376,14 @@ function initChart() {
             legend: {
                 data: ['CPU占用率(%)', '内存占用率(%)', 'GPU占用率(%)'],
                 textStyle: { color: '#86868b', fontSize: 14 },
-                bottom: 10, // 图例移到底部，增加图表空间
+                bottom: 10,
                 left: 'center'
             },
             grid: {
                 left: '5%',
                 right: '5%',
-                top: '15%', // 增加顶部间距
-                bottom: '20%', // 增加底部间距
+                top: '15%',
+                bottom: '20%',
                 containLabel: true
             },
             xAxis: {
@@ -383,7 +411,7 @@ function initChart() {
                     data: [],
                     smooth: true,
                     lineStyle: { width: 2 },
-                    areaStyle: { opacity: 0.1 }, // 增加面积透明度，更简约
+                    areaStyle: { opacity: 0.1 },
                     itemStyle: { color: '#0071e3' }
                 },
                 {
@@ -408,7 +436,6 @@ function initChart() {
         });
     }
 
-    // 2. 网卡流量图表
     const netChartDom = document.getElementById('net-chart');
     if (netChartDom) {
         netChart = echarts.init(netChartDom);
@@ -481,7 +508,6 @@ function initChart() {
         });
     }
 
-    // 3. 系统负载图表
     const systemChartDom = document.getElementById('system-chart');
     if (systemChartDom) {
         systemChart = echarts.init(systemChartDom);
@@ -577,7 +603,6 @@ function initChart() {
     }
 }
 
-// ========== 检测后端是否可用 ==========
 async function checkBackendStatus() {
     try {
         const controller = new AbortController();
@@ -595,7 +620,6 @@ async function checkBackendStatus() {
     }
 }
 
-// ========== 读取本地tmp.json缓存 ==========
 async function loadLocalTmpJson() {
     try {
         const response = await fetch("tmp.json");
@@ -606,15 +630,39 @@ async function loadLocalTmpJson() {
         updateCPUCores(cacheData.real_time_data.cpu_core_usage);
         renderDiskUsage(cacheData.disk_usage);
 
-        // 数字动画更新网卡速度
-        const uploadSpeed = cacheData.real_time_data.net_upload_speed || 0;
-        const downloadSpeed = cacheData.real_time_data.net_download_speed || 0;
+        // 转换时间戳为毫秒（如果需要）
+        const rtData = cacheData.real_time_data;
+        const chartSeries = ['cpu_usage', 'mem_usage', 'gpu_usage', 
+            'net_upload_speed', 'net_download_speed', 
+            'system_load', 'process_count', 'cpu_temperature'];
+        
+        chartSeries.forEach(key => {
+            if (Array.isArray(rtData[key])) {
+                rtData[key] = rtData[key].map(item => [
+                    typeof item[0] === 'number' && item[0] < 1e12 ? item[0] * 1000 : item[0],
+                    item[1]
+                ]);
+            }
+        });
+
+        let uploadSpeed = rtData.net_upload_speed || 0;
+        let downloadSpeed = rtData.net_download_speed || 0;
+
+        if (Array.isArray(uploadSpeed) && uploadSpeed.length > 0) {
+            uploadSpeed = uploadSpeed[uploadSpeed.length - 1][1] || 0;
+        }
+        if (Array.isArray(downloadSpeed) && downloadSpeed.length > 0) {
+            downloadSpeed = downloadSpeed[downloadSpeed.length - 1][1] || 0;
+        }
+
+        uploadSpeed = Number(uploadSpeed) || 0;
+        downloadSpeed = Number(downloadSpeed) || 0;
+
         const uploadEl = document.getElementById('net-upload-speed');
         const downloadEl = document.getElementById('net-download-speed');
 
         if (uploadEl) {
             animateNumber(uploadEl, uploadSpeed, false);
-            // 确保单位显示
             uploadEl.textContent = `${uploadSpeed.toFixed(1)} KB/s`;
         }
         if (downloadEl) {
@@ -632,15 +680,8 @@ async function loadLocalTmpJson() {
     }
 }
 
-// ========== 从缓存加载初始数据 ==========
 async function loadFromCache() {
-    if (!isLocalAddress) {
-        updateStatusTip(`当前连接远端地址，无法使用缓存`, "warning");
-        return false;
-    }
-
     try {
-        // 1. 优先读取后端缓存接口
         const cacheResponse = await fetch(`${API_BASE}/cache`);
         if (cacheResponse.ok) {
             const cacheData = await cacheResponse.json();
@@ -649,9 +690,34 @@ async function loadFromCache() {
                 updateCPUCores(cacheData.real_time_data.cpu_core_usage);
                 renderDiskUsage(cacheData.disk_usage);
 
-                // 数字动画更新网卡速度
-                const uploadSpeed = cacheData.real_time_data.net_upload_speed || 0;
-                const downloadSpeed = cacheData.real_time_data.net_download_speed || 0;
+                // 转换时间戳为毫秒（如果需要）
+                const rtData = cacheData.real_time_data;
+                const chartSeries = ['cpu_usage', 'mem_usage', 'gpu_usage', 
+                    'net_upload_speed', 'net_download_speed', 
+                    'system_load', 'process_count', 'cpu_temperature'];
+                
+                chartSeries.forEach(key => {
+                    if (Array.isArray(rtData[key])) {
+                        rtData[key] = rtData[key].map(item => [
+                            typeof item[0] === 'number' && item[0] < 1e12 ? item[0] * 1000 : item[0],
+                            item[1]
+                        ]);
+                    }
+                });
+
+                let uploadSpeed = rtData.net_upload_speed || 0;
+                let downloadSpeed = rtData.net_download_speed || 0;
+
+                if (Array.isArray(uploadSpeed) && uploadSpeed.length > 0) {
+                    uploadSpeed = uploadSpeed[uploadSpeed.length - 1][1] || 0;
+                }
+                if (Array.isArray(downloadSpeed) && downloadSpeed.length > 0) {
+                    downloadSpeed = downloadSpeed[downloadSpeed.length - 1][1] || 0;
+                }
+
+                uploadSpeed = Number(uploadSpeed) || 0;
+                downloadSpeed = Number(downloadSpeed) || 0;
+
                 const uploadEl = document.getElementById('net-upload-speed');
                 const downloadEl = document.getElementById('net-download-speed');
 
@@ -670,7 +736,6 @@ async function loadFromCache() {
             }
         }
 
-        // 2. 读取浏览器本地缓存
         const localCache = localStorage.getItem(LOCAL_CACHE_KEY);
         if (localCache) {
             const cacheData = JSON.parse(localCache);
@@ -678,9 +743,19 @@ async function loadFromCache() {
             updateCPUCores(cacheData.real_time_data.cpu_core_usage);
             renderDiskUsage(cacheData.disk_usage);
 
-            // 数字动画更新网卡速度
-            const uploadSpeed = cacheData.real_time_data.net_upload_speed || 0;
-            const downloadSpeed = cacheData.real_time_data.net_download_speed || 0;
+            let uploadSpeed = cacheData.real_time_data.net_upload_speed || 0;
+            let downloadSpeed = cacheData.real_time_data.net_download_speed || 0;
+
+            if (Array.isArray(uploadSpeed) && uploadSpeed.length > 0) {
+                uploadSpeed = uploadSpeed[uploadSpeed.length - 1][1] || 0;
+            }
+            if (Array.isArray(downloadSpeed) && downloadSpeed.length > 0) {
+                downloadSpeed = downloadSpeed[downloadSpeed.length - 1][1] || 0;
+            }
+
+            uploadSpeed = Number(uploadSpeed) || 0;
+            downloadSpeed = Number(downloadSpeed) || 0;
+
             const uploadEl = document.getElementById('net-upload-speed');
             const downloadEl = document.getElementById('net-download-speed');
 
@@ -697,7 +772,6 @@ async function loadFromCache() {
             return true;
         }
 
-        // 3. 读取本地tmp.json文件
         return await loadLocalTmpJson();
     } catch (e) {
         console.log("缓存加载失败:", e);
@@ -706,45 +780,106 @@ async function loadFromCache() {
     }
 }
 
-// ========== 渲染硬件信息 ==========
 function renderHardwareInfo(data) {
     if (!data) return;
 
-    // CPU信息
     const cpuModelEl = document.getElementById('cpu-model');
     const cpuCoresEl = document.getElementById('cpu-cores');
     if (cpuModelEl) cpuModelEl.textContent = data.cpu?.model || "未知CPU";
     if (cpuCoresEl) cpuCoresEl.textContent = `${data.cpu?.cores || 0} (物理: ${data.cpu?.physical_cores || 0})`;
 
-    // 内存信息
     const memModelEl = document.getElementById('mem-model');
     const memTotalEl = document.getElementById('mem-total');
     if (memModelEl) memModelEl.textContent = data.memory?.model || "未知内存";
     if (memTotalEl) memTotalEl.textContent = data.memory?.total || 0;
 
-    // 显卡信息
     const gpuModelEl = document.getElementById('gpu-model');
     const gpuStatusEl = document.getElementById('gpu-status');
     if (gpuModelEl) gpuModelEl.textContent = data.gpu?.model || "未知显卡";
     if (gpuStatusEl) gpuStatusEl.textContent = data.gpu?.available ? '可用' : '不可用';
 
-    // 网卡信息
     const netContainer = document.getElementById('network-info');
     if (netContainer) {
         netContainer.innerHTML = '';
         if (data.network && data.network.length > 0) {
+            // 创建表格布局
+            const table = document.createElement('table');
+            table.className = 'network-table';
+            
             data.network.forEach(iface => {
-                const p = document.createElement('p');
-                p.textContent = `${iface.name}: ${iface.addresses.join(', ') || '无IP地址'}`;
-                netContainer.appendChild(p);
+                const row = document.createElement('tr');
+                row.className = 'network-row';
+                
+                // 根据网卡名称添加图标和类型
+                const icon = getNetworkIcon(iface.name);
+                const type = getNetworkType(iface.name);
+                const typeClass = getTypeClass(iface.name);
+                
+                row.innerHTML = `
+                    <td class="network-icon">${icon}</td>
+                    <td class="network-name">${iface.name}</td>
+                    <td class="network-type ${typeClass}"><span>${type}</span></td>
+                    <td class="network-ips">${iface.addresses.join(', ') || '<span class="no-ip">无IP</span>'}</td>
+                `;
+                
+                table.appendChild(row);
             });
+            
+            netContainer.appendChild(table);
         } else {
             netContainer.innerHTML = "<p>未检测到网卡信息</p>";
         }
     }
 }
 
-// ========== 渲染硬盘信息（增量更新） ==========
+// 获取网卡图标
+function getNetworkIcon(name) {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) {
+        return '📶';
+    } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) {
+        return '🔌';
+    } else if (nameLower.includes('vpn') || nameLower.includes('tunnel')) {
+        return '🔒';
+    } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) {
+        return '📱';
+    } else {
+        return '🌐';
+    }
+}
+
+// 获取网卡类型标签
+function getNetworkType(name) {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) {
+        return 'WiFi';
+    } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) {
+        return '以太网';
+    } else if (nameLower.includes('vpn')) {
+        return 'VPN';
+    } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) {
+        return '蓝牙';
+    } else {
+        return '其他';
+    }
+}
+
+// 获取类型样式类
+function getTypeClass(name) {
+    const nameLower = name.toLowerCase();
+    if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) {
+        return 'type-wifi';
+    } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) {
+        return 'type-ethernet';
+    } else if (nameLower.includes('vpn')) {
+        return 'type-vpn';
+    } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) {
+        return 'type-bluetooth';
+    } else {
+        return 'type-other';
+    }
+}
+
 function renderDiskUsage(disks) {
     const container = document.getElementById('disk-container');
     if (!container) return;
@@ -754,12 +889,10 @@ function renderDiskUsage(disks) {
         return;
     }
 
-    // 获取已有的硬盘元素
     const existingItems = container.querySelectorAll('.disk-item');
     const existingCount = existingItems.length;
     const newCount = disks.length;
 
-    // 如果硬盘数量变化，完全重新渲染
     if (existingCount !== newCount) {
         container.innerHTML = '';
         disks.forEach(disk => {
@@ -768,14 +901,12 @@ function renderDiskUsage(disks) {
         return;
     }
 
-    // 增量更新现有硬盘元素
     disks.forEach((disk, index) => {
         const diskItem = existingItems[index];
         updateDiskItem(diskItem, disk);
     });
 }
 
-// 创建硬盘元素
 function createDiskItem(container, disk, withAnimation = false) {
     const diskItem = document.createElement('div');
     diskItem.className = 'disk-item';
@@ -786,7 +917,6 @@ function createDiskItem(container, disk, withAnimation = false) {
     if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill';
     else if (disk.usage_percent >= 70) fillClass = 'high-fill';
 
-    // 创建进度条元素
     const progressBar = document.createElement('div');
     progressBar.className = 'progress-bar';
 
@@ -814,22 +944,19 @@ function createDiskItem(container, disk, withAnimation = false) {
     container.appendChild(diskItem);
 }
 
-// 更新硬盘元素
 function updateDiskItem(diskItem, disk) {
     if (!diskItem) return;
 
-    // 更新进度条颜色
     const progressFill = diskItem.querySelector('.progress-fill');
     if (progressFill) {
         let fillClass = 'low-fill';
         if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill';
         else if (disk.usage_percent >= 70) fillClass = 'high-fill';
-        
+
         progressFill.className = `progress-fill ${fillClass}`;
         progressFill.style.width = `${disk.usage_percent}%`;
     }
 
-    // 更新文本信息
     const diskInfo = diskItem.querySelector('.disk-info');
     if (diskInfo) {
         diskInfo.innerHTML = `
@@ -839,7 +966,6 @@ function updateDiskItem(diskItem, disk) {
     }
 }
 
-// ========== 更新网卡速度显示（带动画） ==========
 function updateNetSpeedDisplay(upload, download) {
     const uploadEl = document.getElementById('net-upload-speed');
     const downloadEl = document.getElementById('net-download-speed');
@@ -853,9 +979,8 @@ function updateNetSpeedDisplay(upload, download) {
     }
 }
 
-// ========== 获取最新硬件信息 ==========
 async function getHardwareInfo() {
-    if (!isLocalAddress || !(await checkBackendStatus())) return;
+    if (!(await checkBackendStatus())) return;
 
     try {
         const response = await fetch(`${API_BASE}/hardware-info`);
@@ -873,91 +998,92 @@ async function getHardwareInfo() {
     }
 }
 
-// ========== 更新实时监控数据（核心数字动画） ==========
 async function updateRealTimeData() {
-    if (!isLocalAddress || !(await checkBackendStatus())) return;
+    if (!(await checkBackendStatus())) return;
 
     try {
         const response = await fetch(`${API_BASE}/real-time-data`);
         const data = await response.json();
 
-        // 更新CPU/内存/GPU图表
+        // 根据屏幕宽度获取采样间隔
+        const sampleInterval = getSampleInterval();
+
+        // 对数据进行采样
+        const sampledCpuUsage = sampleChartData(data.cpu_usage, sampleInterval);
+        const sampledMemUsage = sampleChartData(data.mem_usage, sampleInterval);
+        const sampledGpuUsage = sampleChartData(data.gpu_usage, sampleInterval);
+        const sampledNetUpload = sampleChartData(data.net_upload_speed, sampleInterval);
+        const sampledNetDownload = sampleChartData(data.net_download_speed, sampleInterval);
+        const sampledSystemLoad = sampleChartData(data.system_load, sampleInterval);
+        const sampledProcessCount = sampleChartData(data.process_count, sampleInterval);
+        const sampledCpuTemp = sampleChartData(data.cpu_temperature, sampleInterval);
+
         if (chart) {
             chart.setOption({
                 series: [
-                    { data: data.cpu_usage },
-                    { data: data.mem_usage },
-                    { data: data.gpu_usage }
+                    { data: sampledCpuUsage },
+                    { data: sampledMemUsage },
+                    { data: sampledGpuUsage }
                 ]
             });
         }
 
-        // 更新网卡流量图表
         if (netChart) {
             netChart.setOption({
                 series: [
-                    { data: data.net_upload_speed },
-                    { data: data.net_download_speed }
+                    { data: sampledNetUpload },
+                    { data: sampledNetDownload }
                 ]
             });
         }
 
-        // 更新系统负载图表
         if (systemChart) {
             systemChart.setOption({
                 series: [
-                    { data: data.system_load },
-                    { data: data.process_count },
-                    { data: data.cpu_temperature }
+                    { data: sampledSystemLoad },
+                    { data: sampledProcessCount },
+                    { data: sampledCpuTemp }
                 ]
             });
         }
 
-        // 更新系统资源趋势实时信息
         const cpuUsage = data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0;
         const memUsage = data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0;
         const gpuUsage = data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0;
-        
+
         const cpuUsageEl = document.getElementById('cpu-usage-current');
         const memUsageEl = document.getElementById('mem-usage-current');
         const gpuUsageEl = document.getElementById('gpu-usage-current');
-        
+
         if (cpuUsageEl) animateNumber(cpuUsageEl, cpuUsage, true);
         if (memUsageEl) animateNumber(memUsageEl, memUsage, true);
         if (gpuUsageEl) animateNumber(gpuUsageEl, gpuUsage, true);
 
-        // 更新CPU核心占用（带动画）
         updateCPUCores(data.cpu_core_usage, true);
 
-        // 更新实时网卡速度显示（带动画）
         const uploadSpeed = data.net_upload_speed.length > 0 ? data.net_upload_speed[data.net_upload_speed.length - 1][1] : 0;
         const downloadSpeed = data.net_download_speed.length > 0 ? data.net_download_speed[data.net_download_speed.length - 1][1] : 0;
         updateNetSpeedDisplay(uploadSpeed, downloadSpeed);
 
-        // 更新系统负载、进程数、CPU温度等数据
         const systemLoad = data.system_load.length > 0 ? data.system_load[data.system_load.length - 1][1] : 0;
         const processCount = data.process_count.length > 0 ? data.process_count[data.process_count.length - 1][1] : 0;
         const cpuTemperature = data.cpu_temperature.length > 0 ? data.cpu_temperature[data.cpu_temperature.length - 1][1] : 0;
-        
-        // 更新系统负载显示
+
         const systemLoadEl = document.getElementById('system-load');
         if (systemLoadEl) {
             animateNumber(systemLoadEl, systemLoad, false);
         }
-        
-        // 更新进程数显示
+
         const processCountEl = document.getElementById('process-count');
         if (processCountEl) {
             animateNumber(processCountEl, processCount, false);
         }
-        
-        // 更新CPU温度显示
+
         const cpuTemperatureEl = document.getElementById('cpu-temperature');
         if (cpuTemperatureEl) {
             animateNumber(cpuTemperatureEl, cpuTemperature, false, '°C');
         }
-        
-        // 更新开机时间
+
         const bootTimeEl = document.getElementById('boot-time');
         if (bootTimeEl && data.boot_time) {
             const bootTime = new Date(data.boot_time * 1000);
@@ -968,8 +1094,7 @@ async function updateRealTimeData() {
             const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
             bootTimeEl.textContent = `${diffDays}天${diffHours}小时${diffMinutes}分钟`;
         }
-        
-        // 更新电池信息
+
         const batteryInfoEl = document.getElementById('battery-info');
         if (batteryInfoEl && data.battery_info) {
             const battery = data.battery_info;
@@ -989,7 +1114,6 @@ async function updateRealTimeData() {
             }
         }
 
-        // 更新本地缓存
         const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
         localCache.real_time_data = {
             cpu_usage: data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0,
@@ -1012,7 +1136,6 @@ async function updateRealTimeData() {
     }
 }
 
-// ========== 更新CPU核心显示（带动画） ==========
 function updateCPUCores(coreUsages, withAnimation = false) {
     const container = document.getElementById('cpu-cores-container');
     if (!container) return;
@@ -1022,20 +1145,17 @@ function updateCPUCores(coreUsages, withAnimation = false) {
         return;
     }
 
-    // 获取当前已存在的核心元素
     const existingCoreBoxes = container.querySelectorAll('.core-box');
     const existingCount = existingCoreBoxes.length;
     const newCount = coreUsages.length;
 
-    // 如果核心数量变化，重新创建所有元素
     if (existingCount !== newCount) {
         container.innerHTML = '';
-        
+
         coreUsages.forEach((usage, index) => {
             const coreBox = document.createElement('div');
             coreBox.className = 'core-box';
-            
-            // 创建核心数字元素
+
             const coreNumEl = document.createElement('div');
             coreNumEl.className = 'core-num';
             coreNumEl.textContent = `核心 ${index + 1}`;
@@ -1050,12 +1170,10 @@ function updateCPUCores(coreUsages, withAnimation = false) {
         });
     }
 
-    // 更新现有元素的样式和内容
     coreUsages.forEach((usage, index) => {
         const coreBox = container.children[index];
         if (!coreBox) return;
-        
-        // 更新核心使用率
+
         const coreUsageEl = coreBox.querySelector('.core-usage');
         if (coreUsageEl) {
             if (withAnimation) {
@@ -1064,8 +1182,7 @@ function updateCPUCores(coreUsages, withAnimation = false) {
                 coreUsageEl.textContent = `${usage.toFixed(1)}%`;
             }
         }
-        
-        // 更新样式类
+
         coreBox.className = 'core-box';
         if (usage < 30) coreBox.classList.add('low');
         else if (usage < 70) coreBox.classList.add('medium');
@@ -1073,36 +1190,29 @@ function updateCPUCores(coreUsages, withAnimation = false) {
     });
 }
 
-// ========== 自动重试机制 ==========
 let autoRetryInterval = null;
 let retryCount = 0;
 const MAX_RETRY_COUNT = 5;
 
-// 重试连接后端
 async function retryBackendConnection() {
     updateStatusTip("正在尝试重新连接后端...", "warning");
     hideRetryButton();
-    
+
     const backendAvailable = await checkBackendStatus();
-    
+
     if (backendAvailable) {
         updateStatusTip(`已成功连接【${branchConfig[currentBranch].name || currentBranch}】`, "success");
-        // 加载缓存（快速显示）
         await loadFromCache();
-        // 立即更新最新数据
         getHardwareInfo();
         updateRealTimeData();
         updateDiskUsage();
-        
-        // 清除现有定时器
+
         clearAllIntervals();
-        
-        // 启动定时更新
-        realTimeDataInterval = setInterval(updateRealTimeData, 2000); // 2秒更新一次，避免动画频繁
+
+        realTimeDataInterval = setInterval(updateRealTimeData, 2000);
         diskUsageInterval = setInterval(updateDiskUsage, 10000);
         hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
-        
-        // 清除自动重试
+
         if (autoRetryInterval) {
             clearInterval(autoRetryInterval);
             autoRetryInterval = null;
@@ -1112,7 +1222,6 @@ async function retryBackendConnection() {
         retryCount++;
         if (retryCount < MAX_RETRY_COUNT) {
             updateStatusTip(`连接失败，${MAX_RETRY_COUNT - retryCount}秒后自动重试...`, "error");
-            // 延迟重试
             setTimeout(retryBackendConnection, 1000);
         } else {
             updateStatusTip("后端连接失败，已达到最大重试次数", "error");
@@ -1121,7 +1230,6 @@ async function retryBackendConnection() {
     }
 }
 
-// 显示重试按钮
 function showRetryButton() {
     const retryContainer = document.getElementById('retry-container');
     if (retryContainer) {
@@ -1129,7 +1237,6 @@ function showRetryButton() {
     }
 }
 
-// 隐藏重试按钮
 function hideRetryButton() {
     const retryContainer = document.getElementById('retry-container');
     if (retryContainer) {
@@ -1137,7 +1244,6 @@ function hideRetryButton() {
     }
 }
 
-// 清除所有定时器
 function clearAllIntervals() {
     if (realTimeDataInterval) {
         clearInterval(realTimeDataInterval);
@@ -1153,9 +1259,8 @@ function clearAllIntervals() {
     }
 }
 
-// ========== 更新硬盘占用进度条 ==========
 async function updateDiskUsage() {
-    if (!isLocalAddress || !(await checkBackendStatus())) return;
+    if (!(await checkBackendStatus())) return;
 
     try {
         const response = await fetch(`${API_BASE}/disk-usage`);
@@ -1173,58 +1278,54 @@ async function updateDiskUsage() {
     }
 }
 
-// ========== 页面初始化主函数 ==========
 async function init() {
-    // 1. 先初始化图表（避免DOM未加载）
     initChart();
+    adjustChartHeight();
 
-    // 2. 加载分支配置（优先保证下拉框有数据）
+    // 添加窗口resize事件监听
+    let resizeTimer;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+            adjustChartHeight();
+            // 窗口大小变化时立即更新图表数据
+            updateRealTimeData();
+        }, 250);
+    });
+
     await loadBranchConfig();
 
-    // 3. 初始化折叠按钮事件
     initToggleButtons();
 
-    // 4. 绑定重试按钮事件
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.addEventListener('click', retryBackendConnection);
     }
 
-    // 5. 检测后端状态
     const backendAvailable = await checkBackendStatus();
 
     if (backendAvailable) {
             updateStatusTip(`已成功连接【${branchConfig[currentBranch].name || currentBranch}】`, "success");
-            // 加载缓存（快速显示）
             await loadFromCache();
-            // 立即更新最新数据
             getHardwareInfo();
             updateRealTimeData();
             updateDiskUsage();
 
-            // 清除现有定时器
             clearAllIntervals();
-            
-            // 定时更新（降低更新频率，更流畅）
-            realTimeDataInterval = setInterval(updateRealTimeData, 2000); // 2秒更新一次，避免动画频繁
+
+            realTimeDataInterval = setInterval(updateRealTimeData, 2000);
             diskUsageInterval = setInterval(updateDiskUsage, 10000);
             hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
         } else {
-            // 后端不可用，尝试加载缓存
             await loadFromCache();
-            // 显示重试按钮
             showRetryButton();
-            // 开始自动重试
             retryBackendConnection();
         }
 }
 
-// ========== 图表折叠功能 ==========
 let allChartsCollapsed = false;
 
-// 初始化折叠按钮事件
 function initToggleButtons() {
-    // 单个图表折叠按钮
     const toggleBtns = document.querySelectorAll('.chart-toggle-btn');
     toggleBtns.forEach(btn => {
         btn.addEventListener('click', () => {
@@ -1233,25 +1334,22 @@ function initToggleButtons() {
         });
     });
 
-    // 一键折叠/展开所有按钮
     const toggleAllBtn = document.getElementById('toggle-all-btn');
     if (toggleAllBtn) {
         toggleAllBtn.addEventListener('click', toggleAllCharts);
     }
 }
 
-// 折叠/展开单个图表
 function toggleChart(chartId, btn) {
     const chartContainer = document.getElementById(chartId);
     const panel = chartContainer?.closest('.chart-panel');
-    
+
     if (!chartContainer || !panel) return;
 
     const isCollapsed = chartContainer.classList.toggle('collapsed');
     btn.classList.toggle('collapsed', isCollapsed);
     panel.classList.toggle('collapsed', isCollapsed);
 
-    // 如果展开图表，等待动画完成后调用 resize 确保图表正确显示
     if (!isCollapsed) {
         setTimeout(() => {
             resizeChart(chartId);
@@ -1259,7 +1357,6 @@ function toggleChart(chartId, btn) {
     }
 }
 
-// 折叠/展开所有图表
 function toggleAllCharts() {
     allChartsCollapsed = !allChartsCollapsed;
     const toggleAllBtn = document.getElementById('toggle-all-btn');
@@ -1267,7 +1364,6 @@ function toggleAllCharts() {
     const chartContainers = document.querySelectorAll('.chart-container');
     const panels = document.querySelectorAll('.chart-panel');
 
-    // 更新一键按钮状态
     if (toggleAllBtn) {
         toggleAllBtn.classList.toggle('collapsed', allChartsCollapsed);
         const textEl = toggleAllBtn.querySelector('.toggle-text');
@@ -1276,7 +1372,6 @@ function toggleAllCharts() {
         }
     }
 
-    // 更新所有图表和按钮
     toggleBtns.forEach(btn => {
         btn.classList.toggle('collapsed', allChartsCollapsed);
     });
@@ -1289,7 +1384,6 @@ function toggleAllCharts() {
         panel.classList.toggle('collapsed', allChartsCollapsed);
     });
 
-    // 如果展开所有图表，等待动画完成后调用 resize
     if (!allChartsCollapsed) {
         setTimeout(() => {
             ['net-chart', 'system-chart', 'usage-chart'].forEach(resizeChart);
@@ -1297,7 +1391,6 @@ function toggleAllCharts() {
     }
 }
 
-// 调整图表大小
 function resizeChart(chartId) {
     let chartInstance = null;
     if (chartId === 'usage-chart') chartInstance = chart;
@@ -1311,5 +1404,4 @@ function resizeChart(chartId) {
     }
 }
 
-// 确保DOM完全加载后执行初始化
 document.addEventListener('DOMContentLoaded', init);

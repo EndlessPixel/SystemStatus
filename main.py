@@ -1,35 +1,40 @@
-# 在程序最顶部（任何 import wmi / pythoncom 之前）加两行
 import os
-os.environ["PYTHONFAULTHANDLER"] = "0"          # 可选
 import sys
-# 禁用wmi以避免Win32 exception
+
+# 在程序最顶部添加
+os.environ["PYTHONFAULTHANDLER"] = "0"
+
+# 禁用wmi以避免Win32 exception (Windows)
 if sys.platform == "win32":
-    import win32api
-    win32api.SetConsoleCtrlHandler(None, 0)     # 屏蔽部分无用调试
-    # 注释掉wmi导入以避免Win32 exception
-    # import wmi  # Intel核显检测（仅Windows）
-from fastapi import FastAPI, HTTPException
+    try:
+        import win32api
+        win32api.SetConsoleCtrlHandler(None, 0)
+    except:
+        pass
+
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, Response
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
-import psutil
-import time
+from fastapi.exceptions import RequestValidationError
+from pathlib import Path
 import threading
-from typing import Dict, List, Optional
-import json
-import platform
-# 尝试导入NVML
-NVML_AVAILABLE = False
-NVML_PERMANENTLY_DISABLED = False
-NVML_HANDLE = None
-try:
-    import py3nvml.py3nvml as nvml
-    NVML_AVAILABLE = True
-except ImportError:
-    NVML_AVAILABLE = False
+
+# 导入后端模块
+from backend.hardware import init_nvml, shutdown_nvml
+from backend.monitor import collect_real_time_data, restore_from_cache, update_cache_file
+from backend.routers import api_router
+
+# 获取项目根目录
+BASE_DIR = Path(__file__).parent.absolute()
+FRONTEND_DIR = BASE_DIR / "frontend"
 
 # 初始化FastAPI
-app = FastAPI(title="System Monitor API")
+app = FastAPI(
+    title="SystemStatus - 系统监控平台",
+    description="一个简洁美观的系统监控面板，合并前后端，开箱即用",
+    version="2.0.0"
+)
 
 # 配置跨域
 app.add_middleware(
@@ -40,448 +45,94 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 数据缓存（新增网卡流量及其他监控项）
-DATA_CACHE = {
-    "cpu_usage": [],          # [(timestamp, usage), ...]
-    "mem_usage": [],          # [(timestamp, usage), ...]
-    "gpu_usage": [],          # [(timestamp, usage), ...]
-    "cpu_core_usage": [],     # 每个核心的占用率
-    "net_upload_speed": [],   # 上传速度 (KB/s)
-    "net_download_speed": [], # 下载速度 (KB/s)
-    "system_load": [],        # 系统负载
-    "process_count": [],      # 进程数量
-    "boot_time": 0,           # 开机时间
-    "battery_info": {},       # 电池状态
-    "cpu_temperature": [],    # CPU温度
-}
-CACHE_DURATION = 120  # 2分钟缓存
-CACHE_FILE = "tmp.json"
+# 注册API路由
+app.include_router(api_router)
 
-# 网卡流量初始值（用于计算速度）
-net_io_counters = psutil.net_io_counters()
-last_net_bytes_sent = net_io_counters.bytes_sent
-last_net_bytes_recv = net_io_counters.bytes_recv
-last_net_time = time.time()
+# 挂载前端静态文件
+if FRONTEND_DIR.exists():
+    app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
-# ========== 硬件信息获取 ==========
-def get_cpu_model() -> str:
-    """获取CPU型号"""
-    try:
-        if platform.system() == "Windows":
-            import subprocess
-            output = subprocess.check_output(
-                'wmic cpu get name', shell=True, text=True, stderr=subprocess.DEVNULL
-            )
-            lines = [line.strip() for line in output.split('\n') if line.strip()]
-            return lines[1] if len(lines) > 1 else "Unknown CPU"
-        elif platform.system() == "Linux":
-            with open('/proc/cpuinfo', 'r') as f:
-                for line in f:
-                    if line.startswith('model name'):
-                        return line.split(':')[1].strip()
-        return f"CPU ({psutil.cpu_count(logical=False)}核{psutil.cpu_count(logical=True)}线程)"
-    except:
-        return "Unknown CPU Model"
+@app.get("/")
+async def root():
+    """返回前端页面"""
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
+    return HTMLResponse(
+        content="""
+        <html>
+            <head><title>SystemStatus</title></head>
+            <body>
+                <h1>SystemStatus - 系统监控平台</h1>
+                <p>前端文件未找到，请确保frontend/index.html存在</p>
+            </body>
+        </html>
+        """,
+        status_code=200
+    )
 
-def get_memory_model() -> str:
-    """获取内存型号"""
-    try:
-        if platform.system() == "Windows":
-            import subprocess
-            output = subprocess.check_output(
-                'wmic memorychip get devicelocator,manufacturer,partnumber',
-                shell=True, text=True, stderr=subprocess.DEVNULL
-            )
-            lines = [line.strip() for line in output.split('\n') if line.strip()]
-            return lines[1] if len(lines) > 1 else "DDR Series"
-        elif platform.system() == "Linux":
-            output = subprocess.check_output(
-                'dmidecode -t memory | grep -E "Manufacturer|Part Number"',
-                shell=True, text=True, stderr=subprocess.DEVNULL
-            )
-            return output.strip()[:100]
-        return "DDR Series"
-    except:
-        return "DDR Series"
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    """自定义404处理"""
+    # 检查是否有自定义404页面
+    custom_404_path = FRONTEND_DIR / "404.html"
+    if custom_404_path.exists():
+        return FileResponse(str(custom_404_path))
 
-# NVML全局变量
-NVML_HANDLE = None
-NVML_PERMANENTLY_DISABLED = False  # 永久禁用NVML的标志
+    # 如果没有自定义404页面，返回默认页面
+    index_path = FRONTEND_DIR / "index.html"
+    if index_path.exists():
+        return FileResponse(str(index_path))
 
-def get_gpu_info() -> Dict:
-    """
-    获取 GPU 信息（Windows：Intel 核显 / NVIDIA 独显）
-    返回: {"model": "显卡名称", "available": bool}
-    """
-    gpu_info = {"model": "Unknown", "available": False}
-
-    # ===== 1. Windows 平台用 wmic 取 Intel 核显 =====
-    if platform.system() == "Windows":
-        try:
-            import subprocess
-            result = subprocess.run(
-                ['wmic', 'path', 'win32_VideoController', 'get', 'Name'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')[1:]  # 跳过第一行标题
-                for line in lines:
-                    line = line.strip()
-                    if line and "Intel" in line:
-                        gpu_info = {"model": line, "available": True}
-                        break
-        except Exception:
-            # 不打印错误，避免刷屏
-            pass
-
-    # 如果已找到 Intel 核显，直接返回
-    if gpu_info["available"]:
-        return gpu_info
-
-    # ===== 2. 尝试 NVIDIA 独显 =====
-    global NVML_AVAILABLE, NVML_HANDLE  # 允许修改全局开关
-    if NVML_AVAILABLE and NVML_HANDLE is not None:
-        try:
-            name = nvml.nvmlDeviceGetName(NVML_HANDLE).decode("utf-8")
-            gpu_info = {"model": name, "available": True}
-        except Exception:
-            # 不再打印错误，避免刷屏
-            pass
-
-    return gpu_info
-
-def get_hardware_info() -> Dict:
-    """获取完整硬件信息"""
-    # CPU
-    cpu_info = {
-        "model": get_cpu_model(),
-        "cores": psutil.cpu_count(logical=True),
-        "physical_cores": psutil.cpu_count(logical=False)
-    }
-    # 内存
-    mem = psutil.virtual_memory()
-    mem_info = {
-        "total": round(mem.total / (1024**3), 2),
-        "model": get_memory_model()
-    }
-    # 硬盘
-    disks = []
-    for part in psutil.disk_partitions(all=False):
-        if "cdrom" in part.opts or part.fstype == "":
-            continue
-        try:
-            usage = psutil.disk_usage(part.mountpoint)
-            disks.append({
-                "device": part.device,
-                "mountpoint": part.mountpoint,
-                "fstype": part.fstype,
-                "total": round(usage.total / (1024**3), 2),
-                "used": round(usage.used / (1024**3), 2),
-                "usage_percent": round(usage.percent, 1)
-            })
-        except:
-            continue
-    # 显卡
-    gpu_info = get_gpu_info()
-    # 网卡（基础信息）
-    net_ifaces = []
-    for iface, addrs in psutil.net_if_addrs().items():
-        if iface == "lo":
-            continue
-        net_ifaces.append({
-            "name": iface,
-            "addresses": [addr.address for addr in addrs if addr.family == 2]
-        })
-    return {
-        "cpu": cpu_info,
-        "memory": mem_info,
-        "disks": disks,
-        "gpu": gpu_info,
-        "network": net_ifaces
-    }
-
-# ========== 数据采集 + 缓存 ==========
-def calculate_net_speed():
-    """计算网卡上传/下载速度（KB/s）"""
-    global last_net_bytes_sent, last_net_bytes_recv, last_net_time
-    current_time = time.time()
-    time_diff = current_time - last_net_time
-    
-    if time_diff < 0.1:  # 避免除以0
-        return 0, 0
-    
-    # 获取当前流量
-    current_net = psutil.net_io_counters()
-    sent_diff = current_net.bytes_sent - last_net_bytes_sent
-    recv_diff = current_net.bytes_recv - last_net_bytes_recv
-    
-    # 转换为KB/s
-    upload_speed = round(sent_diff / 1024 / time_diff, 2)
-    download_speed = round(recv_diff / 1024 / time_diff, 2)
-    
-    # 更新上次值
-    last_net_bytes_sent = current_net.bytes_sent
-    last_net_bytes_recv = current_net.bytes_recv
-    last_net_time = current_time
-    
-    return upload_speed, download_speed
-
-def collect_real_time_data():
-    """定时采集所有实时数据（含网卡流量）"""
-    cache_update_counter = 0
-    
-    # 设置开机时间（只需一次）
-    DATA_CACHE["boot_time"] = psutil.boot_time()
-    
-    while True:
-        timestamp = time.time()
-        
-        # 1. 清理过期缓存
-        for key in ["cpu_usage", "mem_usage", "gpu_usage", "net_upload_speed", "net_download_speed", "system_load", "process_count", "cpu_temperature"]:
-            DATA_CACHE[key] = [item for item in DATA_CACHE[key] if timestamp - item[0] <= CACHE_DURATION]
-        
-        # 2. 采集基础数据
-        DATA_CACHE["cpu_usage"].append((timestamp, psutil.cpu_percent(interval=None)))
-        DATA_CACHE["mem_usage"].append((timestamp, psutil.virtual_memory().percent))
-        DATA_CACHE["cpu_core_usage"] = psutil.cpu_percent(interval=None, percpu=True)
-        
-        # 3. GPU占用率
-        gpu_usage = 0
-        # 先尝试NVIDIA GPU
-        if NVML_AVAILABLE and NVML_HANDLE is not None:
-            try:
-                gpu_usage = nvml.nvmlDeviceGetUtilizationRates(NVML_HANDLE).gpu
-            except Exception as e:
-                # NVML可能失效，关闭它
-                shutdown_nvml()
-        # 如果没有NVIDIA GPU，尝试Intel核显
-        if gpu_usage == 0 and platform.system() == "Windows":
-            try:
-                import subprocess
-                result = subprocess.run(
-                    ['powershell', '-Command', '(Get-Counter "\\GPU Engine(*)% 3D Utilization").CounterSamples.CookedValue'],
-                    capture_output=True,
-                    text=True,
-                    timeout=3,
-                    encoding='utf-8',
-                    errors='ignore'
-                )
-                if result.returncode == 0:
-                    lines = result.stdout.strip().split('\n')
-                    values = [float(line.strip()) for line in lines if line.strip().replace('.', '', 1).isdigit()]
-                    if values:
-                        gpu_usage = round(max(values), 1)
-            except Exception:
-                # 不打印错误，避免刷屏
-                pass
-        DATA_CACHE["gpu_usage"].append((timestamp, gpu_usage))
-        
-        # 4. 网卡流量速度
-        upload_speed, download_speed = calculate_net_speed()
-        DATA_CACHE["net_upload_speed"].append((timestamp, upload_speed))
-        DATA_CACHE["net_download_speed"].append((timestamp, download_speed))
-        
-        # 5. 新增监控项：系统负载
-        if hasattr(psutil, 'getloadavg'):
-            load_avg = psutil.getloadavg()[0]  # 获取1分钟负载
-            DATA_CACHE["system_load"].append((timestamp, round(load_avg, 2)))
-        
-        # 6. 新增监控项：进程数量
-        process_count = len(psutil.pids())
-        DATA_CACHE["process_count"].append((timestamp, process_count))
-        
-        # 7. 新增监控项：电池状态
-        if hasattr(psutil, 'sensors_battery'):
-            battery = psutil.sensors_battery()
-            if battery:
-                DATA_CACHE["battery_info"] = {
-                    "percent": battery.percent,
-                    "plugged": battery.power_plugged,
-                    "secsleft": battery.secsleft
-                }
-        
-        # 8. 新增监控项：CPU温度
-        if hasattr(psutil, 'sensors_temperatures'):
-            temps = psutil.sensors_temperatures()
-            if 'coretemp' in temps:
-                # Linux系统核心温度
-                cpu_temp = temps['coretemp'][0].current
-                DATA_CACHE["cpu_temperature"].append((timestamp, round(cpu_temp, 1)))
-            elif 'acpitz' in temps:
-                # 备用温度传感器
-                cpu_temp = temps['acpitz'][0].current
-                DATA_CACHE["cpu_temperature"].append((timestamp, round(cpu_temp, 1)))
-            elif 'k10temp' in temps:
-                # AMD处理器温度
-                cpu_temp = temps['k10temp'][0].current
-                DATA_CACHE["cpu_temperature"].append((timestamp, round(cpu_temp, 1)))
-        
-        # 9. 每10秒更新缓存文件
-        cache_update_counter += 1
-        if cache_update_counter >= 10:
-            update_cache_file()
-            cache_update_counter = 0
-        
-        time.sleep(1)
-
-def update_cache_file():
-    """更新缓存文件（含网卡流量）"""
-    try:
-        # 只调用一次get_hardware_info()，避免重复系统调用
-        hardware_info = get_hardware_info()
-        
-        cache_data = {
-            "hardware_info": hardware_info,
-            "real_time_data": {
-                "cpu_usage": DATA_CACHE["cpu_usage"],
-                "mem_usage": DATA_CACHE["mem_usage"],
-                "gpu_usage": DATA_CACHE["gpu_usage"],
-                "net_upload_speed": DATA_CACHE["net_upload_speed"],
-                "net_download_speed": DATA_CACHE["net_download_speed"],
-                "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
-                "system_load": DATA_CACHE["system_load"],
-                "process_count": DATA_CACHE["process_count"],
-                "cpu_temperature": DATA_CACHE["cpu_temperature"],
-                "boot_time": DATA_CACHE["boot_time"],
-                "battery_info": DATA_CACHE["battery_info"],
-                "timestamp": time.time()
-            },
-            "disk_usage": hardware_info["disks"]
+    # 最后的兜底方案
+    return JSONResponse(
+        status_code=200,
+        content={
+            "error": "页面未找到",
+            "message": "已自动跳转到首页",
+            "status": "ok"
         }
-        with open(CACHE_FILE, 'w', encoding='utf-8') as f:
-            json.dump(cache_data, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        print(f"缓存更新失败: {e}")
+    )
 
-def restore_from_cache():
-    """从缓存文件恢复数据"""
-    try:
-        if not os.path.exists(CACHE_FILE):
-            return
-        
-        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-            cache_data = json.load(f)
-        
-        if "real_time_data" in cache_data:
-            rt_data = cache_data["real_time_data"]
-            # 恢复历史数据
-            for key in ["cpu_usage", "mem_usage", "gpu_usage", "net_upload_speed", "net_download_speed", "system_load", "process_count", "cpu_temperature"]:
-                if key in rt_data and isinstance(rt_data[key], list):
-                    DATA_CACHE[key] = rt_data[key]
-            # 恢复当前值
-            if "cpu_core_usage" in rt_data:
-                DATA_CACHE["cpu_core_usage"] = rt_data["cpu_core_usage"]
-            if "boot_time" in rt_data:
-                DATA_CACHE["boot_time"] = rt_data["boot_time"]
-            if "battery_info" in rt_data:
-                DATA_CACHE["battery_info"] = rt_data["battery_info"]
-        
-        print("从缓存恢复数据成功")
-    except Exception as e:
-        print(f"从缓存恢复数据失败: {e}")
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """处理验证错误"""
+    return JSONResponse(
+        status_code=200,
+        content={"status": "ok", "message": "请求参数已接收"}
+    )
 
-# ========== API接口 ==========
-@app.get("/api/hardware-info")
-async def hardware_info():
-    return get_hardware_info()
+# 采集线程
+collect_thread = None
 
-@app.get("/api/real-time-data")
-async def real_time_data():
-    """实时数据（含网卡流量）"""
-    def format_data(data: List) -> List:
-        return [[round(t, 0), val] for t, val in data]
-    
-    return {
-        "cpu_usage": format_data(DATA_CACHE["cpu_usage"]),
-        "mem_usage": format_data(DATA_CACHE["mem_usage"]),
-        "gpu_usage": format_data(DATA_CACHE["gpu_usage"]),
-        "net_upload_speed": format_data(DATA_CACHE["net_upload_speed"]),
-        "net_download_speed": format_data(DATA_CACHE["net_download_speed"]),
-        "system_load": format_data(DATA_CACHE["system_load"]),
-        "process_count": format_data(DATA_CACHE["process_count"]),
-        "cpu_temperature": format_data(DATA_CACHE["cpu_temperature"]),
-        "cpu_core_usage": DATA_CACHE["cpu_core_usage"],
-        "boot_time": DATA_CACHE["boot_time"],
-        "battery_info": DATA_CACHE["battery_info"],
-        "timestamp": time.time()
-    }
+def start_monitor():
+    """启动监控采集"""
+    global collect_thread
 
-@app.get("/api/disk-usage")
-async def disk_usage():
-    return get_hardware_info()["disks"]
-
-@app.get("/api/cache")
-async def get_cache():
-    try:
-        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return {"error": "缓存文件不存在"}
-
-# ========== NVML初始化和关闭函数 ==========
-def init_nvml():
-    """初始化NVML并获取设备句柄"""
-    global NVML_AVAILABLE, NVML_HANDLE, NVML_PERMANENTLY_DISABLED
-    
-    # 如果已经永久禁用，直接返回
-    if NVML_PERMANENTLY_DISABLED:
-        return False
-    
-    if not NVML_AVAILABLE:
-        return False
-    
-    try:
-        nvml.nvmlInit()
-        device_count = nvml.nvmlDeviceGetCount()
-        if device_count > 0:
-            NVML_HANDLE = nvml.nvmlDeviceGetHandleByIndex(0)
-            print(f"NVML初始化成功，检测到 {device_count} 个NVIDIA设备")
-            return True
-        else:
-            print("NVML初始化成功，但未检测到NVIDIA设备")
-            NVML_AVAILABLE = False
-            NVML_PERMANENTLY_DISABLED = True  # 永久禁用，不再尝试
-            return False
-    except Exception as e:
-        print(f"NVML初始化失败: {repr(e)}")
-        NVML_AVAILABLE = False
-        NVML_PERMANENTLY_DISABLED = True  # 永久禁用，不再尝试
-        return False
-
-def shutdown_nvml():
-    """关闭NVML"""
-    global NVML_AVAILABLE, NVML_HANDLE
-    if NVML_AVAILABLE and NVML_HANDLE is not None:
-        try:
-            nvml.nvmlShutdown()
-            NVML_HANDLE = None
-            print("NVML已关闭")
-        except Exception as e:
-            # 不再打印错误，避免Win32 exception刷屏
-            pass
-
-# 挂载静态文件（必须放在所有API路由之后）
-app.mount("/", StaticFiles(directory=".", html=True), name="static")
-
-# ========== 启动 ==========
-if __name__ == "__main__":
     # 初始化NVML
     init_nvml()
-    
+
     # 从缓存恢复数据
     restore_from_cache()
-    
+
     # 初始化缓存
     update_cache_file()
+
     # 启动采集线程
     collect_thread = threading.Thread(target=collect_real_time_data, daemon=True)
     collect_thread.start()
-    # 启动服务
+
+    print("✓ SystemStatus 系统监控已启动")
+    print(f"✓ 前端页面: http://127.0.0.1:8001/")
+    print(f"✓ API接口: http://127.0.0.1:8001/api")
+    print(f"✓ 服务器配置: http://127.0.0.1:8001/api/servers")
+
+if __name__ == "__main__":
+    # 启动监控
+    start_monitor()
+
     try:
         import uvicorn
         uvicorn.run(app, host="0.0.0.0", port=8001)
     finally:
-        # 确保在程序结束时关闭NVML
         shutdown_nvml()
