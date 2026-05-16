@@ -431,13 +431,16 @@ body {
     overflow: hidden;
     max-height: 2000px;
     opacity: 1;
-    transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease;
+    transition: max-height 0.4s ease, opacity 0.4s ease, margin-top 0.4s ease, margin-bottom 0.4s ease, padding 0.4s ease;
 }
 
 .chart-container.collapsed {
     max-height: 0;
     opacity: 0;
     margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .chart-panel.collapsed .panel-header {
@@ -467,6 +470,23 @@ body {
 .chart-panel[data-chart-id="cpu-cores-container"].collapsed .panel-header,
 .chart-panel[data-chart-id="disk-container"].collapsed .panel-header {
     margin-bottom: 0;
+}
+
+/* CPU核心和硬盘容器折叠时特殊处理 */
+#cpu-cores-container.collapsed,
+#disk-container.collapsed {
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+#cpu-cores-container:not(.collapsed) {
+    margin-top: 16px;
+}
+
+#disk-container:not(.collapsed) {
+    margin-top: 16px;
 }
 
 /* 确保信息在折叠时仍然显示 */
@@ -528,7 +548,6 @@ body {
 
 /* 硬盘样式 */
 .disk-container {
-    margin-top: 16px;
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 20px;
