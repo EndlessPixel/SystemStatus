@@ -106,6 +106,11 @@ window.LANGUAGES = {
         // 主题
         darkMode: "深色模式",
         lightMode: "浅色模式",
+        highContrastMode: "高对比度模式",
+        theme: "主题",
+        themeLight: "浅色",
+        themeDark: "深色",
+        themeHighContrast: "高对比度",
         
         // 语言
         language: "语言",
@@ -241,6 +246,11 @@ window.LANGUAGES = {
         // 主题
         darkMode: "Dark Mode",
         lightMode: "Light Mode",
+        highContrastMode: "High Contrast Mode",
+        theme: "Theme",
+        themeLight: "Light",
+        themeDark: "Dark",
+        themeHighContrast: "High Contrast",
         
         // 语言
         language: "Language",
@@ -286,6 +296,25 @@ window.LANGUAGE_CONFIG = {
     'en': { 
         name: 'English', 
         nativeName: 'English' 
+    }
+};
+
+// 主题配置 - 添加新主题只需在此配置即可
+window.THEME_CONFIG = {
+    'light': { 
+        name: 'light',
+        labelKey: 'themeLight',
+        icon: '☀️'
+    },
+    'dark': { 
+        name: 'dark', 
+        labelKey: 'themeDark',
+        icon: '🌙'
+    },
+    'high-contrast': { 
+        name: 'high-contrast', 
+        labelKey: 'themeHighContrast',
+        icon: '⚫'
     }
 };
 

@@ -68,7 +68,8 @@ function setLanguage(lang) {
         currentLanguage = lang;
         localStorage.setItem(I18N_KEY, lang);
         updateAllTranslations();
-        updateLanguageSelect();
+        updateLanguageSelect();  // 重新生成语言选项
+        updateThemeSelect();    // 重新生成主题选项（因为主题选项有翻译）
         updateChartTranslations();
     }
 }
@@ -248,8 +249,11 @@ function updateChartTranslations() {
 
 // 主题管理功能
 function initTheme() {
+    // 初始化主题下拉框
+    initThemeSelect();
+    
     const savedTheme = localStorage.getItem(THEME_KEY);
-    if (savedTheme) {
+    if (savedTheme && window.THEME_CONFIG[savedTheme]) {
         setTheme(savedTheme);
     } else {
         // 检测系统主题
@@ -258,29 +262,45 @@ function initTheme() {
     }
 }
 
+function initThemeSelect() {
+    const select = document.getElementById('theme-select');
+    if (!select) return;
+    
+    select.innerHTML = '';
+    
+    Object.keys(window.THEME_CONFIG).forEach(themeKey => {
+        const theme = window.THEME_CONFIG[themeKey];
+        const option = document.createElement('option');
+        option.value = themeKey;
+        option.textContent = t(theme.labelKey);
+        select.appendChild(option);
+    });
+    
+    // 添加事件监听器
+    select.addEventListener('change', (e) => {
+        setTheme(e.target.value);
+    });
+}
+
 function setTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem(THEME_KEY, theme);
-    updateThemeButton(theme);
+    updateThemeSelect();
     updateChartTheme(theme);
-}
-
-function toggleTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    setTheme(newTheme);
-}
-
-function updateThemeButton(theme) {
-    const themeIcon = document.getElementById('theme-icon');
-    const themeText = document.getElementById('theme-text');
-
+    
+    // 更新body的class以支持特定的样式
     if (theme === 'dark') {
-        themeIcon.textContent = '☀️';
-        themeText.textContent = t('lightMode');
+        document.body.classList.add('dark-mode');
     } else {
-        themeIcon.textContent = '🌙';
-        themeText.textContent = t('darkMode');
+        document.body.classList.remove('dark-mode');
+    }
+}
+
+function updateThemeSelect() {
+    const select = document.getElementById('theme-select');
+    if (select) {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        select.value = currentTheme;
     }
 }
 
@@ -1651,12 +1671,7 @@ async function init() {
         retryBtn.addEventListener('click', retryBackendConnection);
     }
 
-    // 主题切换按钮事件
-    const themeToggleBtn = document.getElementById('theme-toggle');
-    if (themeToggleBtn) {
-        themeToggleBtn.addEventListener('click', toggleTheme);
-    }
-
+    // 主题切换已改为下拉框，无需按钮事件监听器
     const backendAvailable = await checkBackendStatus();
 
     if (backendAvailable) {
