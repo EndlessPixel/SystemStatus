@@ -1,7 +1,8 @@
 // 语言翻译文件 - System Status Monitor
 // 可以在此文件中轻松添加新语言
-const LANGUAGES = {
-    'zh-CN': {
+// 注意：使用 window 对象导出，避免与其他脚本冲突
+window.LANGUAGES = {
+    'zh': {
         // 页面标题
         title: "系统监控面板",
         
@@ -277,8 +278,8 @@ const LANGUAGES = {
 };
 
 // 语言配置 - 添加新语言只需在此配置即可
-const LANGUAGE_CONFIG = {
-    'zh-CN': { 
+window.LANGUAGE_CONFIG = {
+    'zh': { 
         name: '简体中文', 
         nativeName: '简体中文' 
     },
@@ -288,6 +289,4 @@ const LANGUAGE_CONFIG = {
     }
 };
 
-// 导出语言对象
-window.LANGUAGES = LANGUAGES;
-window.LANGUAGE_CONFIG = LANGUAGE_CONFIG;
+// 移除重复的导出行，因为上面已经直接赋值给 window 对象

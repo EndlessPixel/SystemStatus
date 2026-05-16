@@ -17,9 +17,7 @@ let hardwareInfoInterval = null;
 // i18n - 国际化功能
 const I18N_KEY = "system_monitor_language";
 
-// 使用外部语言文件（从translations.js导入）
-let LANGUAGES = window.LANGUAGES || {};
-let LANGUAGE_CONFIG = window.LANGUAGE_CONFIG || {};
+// 当前语言 - 直接从 window 对象获取翻译数据
 let currentLanguage = 'zh';
 
 function initI18n() {
@@ -29,16 +27,13 @@ function initI18n() {
         return;
     }
     
-    LANGUAGES = window.LANGUAGES;
-    LANGUAGE_CONFIG = window.LANGUAGE_CONFIG;
-    
     const savedLang = localStorage.getItem(I18N_KEY);
-    if (savedLang && LANGUAGES[savedLang]) {
+    if (savedLang && window.LANGUAGES[savedLang]) {
         currentLanguage = savedLang;
     } else {
         const browserLang = navigator.language || navigator.userLanguage;
         // 自动检测浏览器语言
-        const detectedLang = Object.keys(LANGUAGE_CONFIG).find(lang => 
+        const detectedLang = Object.keys(window.LANGUAGE_CONFIG).find(lang => 
             browserLang.toLowerCase().startsWith(lang.toLowerCase())
         );
         currentLanguage = detectedLang || 'zh';
@@ -55,10 +50,10 @@ function initLanguageSelect() {
     
     select.innerHTML = '';
     
-    Object.keys(LANGUAGE_CONFIG).forEach(langKey => {
+    Object.keys(window.LANGUAGE_CONFIG).forEach(langKey => {
         const option = document.createElement('option');
         option.value = langKey;
-        option.textContent = LANGUAGE_CONFIG[langKey].nativeName;
+        option.textContent = window.LANGUAGE_CONFIG[langKey].nativeName;
         select.appendChild(option);
     });
     
@@ -69,7 +64,7 @@ function initLanguageSelect() {
 }
 
 function setLanguage(lang) {
-    if (LANGUAGES[lang]) {
+    if (window.LANGUAGES[lang]) {
         currentLanguage = lang;
         localStorage.setItem(I18N_KEY, lang);
         updateAllTranslations();
@@ -79,7 +74,7 @@ function setLanguage(lang) {
 }
 
 function t(key, replacements = {}) {
-    let text = LANGUAGES[currentLanguage][key] || LANGUAGES['zh'][key] || key;
+    let text = window.LANGUAGES[currentLanguage][key] || window.LANGUAGES['zh'][key] || key;
     
     Object.keys(replacements).forEach(placeholder => {
         text = text.replace(`{${placeholder}}`, replacements[placeholder]);
