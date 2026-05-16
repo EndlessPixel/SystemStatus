@@ -1363,7 +1363,7 @@ function renderHardwareInfo(data) {
                     <td class="network-icon">${icon}</td>
                     <td class="network-name">${iface.name}</td>
                     <td class="network-type ${typeClass}"><span>${type}</span></td>
-                    <td class="network-ips">${iface.addresses.join(', ') || '<span class="no-ip">无IP</span>'}</td>
+                    <td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>
                 `;
                 
                 table.appendChild(row);
@@ -1371,7 +1371,7 @@ function renderHardwareInfo(data) {
             
             netContainer.appendChild(table);
         } else {
-            netContainer.innerHTML = "<p>未检测到网卡信息</p>";
+            netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
         }
     }
 }
@@ -1396,15 +1396,15 @@ function getNetworkIcon(name) {
 function getNetworkType(name) {
     const nameLower = name.toLowerCase();
     if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) {
-        return 'WiFi';
+        return t('wifi');
     } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) {
-        return '以太网';
+        return t('ethernet');
     } else if (nameLower.includes('vpn')) {
-        return 'VPN';
+        return t('vpn');
     } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) {
-        return '蓝牙';
+        return t('bluetooth');
     } else {
-        return '其他';
+        return t('other');
     }
 }
 
