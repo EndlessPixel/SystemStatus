@@ -420,10 +420,21 @@ function updateChartTranslations() {
             },
             yAxis: {
                 name: t('usagePercent')
-            }
+            },
+            series: [
+                {
+                    name: t('cpuUsagePercent')
+                },
+                {
+                    name: t('memoryUsagePercent')
+                },
+                {
+                    name: t('gpuUsagePercent')
+                }
+            ]
         });
     }
-    
+
     if (netChart) {
         netChart.setOption({
             title: {
@@ -437,10 +448,18 @@ function updateChartTranslations() {
             },
             yAxis: {
                 name: t('speedKb')
-            }
+            },
+            series: [
+                {
+                    name: t('uploadSpeedLabel')
+                },
+                {
+                    name: t('downloadSpeedLabel')
+                }
+            ]
         });
     }
-    
+
     if (systemChart) {
         systemChart.setOption({
             title: {
@@ -458,6 +477,17 @@ function updateChartTranslations() {
                 },
                 {
                     name: t('temperatureC')
+                }
+            ],
+            series: [
+                {
+                    name: t('systemLoadLabel')
+                },
+                {
+                    name: t('processCountLabel')
+                },
+                {
+                    name: t('cpuTempLabel')
                 }
             ]
         });
@@ -492,13 +522,13 @@ function toggleTheme() {
 function updateThemeButton(theme) {
     const themeIcon = document.getElementById('theme-icon');
     const themeText = document.getElementById('theme-text');
-    
+
     if (theme === 'dark') {
         themeIcon.textContent = '☀️';
-        themeText.textContent = '浅色模式';
+        themeText.textContent = t('lightMode');
     } else {
         themeIcon.textContent = '🌙';
-        themeText.textContent = '深色模式';
+        themeText.textContent = t('darkMode');
     }
 }
 
@@ -635,7 +665,7 @@ async function loadBranchConfig() {
         }
 
         branchConfig = config.branches || {
-            local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 }
+            local_server: { name: t('localServer'), api: "127.0.0.1", port: 8001 }
         };
         currentBranch = config.default_branch || Object.keys(branchConfig)[0] || "local_server";
 
@@ -645,7 +675,7 @@ async function loadBranchConfig() {
 
         const branchKeys = Object.keys(branchConfig);
         if (branchKeys.length === 0) {
-            branchConfig = { local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 } };
+            branchConfig = { local_server: { name: t('localServer'), api: "127.0.0.1", port: 8001 } };
             branchKeys.push("local_server");
             currentBranch = "local_server";
         }
@@ -654,7 +684,7 @@ async function loadBranchConfig() {
             const branch = branchConfig[key];
             const option = document.createElement("option");
             option.value = key;
-            option.textContent = branch.name || `服务器${key}`;
+            option.textContent = branch.name || t('localServer');
             if (key === currentBranch) option.selected = true;
             selectEl.appendChild(option);
         });
@@ -673,7 +703,7 @@ async function loadBranchConfig() {
     } catch (error) {
         console.error("加载分支配置失败，强制使用默认配置:", error);
         branchConfig = {
-            local_server: { name: "本地服务器", api: "127.0.0.1", port: 8001 }
+            local_server: { name: t('localServer'), api: "127.0.0.1", port: 8001 }
         };
         currentBranch = "local_server";
 
@@ -682,13 +712,13 @@ async function loadBranchConfig() {
             selectEl.innerHTML = "";
             const option = document.createElement("option");
             option.value = "local_server";
-            option.textContent = "本地服务器";
+            option.textContent = t('localServer');
             option.selected = true;
             selectEl.appendChild(option);
         }
 
         initBranchAPI(currentBranch);
-        updateStatusTip("配置加载失败，使用默认本地地址", "warning");
+        updateStatusTip(t('usingDefaultConfig'), "warning");
         return false;
     }
 }
@@ -705,16 +735,16 @@ function initBranchAPI(branchKey) {
         apiHost === "0.0.0.0" ||
         apiHost.startsWith("192.168.");
 
-    updateStatusTip(`已加载【${branch.name || branchKey}】配置：${apiHost}:${apiPort}`, "success");
+    updateStatusTip(t('connected') + "【" + (branch.name || branchKey) + "】配置：" + apiHost + ":" + apiPort, "success");
     if (!isLocalAddress) {
-        updateStatusTip(`当前连接【${branch.name || branchKey}】(远端地址)，无法使用缓存`, "warning");
+        updateStatusTip(t('remoteAddressWarning'), "warning");
     }
 }
 
 async function switchBranch() {
     const selectEl = document.getElementById("branch-select");
     if (!selectEl) {
-        updateStatusTip("切换失败：下拉框元素不存在", "error");
+        updateStatusTip(t('switchFailed'), "error");
         return;
     }
 
@@ -722,11 +752,11 @@ async function switchBranch() {
     if (!newBranch || newBranch === currentBranch) return;
 
     if (!branchConfig[newBranch]) {
-        updateStatusTip(`切换失败：分支【${newBranch}】配置不存在`, "error");
+        updateStatusTip(t('configNotFound'), "error");
         return;
     }
 
-    updateStatusTip(`正在切换到【${branchConfig[newBranch].name || newBranch}】...`, "success");
+    updateStatusTip(t('switchingTo') + "【" + (branchConfig[newBranch].name || newBranch) + "】...", "success");
 
     currentBranch = newBranch;
     initBranchAPI(currentBranch);
@@ -736,7 +766,7 @@ async function switchBranch() {
 
     const backendAvailable = await checkBackendStatus();
     if (backendAvailable) {
-        updateStatusTip(`已成功切换到【${branchConfig[newBranch].name || newBranch}】`, "success");
+        updateStatusTip(t('switchSuccess') + "【" + (branchConfig[newBranch].name || newBranch) + "】", "success");
 
         clearAllIntervals();
 
@@ -750,7 +780,7 @@ async function switchBranch() {
 
         hideRetryButton();
     } else {
-        updateStatusTip(`切换到【${branchConfig[newBranch].name || newBranch}】失败，后端不可用`, "error");
+        updateStatusTip(t('switchFailed'), "error");
         showRetryButton();
     }
 }
@@ -804,17 +834,17 @@ function clearOldData() {
 
     const batteryInfoEl = document.getElementById('battery-info');
     if (batteryInfoEl) {
-        batteryInfoEl.textContent = '电池状态: 未检测到电池信息';
+        batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${t('noBattery')}`;
     }
 
     const networkEl = document.getElementById('network-info');
-    if (networkEl) networkEl.innerHTML = "加载中...";
+    if (networkEl) networkEl.innerHTML = t('loading');
 
     const cpuCoresEl = document.getElementById('cpu-cores-container');
-    if (cpuCoresEl) cpuCoresEl.innerHTML = "加载中...";
+    if (cpuCoresEl) cpuCoresEl.innerHTML = t('loading');
 
     const diskEl = document.getElementById('disk-container');
-    if (diskEl) diskEl.innerHTML = "加载中...";
+    if (diskEl) diskEl.innerHTML = t('loading');
 }
 
 function updateStatusTip(text, type = "success") {
@@ -904,25 +934,31 @@ function initChart() {
     const chartDom = document.getElementById('usage-chart');
     if (chartDom) {
         chart = echarts.init(chartDom);
+        const textColor = '#86868b';
+        const primaryTextColor = '#1d1d1f';
+        const borderColor = '#e6e6e8';
+        const bgColor = '#f5f5f7';
+        const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
+        
         chart.setOption({
             backgroundColor: 'transparent',
             title: {
-                text: 'CPU/内存/GPU 占用率趋势',
-                textStyle: { color: '#86868b', fontSize: 16, fontWeight: 500 },
+                text: t('cpuMemoryGpuTrend'),
+                textStyle: { color: textColor, fontSize: 16, fontWeight: 500 },
                 left: 'center',
                 padding: [0, 0, 20, 0]
             },
             tooltip: {
                 trigger: 'axis',
                 padding: 12,
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                borderColor: '#e6e6e8',
+                backgroundColor: tooltipBgColor,
+                borderColor: borderColor,
                 borderWidth: 1,
-                textStyle: { color: '#1d1d1f', fontSize: 14 }
+                textStyle: { color: primaryTextColor, fontSize: 14 }
             },
             legend: {
-                data: ['CPU占用率(%)', '内存占用率(%)', 'GPU占用率(%)'],
-                textStyle: { color: '#86868b', fontSize: 14 },
+                data: [t('cpuUsagePercent'), t('memoryUsagePercent'), t('gpuUsagePercent')],
+                textStyle: { color: textColor, fontSize: 14 },
                 bottom: 10,
                 left: 'center'
             },
@@ -935,25 +971,25 @@ function initChart() {
             },
             xAxis: {
                 type: 'time',
-                name: '时间',
-                nameTextStyle: { color: '#86868b', padding: [0, 0, 10, 0] },
-                axisLine: { lineStyle: { color: '#e6e6e8' } },
-                axisLabel: { color: '#86868b', fontSize: 12 },
-                splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+                name: t('time'),
+                nameTextStyle: { color: textColor, padding: [0, 0, 10, 0] },
+                axisLine: { lineStyle: { color: borderColor } },
+                axisLabel: { color: textColor, fontSize: 12 },
+                splitLine: { show: true, lineStyle: { color: bgColor } }
             },
             yAxis: {
                 type: 'value',
                 min: 0,
                 max: 100,
-                name: '占用率(%)',
-                nameTextStyle: { color: '#86868b', padding: [0, 10, 0, 0] },
-                axisLine: { lineStyle: { color: '#e6e6e8' } },
-                axisLabel: { color: '#86868b', fontSize: 12 },
-                splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+                name: t('usagePercent'),
+                nameTextStyle: { color: textColor, padding: [0, 10, 0, 0] },
+                axisLine: { lineStyle: { color: borderColor } },
+                axisLabel: { color: textColor, fontSize: 12 },
+                splitLine: { show: true, lineStyle: { color: bgColor } }
             },
             series: [
                 {
-                    name: 'CPU占用率(%)',
+                    name: t('cpuUsagePercent'),
                     type: 'line',
                     data: [],
                     smooth: true,
@@ -962,7 +998,7 @@ function initChart() {
                     itemStyle: { color: '#0071e3' }
                 },
                 {
-                    name: '内存占用率(%)',
+                    name: t('memoryUsagePercent'),
                     type: 'line',
                     data: [],
                     smooth: true,
@@ -971,7 +1007,7 @@ function initChart() {
                     itemStyle: { color: '#34c759' }
                 },
                 {
-                    name: 'GPU占用率(%)',
+                    name: t('gpuUsagePercent'),
                     type: 'line',
                     data: [],
                     smooth: true,
@@ -986,25 +1022,31 @@ function initChart() {
     const netChartDom = document.getElementById('net-chart');
     if (netChartDom) {
         netChart = echarts.init(netChartDom);
+        const textColor = '#86868b';
+        const primaryTextColor = '#1d1d1f';
+        const borderColor = '#e6e6e8';
+        const bgColor = '#f5f5f7';
+        const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
+        
         netChart.setOption({
             backgroundColor: 'transparent',
             title: {
-                text: '网卡流量速度趋势',
-                textStyle: { color: '#86868b', fontSize: 16, fontWeight: 500 },
+                text: t('networkTrafficTrend'),
+                textStyle: { color: textColor, fontSize: 16, fontWeight: 500 },
                 left: 'center',
                 padding: [0, 0, 20, 0]
             },
             tooltip: {
                 trigger: 'axis',
                 padding: 12,
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                borderColor: '#e6e6e8',
+                backgroundColor: tooltipBgColor,
+                borderColor: borderColor,
                 borderWidth: 1,
-                textStyle: { color: '#1d1d1f', fontSize: 14 }
+                textStyle: { color: primaryTextColor, fontSize: 14 }
             },
             legend: {
-                data: ['上传速度', '下载速度'],
-                textStyle: { color: '#86868b', fontSize: 14 },
+                data: [t('uploadSpeedLabel'), t('downloadSpeedLabel')],
+                textStyle: { color: textColor, fontSize: 14 },
                 bottom: 10,
                 left: 'center'
             },
@@ -1017,24 +1059,24 @@ function initChart() {
             },
             xAxis: {
                 type: 'time',
-                name: '时间',
-                nameTextStyle: { color: '#86868b', padding: [0, 0, 10, 0] },
-                axisLine: { lineStyle: { color: '#e6e6e8' } },
-                axisLabel: { color: '#86868b', fontSize: 12 },
-                splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+                name: t('time'),
+                nameTextStyle: { color: textColor, padding: [0, 0, 10, 0] },
+                axisLine: { lineStyle: { color: borderColor } },
+                axisLabel: { color: textColor, fontSize: 12 },
+                splitLine: { show: true, lineStyle: { color: bgColor } }
             },
             yAxis: {
                 type: 'value',
                 min: 0,
-                name: '速度 (KB/s)',
-                nameTextStyle: { color: '#86868b', padding: [0, 10, 0, 0] },
-                axisLine: { lineStyle: { color: '#e6e6e8' } },
-                axisLabel: { color: '#86868b', fontSize: 12 },
-                splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+                name: t('speedKb'),
+                nameTextStyle: { color: textColor, padding: [0, 10, 0, 0] },
+                axisLine: { lineStyle: { color: borderColor } },
+                axisLabel: { color: textColor, fontSize: 12 },
+                splitLine: { show: true, lineStyle: { color: bgColor } }
             },
             series: [
                 {
-                    name: '上传速度',
+                    name: t('uploadSpeedLabel'),
                     type: 'line',
                     data: [],
                     smooth: true,
@@ -1043,7 +1085,7 @@ function initChart() {
                     itemStyle: { color: '#0071e3' }
                 },
                 {
-                    name: '下载速度',
+                    name: t('downloadSpeedLabel'),
                     type: 'line',
                     data: [],
                     smooth: true,
@@ -1058,25 +1100,31 @@ function initChart() {
     const systemChartDom = document.getElementById('system-chart');
     if (systemChartDom) {
         systemChart = echarts.init(systemChartDom);
+        const textColor = '#86868b';
+        const primaryTextColor = '#1d1d1f';
+        const borderColor = '#e6e6e8';
+        const bgColor = '#f5f5f7';
+        const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
+        
         systemChart.setOption({
             backgroundColor: 'transparent',
             title: {
-                text: '系统负载趋势',
-                textStyle: { color: '#86868b', fontSize: 16, fontWeight: 500 },
+                text: t('systemLoadTrend'),
+                textStyle: { color: textColor, fontSize: 16, fontWeight: 500 },
                 left: 'center',
                 padding: [0, 0, 20, 0]
             },
             tooltip: {
                 trigger: 'axis',
                 padding: 12,
-                backgroundColor: 'rgba(255, 255, 255, 0.95)',
-                borderColor: '#e6e6e8',
+                backgroundColor: tooltipBgColor,
+                borderColor: borderColor,
                 borderWidth: 1,
-                textStyle: { color: '#1d1d1f', fontSize: 14 }
+                textStyle: { color: primaryTextColor, fontSize: 14 }
             },
             legend: {
-                data: ['系统负载', '进程数', 'CPU温度'],
-                textStyle: { color: '#86868b', fontSize: 14 },
+                data: [t('systemLoadLabel'), t('processCountLabel'), t('cpuTempLabel')],
+                textStyle: { color: textColor, fontSize: 14 },
                 bottom: 10,
                 left: 'center'
             },
@@ -1089,36 +1137,36 @@ function initChart() {
             },
             xAxis: {
                 type: 'time',
-                name: '时间',
-                nameTextStyle: { color: '#86868b', padding: [0, 0, 10, 0] },
-                axisLine: { lineStyle: { color: '#e6e6e8' } },
-                axisLabel: { color: '#86868b', fontSize: 12 },
-                splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+                name: t('time'),
+                nameTextStyle: { color: textColor, padding: [0, 0, 10, 0] },
+                axisLine: { lineStyle: { color: borderColor } },
+                axisLabel: { color: textColor, fontSize: 12 },
+                splitLine: { show: true, lineStyle: { color: bgColor } }
             },
             yAxis: [
                 {
                     type: 'value',
                     min: 0,
-                    name: '系统负载/进程数',
-                    nameTextStyle: { color: '#86868b', padding: [0, 10, 0, 0] },
-                    axisLine: { lineStyle: { color: '#e6e6e8' } },
-                    axisLabel: { color: '#86868b', fontSize: 12 },
-                    splitLine: { show: true, lineStyle: { color: '#f5f5f7' } }
+                    name: t('loadProcess'),
+                    nameTextStyle: { color: textColor, padding: [0, 10, 0, 0] },
+                    axisLine: { lineStyle: { color: borderColor } },
+                    axisLabel: { color: textColor, fontSize: 12 },
+                    splitLine: { show: true, lineStyle: { color: bgColor } }
                 },
                 {
                     type: 'value',
                     min: 0,
                     max: 100,
-                    name: 'CPU温度(°C)',
-                    nameTextStyle: { color: '#86868b', padding: [0, 10, 0, 0] },
-                    axisLine: { lineStyle: { color: '#e6e6e8' } },
-                    axisLabel: { color: '#86868b', fontSize: 12 },
+                    name: t('temperatureC'),
+                    nameTextStyle: { color: textColor, padding: [0, 10, 0, 0] },
+                    axisLine: { lineStyle: { color: borderColor } },
+                    axisLabel: { color: textColor, fontSize: 12 },
                     splitLine: { show: false }
                 }
             ],
             series: [
                 {
-                    name: '系统负载',
+                    name: t('systemLoadLabel'),
                     type: 'line',
                     data: [],
                     smooth: true,
@@ -1127,7 +1175,7 @@ function initChart() {
                     itemStyle: { color: '#0071e3' }
                 },
                 {
-                    name: '进程数',
+                    name: t('processCountLabel'),
                     type: 'line',
                     data: [],
                     smooth: true,
@@ -1136,7 +1184,7 @@ function initChart() {
                     itemStyle: { color: '#34c759' }
                 },
                 {
-                    name: 'CPU温度',
+                    name: t('cpuTempLabel'),
                     type: 'line',
                     yAxisIndex: 1,
                     data: [],
@@ -1218,11 +1266,11 @@ async function loadLocalTmpJson() {
         }
 
         localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cacheData));
-        updateStatusTip("未检测到后端，无法获取数据，正在使用缓存", "error");
+        updateStatusTip(t('noCache'), "error");
         return true;
     } catch (error) {
         console.error("读取tmp.json失败:", error);
-        updateStatusTip("未检测到后端，且无可用缓存", "error");
+        updateStatusTip(t('noCache'), "error");
         return false;
     }
 }
@@ -1278,7 +1326,7 @@ async function loadFromCache() {
                 }
 
                 localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cacheData));
-                updateStatusTip("已连接后端，使用缓存快速加载", "success");
+                updateStatusTip(t('usingCache'), "success");
                 return true;
             }
         }
@@ -1315,14 +1363,14 @@ async function loadFromCache() {
                 downloadEl.textContent = `${downloadSpeed.toFixed(1)} KB/s`;
             }
 
-            updateStatusTip("后端缓存不可用，使用浏览器本地缓存", "warning");
+            updateStatusTip(t('usingLocalCache'), "warning");
             return true;
         }
 
         return await loadLocalTmpJson();
     } catch (e) {
         console.log("缓存加载失败:", e);
-        updateStatusTip("已连接后端", "success");
+        updateStatusTip(t('connected'), "success");
         return false;
     }
 }
@@ -1821,7 +1869,7 @@ async function updateDiskUsage() {
     } catch (error) {
         console.error('获取硬盘信息失败:', error);
         const container = document.getElementById('disk-container');
-        if (container) container.innerHTML = "<p>硬盘信息获取失败</p>";
+        if (container) container.innerHTML = `<p>${t('noDisk')}</p>`;
     }
 }
 
@@ -1866,11 +1914,11 @@ async function init() {
     const backendAvailable = await checkBackendStatus();
 
     if (backendAvailable) {
-            updateStatusTip(`已成功连接【${branchConfig[currentBranch].name || currentBranch}】`, "success");
-            await loadFromCache();
-            getHardwareInfo();
-            updateRealTimeData();
-            updateDiskUsage();
+        updateStatusTip(t('connected') + "【" + (branchConfig[currentBranch].name || currentBranch) + "】", "success");
+        await loadFromCache();
+        getHardwareInfo();
+        updateRealTimeData();
+        updateDiskUsage();
 
             clearAllIntervals();
 
