@@ -18,11 +18,20 @@
             <p class="sub-title">系统监控面板</p>
         </header>
 
-        <div class="theme-toggle-container">
-            <button id="theme-toggle" class="theme-toggle-btn">
-                <span id="theme-icon" class="theme-icon">🌙</span>
-                <span id="theme-text">深色模式</span>
-            </button>
+        <div class="controls-container">
+            <div class="theme-toggle-container">
+                <button id="theme-toggle" class="theme-toggle-btn">
+                    <span id="theme-icon" class="theme-icon">🌙</span>
+                    <span id="theme-text" data-i18n="darkMode">深色模式</span>
+                </button>
+            </div>
+
+            <div class="language-toggle-container">
+                <button id="language-toggle" class="language-toggle-btn">
+                    <span id="lang-icon" class="lang-icon">🌐</span>
+                    <span id="lang-text">中</span>
+                </button>
+            </div>
         </div>
 
         <div class="branch-switcher">
@@ -42,22 +51,22 @@
 
         <div class="card-container">
             <div class="card">
-                <h3 class="card-title">CPU</h3>
+                <h3 class="card-title" data-i18n="cpu">CPU</h3>
                 <p id="cpu-model" class="card-content">加载中...</p>
-                <p class="card-content">核心数: <span id="cpu-cores">加载中...</span></p>
+                <p class="card-content"><span data-i18n="cores">核心数</span>: <span id="cpu-cores">加载中...</span></p>
             </div>
             <div class="card">
-                <h3 class="card-title">内存</h3>
+                <h3 class="card-title" data-i18n="memory">内存</h3>
                 <p id="mem-model" class="card-content">加载中...</p>
-                <p class="card-content">总容量: <span id="mem-total">加载中...</span> GB</p>
+                <p class="card-content"><span data-i18n="total">总容量</span>: <span id="mem-total">加载中...</span> GB</p>
             </div>
             <div class="card">
-                <h3 class="card-title">显卡</h3>
+                <h3 class="card-title" data-i18n="gpu">显卡</h3>
                 <p id="gpu-model" class="card-content">加载中...</p>
-                <p class="card-content">状态: <span id="gpu-status">加载中...</span></p>
+                <p class="card-content"><span data-i18n="status">状态</span>: <span id="gpu-status">加载中...</span></p>
             </div>
             <div class="card">
-                <h3 class="card-title">网卡</h3>
+                <h3 class="card-title" data-i18n="network">网卡</h3>
                 <div id="network-info" class="card-content">加载中...</div>
             </div>
         </div>
@@ -71,7 +80,7 @@
 
         <div class="panel chart-panel" data-chart-id="cpu-cores-container">
             <div class="panel-header">
-                <h2 class="panel-title">CPU核心实时占用</h2>
+                <h2 class="panel-title" data-i18n="cpuCoresUsage">CPU核心实时占用</h2>
                 <button class="toggle-btn chart-toggle-btn" data-target="cpu-cores-container">
                     <span class="toggle-icon">▼</span>
                 </button>
@@ -83,7 +92,7 @@
 
         <div class="panel chart-panel" data-chart-id="disk-container">
             <div class="panel-header">
-                <h2 class="panel-title">硬盘占用率</h2>
+                <h2 class="panel-title" data-i18n="diskUsage">硬盘占用率</h2>
                 <button class="toggle-btn chart-toggle-btn" data-target="disk-container">
                     <span class="toggle-icon">▼</span>
                 </button>
@@ -95,46 +104,46 @@
 
         <div class="panel chart-panel" data-chart-id="net-chart">
             <div class="panel-header">
-                <h2 class="panel-title">网卡流量监控</h2>
+                <h2 class="panel-title" data-i18n="networkTraffic">网卡流量监控</h2>
                 <button class="toggle-btn chart-toggle-btn" data-target="net-chart">
                     <span class="toggle-icon">▼</span>
                 </button>
             </div>
             <div class="net-speed">
-                <p>实时上传速度: <span id="net-upload-speed">0 KB/s</span></p>
-                <p>实时下载速度: <span id="net-download-speed">0 KB/s</span></p>
+                <p><span data-i18n="uploadSpeed">实时上传速度</span>: <span id="net-upload-speed">0 KB/s</span></p>
+                <p><span data-i18n="downloadSpeed">实时下载速度</span>: <span id="net-download-speed">0 KB/s</span></p>
             </div>
             <div id="net-chart" class="chart-container"></div>
         </div>
 
         <div class="panel chart-panel" data-chart-id="system-chart">
             <div class="panel-header">
-                <h2 class="panel-title">系统负载监控</h2>
+                <h2 class="panel-title" data-i18n="systemLoad">系统负载监控</h2>
                 <button class="toggle-btn chart-toggle-btn" data-target="system-chart">
                     <span class="toggle-icon">▼</span>
                 </button>
             </div>
             <div class="system-info">
-                <p>1分钟系统负载: <span id="system-load">0.00</span></p>
-                <p>当前进程数: <span id="process-count">0</span></p>
-                <p>CPU温度: <span id="cpu-temperature">0°C</span></p>
-                <p>开机时间: <span id="boot-time">0天0小时0分钟</span></p>
-                <p id="battery-info">电池状态: 未检测到电池信息</p>
+                <p><span data-i18n="systemLoad1Min">1分钟系统负载</span>: <span id="system-load">0.00</span></p>
+                <p><span data-i18n="processCount">当前进程数</span>: <span id="process-count">0</span></p>
+                <p><span data-i18n="cpuTemperature">CPU温度</span>: <span id="cpu-temperature">0°C</span></p>
+                <p><span data-i18n="bootTime">开机时间</span>: <span id="boot-time">0天0小时0分钟</span></p>
+                <p id="battery-info"><span data-i18n="batteryInfo">电池状态</span>: <span data-i18n="noBattery">未检测到电池信息</span></p>
             </div>
             <div id="system-chart" class="chart-container"></div>
         </div>
 
         <div class="panel chart-panel" data-chart-id="usage-chart">
             <div class="panel-header">
-                <h2 class="panel-title">系统资源趋势</h2>
+                <h2 class="panel-title" data-i18n="systemResourceTrend">系统资源趋势</h2>
                 <button class="toggle-btn chart-toggle-btn" data-target="usage-chart">
                     <span class="toggle-icon">▼</span>
                 </button>
             </div>
             <div class="usage-info">
-                <p>CPU占用率: <span id="cpu-usage-current">0%</span></p>
-                <p>内存占用率: <span id="mem-usage-current">0%</span></p>
-                <p>GPU占用率: <span id="gpu-usage-current">0%</span></p>
+                <p><span data-i18n="cpuUsage">CPU占用率</span>: <span id="cpu-usage-current">0%</span></p>
+                <p><span data-i18n="memoryUsage">内存占用率</span>: <span id="mem-usage-current">0%</span></p>
+                <p><span data-i18n="gpuUsage">GPU占用率</span>: <span id="gpu-usage-current">0%</span></p>
             </div>
             <div id="usage-chart" class="chart-container"></div>
         </div>
