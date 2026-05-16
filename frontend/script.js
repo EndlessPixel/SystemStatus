@@ -298,10 +298,22 @@ function setTheme(theme) {
 
 function updateThemeSelect() {
     const select = document.getElementById('theme-select');
-    if (select) {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-        select.value = currentTheme;
-    }
+    if (!select) return;
+    
+    // 重新生成所有选项以更新翻译
+    select.innerHTML = '';
+    
+    Object.keys(window.THEME_CONFIG).forEach(themeKey => {
+        const theme = window.THEME_CONFIG[themeKey];
+        const option = document.createElement('option');
+        option.value = themeKey;
+        option.textContent = t(theme.labelKey);
+        select.appendChild(option);
+    });
+    
+    // 设置当前选中的主题
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    select.value = currentTheme;
 }
 
 function updateChartTheme(theme) {
