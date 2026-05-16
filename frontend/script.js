@@ -151,6 +151,8 @@ const LANGUAGES = {
         
         // 其他
         localServer: "本地服务器",
+        noDisk: "未检测到硬盘信息",
+        core: "核心",
     },
     en: {
         // 页面标题
@@ -1323,18 +1325,18 @@ function renderHardwareInfo(data) {
 
     const cpuModelEl = document.getElementById('cpu-model');
     const cpuCoresEl = document.getElementById('cpu-cores');
-    if (cpuModelEl) cpuModelEl.textContent = data.cpu?.model || "未知CPU";
-    if (cpuCoresEl) cpuCoresEl.textContent = `${data.cpu?.cores || 0} (物理: ${data.cpu?.physical_cores || 0})`;
+    if (cpuModelEl) cpuModelEl.textContent = data.cpu?.model || t('unknownCPU');
+    if (cpuCoresEl) cpuCoresEl.textContent = `${data.cpu?.cores || 0} (${t('physicalCores')}: ${data.cpu?.physical_cores || 0})`;
 
     const memModelEl = document.getElementById('mem-model');
     const memTotalEl = document.getElementById('mem-total');
-    if (memModelEl) memModelEl.textContent = data.memory?.model || "未知内存";
+    if (memModelEl) memModelEl.textContent = data.memory?.model || t('unknownMemory');
     if (memTotalEl) memTotalEl.textContent = data.memory?.total || 0;
 
     const gpuModelEl = document.getElementById('gpu-model');
     const gpuStatusEl = document.getElementById('gpu-status');
-    if (gpuModelEl) gpuModelEl.textContent = data.gpu?.model || "未知显卡";
-    if (gpuStatusEl) gpuStatusEl.textContent = data.gpu?.available ? '可用' : '不可用';
+    if (gpuModelEl) gpuModelEl.textContent = data.gpu?.model || t('unknownGPU');
+    if (gpuStatusEl) gpuStatusEl.textContent = data.gpu?.available ? t('available') : t('unavailable');
 
     const netContainer = document.getElementById('network-info');
     if (netContainer) {
@@ -1423,7 +1425,7 @@ function renderDiskUsage(disks) {
     if (!container) return;
 
     if (!disks || disks.length === 0) {
-        container.innerHTML = "<p>未检测到硬盘信息</p>";
+        container.innerHTML = `<p>${t('noDisk')}</p>`;
         return;
     }
 

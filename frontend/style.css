@@ -855,7 +855,7 @@ footer {
 .theme-toggle-container {
     display: flex;
     justify-content: center;
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 .theme-toggle-btn {
@@ -879,6 +879,44 @@ footer {
 }
 
 .theme-icon {
+    font-size: 18px;
+}
+
+/* 语言切换按钮样式 */
+.controls-container {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.language-toggle-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 0;
+}
+
+.language-toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background-color: var(--apple-card-bg);
+    border: 1px solid var(--apple-border);
+    border-radius: 24px;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--apple-text-primary);
+    transition: all 0.3s ease;
+}
+
+.language-toggle-btn:hover {
+    background-color: var(--apple-accent);
+    color: white;
+    border-color: var(--apple-accent);
+}
+
+.lang-icon {
     font-size: 18px;
 }
 
