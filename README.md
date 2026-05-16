@@ -35,28 +35,12 @@
 - Windows 系统：通过 `wmic` 命令获取硬件详情
 - Linux 系统：通过 `/proc/cpuinfo`/`dmidecode` 兼容
 
-## 项目结构
-```
-SystemStatus/
-├── ips.json         # 存储 IP 地址的 JSON 文件
-├── main.py          # 后端 FastAPI 服务（已集成静态文件）
-├── index.html       # 前端监控页面
-├── script.js        # 前端交互逻辑
-├── style.css        # 前端样式文件
-├── echarts.js       # ECharts 图表库
-├── LICENSE          # Apache License Version 2.0 开源许可证
-├── README.md        # 项目说明文档
-└── tmp.json         # 自动生成的缓存文件
-```
-
 ## 快速开始
 ### 1. 环境准备
 确保已安装 Python 3.8+，然后安装依赖：
 ```bash
-pip install fastapi uvicorn psutil py3nvml
+pip install -r requirements.txt
 ```
-- `py3nvml`：可选，仅用于检测 NVIDIA 独显
-- `wmi`：已不再需要，已使用 wmic 替代
 
 ### 2. 启动服务
 ```bash
@@ -65,7 +49,7 @@ python main.py
 服务会启动在 `http://0.0.0.0:8001`
 
 ### 3. 访问监控页面
-直接在浏览器中访问 `http://localhost:8001` 即可，无需额外的 http.server。
+直接在浏览器中访问 `http://localhost:8001` 即可，现已无需额外的 http.server。
 
 ## 接口文档
 | 接口地址 | 请求方式 | 功能描述 |
@@ -74,29 +58,6 @@ python main.py
 | `/api/real-time-data` | GET | 获取实时监控数据（折线图 + 核心占用） |
 | `/api/disk-usage` | GET | 获取硬盘分区占用信息 |
 | `/api/cache` | GET | 获取 `tmp.json` 缓存数据 |
-
-## 常见问题
-### Q1: 内存/显卡型号显示 Unknown？
-- Windows：确保已安装显卡/内存驱动，以管理员身份运行命令行
-- Linux：安装 `dmidecode` 工具：`sudo apt install dmidecode`
-
-### Q2: 页面显示跨域错误？
-- 现在已集成静态文件，直接访问 http://localhost:8001 即可
-- 生产环境请修改 `main.py` 中的 `allow_origins` 为具体域名
-
-### Q3: 折线图没有数据？
-- 检查后端服务是否正常运行
-- 按 F12 打开控制台，查看是否有接口请求失败
-
-### Q4: 没有 NVIDIA 显卡但报错？
-- 已优化，无 NVIDIA 显卡时会永久禁用 NVML，不再尝试恢复
-- 不会再出现持续的 NVMLError_LibraryNotFound 错误
-
-### Q5: 重启服务器后数据丢失？
-- 已优化，重启服务器后会自动从 tmp.json 缓存恢复历史数据
-
-### Q6: Win32 IUnknown 异常？
-- 已彻底解决，使用 wmic 替代 wmi COM 接口，避免异常
 
 ## 许可证
 本项目基于 ** Apache License Version 2.0** 开源
