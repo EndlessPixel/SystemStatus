@@ -882,25 +882,24 @@ footer {
     font-size: 18px;
 }
 
-/* 语言切换按钮样式 */
+/* 语言下拉菜单样式 */
 .controls-container {
     display: flex;
     justify-content: center;
     gap: 16px;
     margin-bottom: 20px;
+    flex-wrap: wrap;
 }
 
-.language-toggle-container {
+.language-select-container {
     display: flex;
     justify-content: center;
+    align-items: center;
     margin-bottom: 0;
 }
 
-.language-toggle-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 20px;
+.language-select {
+    padding: 10px 24px 10px 16px;
     background-color: var(--apple-card-bg);
     border: 1px solid var(--apple-border);
     border-radius: 24px;
@@ -908,16 +907,46 @@ footer {
     font-size: 14px;
     color: var(--apple-text-primary);
     transition: all 0.3s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2386868b' d='M6 8.5L1 3h10l-5 5.5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 12px;
+    min-width: 120px;
 }
 
-.language-toggle-btn:hover {
-    background-color: var(--apple-accent);
-    color: white;
+.language-select:hover {
     border-color: var(--apple-accent);
 }
 
-.lang-icon {
-    font-size: 18px;
+.language-select:focus {
+    outline: none;
+    border-color: var(--apple-accent);
+    box-shadow: 0 0 0 3px rgba(0, 113, 227, 0.1);
+}
+
+.language-select option {
+    background-color: var(--apple-card-bg);
+    color: var(--apple-text-primary);
+}
+
+/* 深色模式下的语言下拉菜单样式 */
+body.dark-mode .language-select {
+    background-color: #2c2c2e;
+    color: #f5f5f7;
+    border-color: #48484a;
+}
+
+body.dark-mode .language-select:hover,
+body.dark-mode .language-select:focus {
+    border-color: var(--apple-accent);
+}
+
+body.dark-mode .language-select option {
+    background-color: #2c2c2e;
+    color: #f5f5f7;
 }
 
 footer .project {
