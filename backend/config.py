@@ -39,7 +39,7 @@ class ServerConfig:
                 "line1": "前端获取信息选项 - 多服务器分支配置",
                 "line2": "branches对象中可添加多个服务器配置",
                 "line3": "default_branch指定默认选中的服务器分支key",
-                "line4": "每个分支包含name(显示名)、api(服务器IP)、port(端口)"
+                "line4": "每个分支包含name(显示名)、api(服务器IP)、port(端口，可选)"
             },
             "default_branch": "local_server",
             "branches": {
@@ -75,13 +75,15 @@ class ServerConfig:
             print(f"配置保存失败: {e}")
             return False
 
-    def add_branch(self, key: str, name: str, api: str, port: int) -> bool:
+    def add_branch(self, key: str, name: str, api: str, port: Optional[int] = None) -> bool:
         """添加新分支"""
-        self.config["branches"][key] = {
+        branch_config = {
             "name": name,
-            "api": api,
-            "port": port
+            "api": api
         }
+        if port is not None:
+            branch_config["port"] = port
+        self.config["branches"][key] = branch_config
         return self.save_config()
 
     def remove_branch(self, key: str) -> bool:
