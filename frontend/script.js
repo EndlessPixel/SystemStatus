@@ -285,6 +285,8 @@ const LANGUAGES = {
         
         // 其他
         localServer: "Local Server",
+        noDisk: "No disk detected",
+        core: "Core",
     }
 };
 
