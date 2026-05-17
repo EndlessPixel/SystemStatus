@@ -29,6 +29,7 @@ from backend.routers import api_router
 # 获取项目根目录
 BASE_DIR = Path(__file__).parent.absolute()
 FRONTEND_DIR = BASE_DIR / "frontend"
+PUBLIC_DIR = BASE_DIR / "public"  # 公共静态文件目录，用于扩展性
 
 # 初始化FastAPI
 app = FastAPI(
@@ -76,6 +77,10 @@ app.include_router(api_router)
 # 挂载前端静态文件
 if FRONTEND_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
+
+# 挂载公共静态文件目录（用于扩展性）
+if PUBLIC_DIR.exists():
+    app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
 
 @app.get("/")
 async def root():
