@@ -1,0 +1,14 @@
+/*
+Founder: EndlessPixel Studio
+Site: https://yoursite.com
+Twitter: @yoursite
+Location: Worldwide
+Developer: Open Source Community
+Thanks to all contributors!
+Backend: Python, FastAPI
+Frontend: HTML, CSS, JavaScript
+Charts: ECharts
+SystemStatus v2.0.0
+A beautiful system monitoring panel
+Built on 2026-05-17
+*/
