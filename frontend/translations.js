@@ -876,10 +876,9 @@ window.LANGUAGES = {
     },
 };
 
-// 语言配置 - 添加新语言只需在此配置即可
 window.LANGUAGE_CONFIG = {
     'zh': {
-        name: '简体中文',
+        name: 'Chinese',
         nativeName: '简体中文'
     },
     'en': {
@@ -897,6 +896,16 @@ window.LANGUAGE_CONFIG = {
     'de': {
         name: 'German',
         nativeName: 'Deutsch'
+    },
+    // 补上俄语
+    'ru': {
+        name: 'Russian',
+        nativeName: 'Русский'
+    },
+    // 补上韩语
+    'ko': {
+        name: 'Korean',
+        nativeName: '한국어'
     }
 };
 
