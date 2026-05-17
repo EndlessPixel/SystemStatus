@@ -35,19 +35,6 @@ async def get_cache():
     except:
         return {"error": "缓存文件不存在"}
 
-@api_router.get("/servers")
-async def get_servers():
-    """获取服务器配置列表"""
-    from ..config import server_config
-
-    branches = server_config.get_branches()
-    default_branch = server_config.get_default_branch()
-
-    return {
-        "default_branch": default_branch,
-        "branches": branches
-    }
-
 @api_router.get("/")
 async def root():
     """健康检查"""

@@ -1,13 +1,10 @@
 // 全局变量
-let API_BASE = "";
-let isLocalAddress = false;
+const API_BASE = "/api";
 const LOCAL_CACHE_KEY = "system_monitor_cache";
 const THEME_KEY = "system_monitor_theme";
 let chart = null;
 let netChart = null;
 let systemChart = null;
-let currentBranch = "";
-let branchConfig = {};
 const ANIMATION_DURATION = 800;
 const ANIMATION_FRAME = 16;
 let realTimeDataInterval = null;
@@ -20,6 +17,7 @@ const I18N_KEY = "system_monitor_language";
 // 当前语言 - 直接从 window 对象获取翻译数据
 let currentLanguage = 'zh';
 let cachedHardwareInfo = null;  // 缓存硬件信息，避免重复请求
+let cachedCpuCores = [];  // 缓存CPU核心数据，用于语言切换时更新
 
 function initI18n() {
     // 确保语言文件已加载
@@ -452,219 +450,7 @@ function animateNumber(element, targetValue, isPercent = true, suffix = '') {
     element.animationFrame = requestAnimationFrame(animate);
 }
 
-async function loadBranchConfig() {
-    console.log('📦 loadBranchConfig 开始执行');
-    try {
-        const selectEl = document.getElementById("branch-select");
-        if (!selectEl) {
-            console.error("❌ 下拉框DOM元素不存在");
-            throw new Error("下拉框元素未找到");
-        }
 
-        selectEl.innerHTML = "";
-
-        let config = {};
-        try {
-            console.log('🌐 正在请求 /api/servers');
-            // 从API获取服务器配置
-            const response = await fetch("/api/servers");
-            console.log('📡 /api/servers 响应状态:', response.status);
-            if (!response.ok) throw new Error(`配置请求失败: ${response.status} ${response.statusText}`);
-            config = await response.json();
-            console.log('✅ 配置加载成功:', config);
-        } catch (e) {
-            console.error("❌ 从API加载配置失败，使用默认配置:", e);
-        }
-
-        branchConfig = config.branches || {
-            local_server: { name: t('localServer'), api: "127.0.0.1", port: 8001 }
-        };
-        currentBranch = config.default_branch || Object.keys(branchConfig)[0] || "local_server";
-
-        if (!branchConfig[currentBranch]) {
-            currentBranch = Object.keys(branchConfig)[0];
-        }
-
-        const branchKeys = Object.keys(branchConfig);
-        if (branchKeys.length === 0) {
-            branchConfig = { local_server: { name: t('localServer'), api: "127.0.0.1", port: 8001 } };
-            branchKeys.push("local_server");
-            currentBranch = "local_server";
-        }
-
-        branchKeys.forEach(key => {
-            const branch = branchConfig[key];
-            const option = document.createElement("option");
-            option.value = key;
-            option.textContent = branch.name || t('localServer');
-            if (key === currentBranch) option.selected = true;
-            selectEl.appendChild(option);
-        });
-
-        initBranchAPI(currentBranch);
-
-        const switchBtn = document.getElementById("switch-btn");
-        if (switchBtn) {
-            switchBtn.removeEventListener("click", switchBranch);
-            switchBtn.addEventListener("click", switchBranch);
-        } else {
-            console.error("切换按钮DOM元素不存在");
-        }
-
-        return true;
-    } catch (error) {
-        console.error("加载分支配置失败，强制使用默认配置:", error);
-        branchConfig = {
-            local_server: { name: t('localServer'), api: "127.0.0.1", port: 8001 }
-        };
-        currentBranch = "local_server";
-
-        const selectEl = document.getElementById("branch-select");
-        if (selectEl) {
-            selectEl.innerHTML = "";
-            const option = document.createElement("option");
-            option.value = "local_server";
-            option.textContent = t('localServer');
-            option.selected = true;
-            selectEl.appendChild(option);
-        }
-
-        initBranchAPI(currentBranch);
-        updateStatusTip(t('usingDefaultConfig'), "warning");
-        return false;
-    }
-}
-
-function initBranchAPI(branchKey) {
-    console.log('🔧 initBranchAPI 被调用，branchKey:', branchKey);
-    console.log('📋 当前 branchConfig:', branchConfig);
-    
-    const branch = branchConfig[branchKey] || { api: "127.0.0.1", port: 8001 };
-    console.log('🎯 选中的分支配置:', branch);
-
-    // 优先检测：如果当前页面就是配置的服务器地址，直接使用相对路径
-    const currentHost = window.location.hostname;
-    const currentPort = window.location.port;
-    const currentProtocol = window.location.protocol;
-    
-    // 检查是否是同一域名访问
-    const isSameOrigin = branch && (
-        branch.api === currentHost || 
-        branch.api === "localhost" || 
-        branch.api === "127.0.0.1" ||
-        branch.api === "0.0.0.0"
-    );
-    
-    console.log('📍 isSameOrigin:', isSameOrigin);
-    
-    if (isSameOrigin) {
-        // 如果是同一域名，直接使用相对路径（最稳定）
-        API_BASE = "/api";
-    } else {
-        // 否则使用配置文件中的地址
-        const apiHost = branch.api || "127.0.0.1";
-        const apiPort = branch.port;
-        
-        // 根据协议选择http或https（当前页面是https时也用https）
-        const protocol = currentProtocol === "https:" ? "https:" : "http:";
-        
-        if (apiPort !== undefined && apiPort !== null) {
-            API_BASE = `${protocol}//${apiHost}:${apiPort}/api`;
-        } else {
-            API_BASE = `${protocol}//${apiHost}/api`;
-        }
-    }
-    
-    console.log('✅ API_BASE 设置为:', API_BASE);
-
-    // 更新本地地址检测
-    let finalHost = currentHost;
-    try {
-        if (!API_BASE.startsWith("/")) {
-            const url = new URL(API_BASE, window.location.origin);
-            finalHost = url.hostname;
-        }
-    } catch (e) {
-        console.error('❌ URL解析失败:', e);
-        finalHost = currentHost;
-    }
-    
-    console.log('🏠 finalHost:', finalHost);
-    
-    isLocalAddress = finalHost === "localhost" ||
-        finalHost.startsWith("127.") ||
-        finalHost === "0.0.0.0" ||
-        finalHost.startsWith("192.168.");
-
-    // 显示配置信息
-    let addressDisplay = "";
-    if (API_BASE.startsWith("/")) {
-        addressDisplay = `${currentHost}${currentPort ? ':' + currentPort : ''}`;
-    } else {
-        try {
-            const displayURL = new URL(API_BASE, window.location.origin);
-            addressDisplay = displayURL.hostname;
-            if (displayURL.port) {
-                addressDisplay += ":" + displayURL.port;
-            }
-        } catch {
-            addressDisplay = branch.api || "unknown";
-            if (branch.port) addressDisplay += ":" + branch.port;
-        }
-    }
-    
-    console.log('📊 addressDisplay:', addressDisplay);
-    updateStatusTip(t('connected') + "【" + (branch.name || branchKey) + "】配置：" + addressDisplay, "success");
-    if (!isLocalAddress) {
-        updateStatusTip(t('remoteAddressWarning'), "warning");
-    }
-    
-    console.log('✅ initBranchAPI 完成');
-}
-
-async function switchBranch() {
-    const selectEl = document.getElementById("branch-select");
-    if (!selectEl) {
-        updateStatusTip(t('switchFailed'), "error");
-        return;
-    }
-
-    const newBranch = selectEl.value;
-    if (!newBranch || newBranch === currentBranch) return;
-
-    if (!branchConfig[newBranch]) {
-        updateStatusTip(t('configNotFound'), "error");
-        return;
-    }
-
-    updateStatusTip(t('switchingTo') + "【" + (branchConfig[newBranch].name || newBranch) + "】...", "success");
-
-    currentBranch = newBranch;
-    initBranchAPI(currentBranch);
-
-    clearOldData();
-    await loadFromCache();
-
-    const backendAvailable = await checkBackendStatus();
-    if (backendAvailable) {
-        updateStatusTip(t('switchSuccess') + "【" + (branchConfig[newBranch].name || newBranch) + "】", "success");
-
-        clearAllIntervals();
-
-        getHardwareInfo();
-        updateRealTimeData();
-        updateDiskUsage();
-
-        realTimeDataInterval = setInterval(updateRealTimeData, 2000);
-        diskUsageInterval = setInterval(updateDiskUsage, 10000);
-        hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
-
-        hideRetryButton();
-    } else {
-        updateStatusTip(t('switchFailed'), "error");
-        showRetryButton();
-    }
-}
 
 function clearOldData() {
     if (chart) {
@@ -1666,8 +1452,14 @@ function updateCPUCores(coreUsages, withAnimation = false) {
     const container = document.getElementById('cpu-cores-container');
     if (!container) return;
 
+    // 保存核心数据用于语言切换
+    if (coreUsages && coreUsages.length > 0) {
+        cachedCpuCores = [...coreUsages];
+    }
+
     if (!coreUsages || coreUsages.length === 0) {
         container.innerHTML = `<p>${t('noCPUCores')}</p>`;
+        cachedCpuCores = [];
         return;
     }
 
@@ -1700,6 +1492,12 @@ function updateCPUCores(coreUsages, withAnimation = false) {
         const coreBox = container.children[index];
         if (!coreBox) return;
 
+        // 更新核心编号文本（用于语言切换时更新翻译）
+        const coreNumEl = coreBox.querySelector('.core-num');
+        if (coreNumEl) {
+            coreNumEl.textContent = `${t('core')} ${index + 1}`;
+        }
+
         const coreUsageEl = coreBox.querySelector('.core-usage');
         if (coreUsageEl) {
             if (withAnimation) {
@@ -1727,7 +1525,7 @@ async function retryBackendConnection() {
     const backendAvailable = await checkBackendStatus();
 
     if (backendAvailable) {
-        updateStatusTip(`${t('connected')}【${branchConfig[currentBranch].name || currentBranch}】`, "success");
+        updateStatusTip(t('connected'), "success");
         await loadFromCache();
         getHardwareInfo();
         updateRealTimeData();
@@ -1805,23 +1603,22 @@ async function updateDiskUsage() {
 }
 
 async function init() {
-    console.log('🚀 SystemStatus 前端初始化开始');
-    console.log('📍 当前页面地址:', window.location.href);
-    console.log('🏠 当前主机:', window.location.hostname);
-    console.log('🔌 当前端口:', window.location.port);
-    console.log('🔐 当前协议:', window.location.protocol);
+    console.log('[Init] SystemStatus 前端初始化开始');
+    console.log('[Init] 当前页面地址:', window.location.href);
+    console.log('[Init] 当前主机:', window.location.hostname);
+    console.log('[Init] API_BASE:', API_BASE);
     
     initI18n();
-    console.log('✅ initI18n 完成');
+    console.log('[Init] initI18n 完成');
     
     initTheme();
-    console.log('✅ initTheme 完成');
+    console.log('[Init] initTheme 完成');
     
     initChart();
-    console.log('✅ initChart 完成');
+    console.log('[Init] initChart 完成');
     
     adjustChartHeight();
-    console.log('✅ adjustChartHeight 完成');
+    console.log('[Init] adjustChartHeight 完成');
 
     // 添加窗口resize事件监听
     let resizeTimer;
@@ -1829,31 +1626,25 @@ async function init() {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
             adjustChartHeight();
-            // 窗口大小变化时立即更新图表数据
             updateRealTimeData();
         }, 250);
     });
 
-    console.log('📦 开始调用 loadBranchConfig');
-    await loadBranchConfig();
-    console.log('✅ loadBranchConfig 完成');
-
     initToggleButtons();
-    console.log('✅ initToggleButtons 完成');
+    console.log('[Init] initToggleButtons 完成');
 
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.addEventListener('click', retryBackendConnection);
     }
 
-    // 主题切换已改为下拉框，无需按钮事件监听器
-    console.log('🔍 开始检查后端状态，API_BASE:', API_BASE);
+    console.log('[Init] 开始检查后端状态');
     const backendAvailable = await checkBackendStatus();
-    console.log('📡 后端状态检查结果:', backendAvailable);
+    console.log('[Init] 后端状态检查结果:', backendAvailable);
 
     if (backendAvailable) {
-        console.log('✅ 后端可用，开始加载数据');
-        updateStatusTip(t('connected') + "【" + (branchConfig[currentBranch].name || currentBranch) + "】", "success");
+        console.log('[Init] 后端可用，开始加载数据');
+        updateStatusTip(t('connected'), "success");
         await loadFromCache();
         getHardwareInfo();
         updateRealTimeData();
@@ -1864,15 +1655,15 @@ async function init() {
         realTimeDataInterval = setInterval(updateRealTimeData, 2000);
         diskUsageInterval = setInterval(updateDiskUsage, 10000);
         hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
-        console.log('✅ 数据轮询已启动');
+        console.log('[Init] 数据轮询已启动');
     } else {
-        console.log('❌ 后端不可用，尝试加载缓存并重试');
+        console.log('[Init] 后端不可用，尝试加载缓存并重试');
         await loadFromCache();
         showRetryButton();
         retryBackendConnection();
     }
     
-    console.log('🏁 SystemStatus 初始化完成');
+    console.log('[Init] SystemStatus 初始化完成');
 }
 
 let allChartsCollapsed = false;

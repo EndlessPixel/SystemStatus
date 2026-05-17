@@ -150,7 +150,6 @@ def start_monitor():
     print("[OK] SystemStatus 系统监控已启动")
     print(f"[OK] 前端页面: http://127.0.0.1:8001/")
     print(f"[OK] API接口: http://127.0.0.1:8001/api")
-    print(f"[OK] 服务器配置: http://127.0.0.1:8001/api/servers")
 
 if __name__ == "__main__":
     # 启动监控
