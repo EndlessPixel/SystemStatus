@@ -12,7 +12,7 @@ if sys.platform == "win32":
     except:
         pass
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -30,6 +30,7 @@ from backend.routers import api_router
 BASE_DIR = Path(__file__).parent.absolute()
 FRONTEND_DIR = BASE_DIR / "frontend"
 PUBLIC_DIR = BASE_DIR / "public"  # 公共静态文件目录，用于扩展性
+PORT = 8001  # 服务器默认端口号
 
 # 初始化FastAPI
 app = FastAPI(
@@ -81,6 +82,52 @@ if FRONTEND_DIR.exists():
 # 挂载公共静态文件目录（用于扩展性）
 if PUBLIC_DIR.exists():
     app.mount("/public", StaticFiles(directory=str(PUBLIC_DIR)), name="public")
+
+# 根路径文件路由 - 常用网站文件（public目录下的文件可以直接通过/访问）
+@app.get("/robots.txt", include_in_schema=False)
+async def robots_txt():
+    file_path = PUBLIC_DIR / "robots.txt"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="text/plain")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/sitemap.xml", include_in_schema=False)
+async def sitemap_xml():
+    file_path = PUBLIC_DIR / "sitemap.xml"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="application/xml")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/baidusitemap.xml", include_in_schema=False)
+async def baidusitemap_xml():
+    file_path = PUBLIC_DIR / "baidusitemap.xml"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="application/xml")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_ico():
+    file_path = PUBLIC_DIR / "favicon.ico"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="image/x-icon")
+    frontend_path = FRONTEND_DIR / "favicon.ico"
+    if frontend_path.exists():
+        return FileResponse(str(frontend_path), media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/security.txt", include_in_schema=False)
+async def security_txt():
+    file_path = PUBLIC_DIR / "security.txt"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="text/plain")
+    raise HTTPException(status_code=404, detail="File not found")
+
+@app.get("/humans.txt", include_in_schema=False)
+async def humans_txt():
+    file_path = PUBLIC_DIR / "humans.txt"
+    if file_path.exists():
+        return FileResponse(str(file_path), media_type="text/plain")
+    raise HTTPException(status_code=404, detail="File not found")
 
 @app.get("/")
 async def root():
@@ -153,8 +200,8 @@ def start_monitor():
     collect_thread.start()
 
     print("[OK] SystemStatus 系统监控已启动")
-    print(f"[OK] 前端页面: http://127.0.0.1:8001/")
-    print(f"[OK] API接口: http://127.0.0.1:8001/api")
+    print(f"[OK] 前端页面: http://127.0.0.1:{PORT}/")
+    print(f"[OK] API接口: http://127.0.0.1:{PORT}/api")
 
 if __name__ == "__main__":
     # 启动监控
@@ -162,6 +209,6 @@ if __name__ == "__main__":
 
     try:
         import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=8001)
+        uvicorn.run(app, host="0.0.0.0", port=PORT)
     finally:
         shutdown_nvml()

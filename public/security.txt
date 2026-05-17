@@ -1,0 +1,10 @@
+# Security.txt file for SystemStatus
+# https://securitytxt.org/
+
+# Contact: security@yoursite.com
+# Expires: 2027-05-17T00:00:00.000Z
+# Encryption: https://yoursite.com/pgp-key.txt
+# Acknowledgments: https://yoursite.com/thanks/
+# Preferred-Languages: en, zh-CN, zh-TW, ja, fr, de
+# Policy: https://yoursite.com/security-policy
+# Hiring: https://yoursite.com/careers
