@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from pathlib import Path
 import threading
+import time
 
 # 导入后端模块
 from backend.hardware import init_nvml, shutdown_nvml
@@ -36,13 +37,37 @@ app = FastAPI(
     version="2.0.0"
 )
 
-# 配置跨域
+# 添加请求日志中间件
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # 记录请求信息
+    print(f"\n[Request] {request.method} {request.url.path}")
+    print(f"Source: {request.client.host if request.client else 'unknown'}")
+    print(f"Headers:")
+    for key, value in request.headers.items():
+        print(f"   {key}: {value}")
+    
+    # 处理请求
+    response = await call_next(request)
+    
+    # 记录响应信息
+    process_time = (time.time() - start_time) * 1000
+    print(f"[Response] Status: {response.status_code} | Time: {process_time:.2f}ms")
+    
+    return response
+
+# 配置跨域 - 更宽松的设置以适应反向代理环境
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_origin_regex=None,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
+    max_age=600,
 )
 
 # 注册API路由
@@ -122,10 +147,10 @@ def start_monitor():
     collect_thread = threading.Thread(target=collect_real_time_data, daemon=True)
     collect_thread.start()
 
-    print("✓ SystemStatus 系统监控已启动")
-    print(f"✓ 前端页面: http://127.0.0.1:8001/")
-    print(f"✓ API接口: http://127.0.0.1:8001/api")
-    print(f"✓ 服务器配置: http://127.0.0.1:8001/api/servers")
+    print("[OK] SystemStatus 系统监控已启动")
+    print(f"[OK] 前端页面: http://127.0.0.1:8001/")
+    print(f"[OK] API接口: http://127.0.0.1:8001/api")
+    print(f"[OK] 服务器配置: http://127.0.0.1:8001/api/servers")
 
 if __name__ == "__main__":
     # 启动监控
