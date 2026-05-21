@@ -1101,16 +1101,13 @@ async function loadFromCache() {
 
         return await loadLocalTmpJson();
     } catch (e) {
-        console.log("缓存加载失败:", e);
-        updateStatusTip(t('connected'), "success");
+        console.log(`${t('cacheLoadError')}:`, e);
+        updateStatusTip(`${t('cacheLoadError')}`, "success");
         return false;
     }
 }
-
 function renderHardwareInfo(data) {
     if (!data) return;
-
-    // 缓存硬件信息以便在语言切换时更新
     cachedHardwareInfo = data;
 
     const cpuModelEl = document.getElementById('cpu-model');
@@ -1122,43 +1119,26 @@ function renderHardwareInfo(data) {
     const memTotalEl = document.getElementById('mem-total');
     if (memModelEl) memModelEl.textContent = data.memory?.model || t('unknownMemory');
     if (memTotalEl) memTotalEl.textContent = data.memory?.total || 0;
-
     const gpuModelEl = document.getElementById('gpu-model');
     const gpuStatusEl = document.getElementById('gpu-status');
     if (gpuModelEl) gpuModelEl.textContent = data.gpu?.model || t('unknownGPU');
     if (gpuStatusEl) gpuStatusEl.textContent = data.gpu?.available ? t('available') : t('unavailable');
-
     const netContainer = document.getElementById('network-info');
     if (netContainer) {
         netContainer.innerHTML = '';
         if (data.network && data.network.length > 0) {
-            // 创建表格布局
             const table = document.createElement('table');
             table.className = 'network-table';
-
             data.network.forEach(iface => {
                 const row = document.createElement('tr');
                 row.className = 'network-row';
-
-                // 根据网卡名称添加图标和类型
                 const icon = getNetworkIcon(iface.name);
                 const type = getNetworkType(iface.name);
                 const typeClass = getTypeClass(iface.name);
-
-                row.innerHTML = `
-                    <td class="network-icon">${icon}</td>
-                    <td class="network-name">${iface.name}</td>
-                    <td class="network-type ${typeClass}"><span>${type}</span></td>
-                    <td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>
-                `;
-
+                row.innerHTML = `<td class="network-icon">${icon}</td><td class="network-name">${iface.name}</td><td class="network-type ${typeClass}"><span>${type}</span></td><td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>`;
                 table.appendChild(row);
-            });
-
-            netContainer.appendChild(table);
-        } else {
-            netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
-        }
+            }); netContainer.appendChild(table);
+        } else { netContainer.innerHTML = `<p>${t('noNetwork')}</p>`; }
     }
 }
 function updateNetworkTypeLabels() {
@@ -1258,7 +1238,7 @@ async function updateRealTimeData() {
             process_count: processCount, cpu_temperature: cpuTemperature, boot_time: data.boot_time,
             battery_info: data.battery_info, cpu_core_usage: data.cpu_core_usage, timestamp: data.timestamp
         }; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
-    } catch (error) { console.error('获取实时数据失败:', error); showPrompt(`获取实时数据失败: ${t('realTimeErrorError')}`, false); }
+    } catch (error) { console.error(`${t('realTimeErrorError')}:`, error); showPrompt(`${t('realTimeErrorError')}`, false); }
 }
 function updateCPUCores(coreUsages, withAnimation = false) {
     const container = document.getElementById('cpu-cores-container'); if (!container) return;
