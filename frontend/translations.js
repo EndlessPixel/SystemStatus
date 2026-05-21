@@ -145,6 +145,14 @@ window.LANGUAGES = {
         noDisk: "未检测到硬盘信息",
         core: "核心",
         noCPUCores: "未检测到CPU核心信息",
+
+        // 数据加载
+        loadingData: "正在从后端加载数据...",
+        loading: "加载中...",
+        speedUnit: "KB/s",
+        temperatureUnit: "°C",
+        bootTimeFormat: "开机时间格式",
+        diskError: "硬盘错误",
     },
     'en': {
         // 页面标题
