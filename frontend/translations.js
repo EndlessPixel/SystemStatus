@@ -927,5 +927,3 @@ window.THEME_CONFIG = {
         icon: '⚫'
     }
 };
-
-// 移除重复的导出行，因为上面已经直接赋值给 window 对象
