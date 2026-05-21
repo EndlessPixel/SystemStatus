@@ -146,31 +146,107 @@ body {
     margin: 0 auto;
 }
 
-/* 头部样式 */
-/* 让头部悬浮+玻璃效果，下滑时仍可见 */
+/* 头部样式 - 紧凑悬浮设计 */
 .header {
     position: sticky;
     top: 0;
     z-index: 10;
-    background: rgba(245, 245, 247, 0.75);
+    background: rgba(245, 245, 247, 0.85);
     backdrop-filter: saturate(180%) blur(20px);
     -webkit-backdrop-filter: saturate(180%) blur(20px);
     border-bottom: 1px solid var(--apple-border);
     margin: -20px -20px 30px -20px;
-    /* 抵消 body padding */
-    padding: 20px 20px 0 20px;
+    padding: 16px 20px;
+    transition: all 0.3s ease;
+}
+
+.header.scrolled {
+    margin: 0;
+    padding: 10px 20px;
+    border-radius: 0 0 16px 16px;
+    border: 1px solid var(--apple-border);
+    border-top: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    transition: all 0.3s ease;
+}
+
+.header.scrolled .header-content {
+    max-width: 100%;
+}
+
+.header-left {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.header.scrolled .header-left {
+    gap: 8px;
 }
 
 .header h1 {
-    font-size: 32px;
+    font-size: 24px;
     font-weight: 600;
-    margin-bottom: 8px;
+    margin: 0;
     color: var(--apple-text-primary);
+    transition: font-size 0.3s ease;
+}
+
+.header.scrolled h1 {
+    font-size: 18px;
 }
 
 .header .sub-title {
-    font-size: 16px;
+    font-size: 14px;
     color: var(--apple-text-secondary);
+    transition: font-size 0.3s ease, opacity 0.3s ease;
+}
+
+.header.scrolled .sub-title {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
+.header-right {
+    display: flex;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.header.scrolled .header-right {
+    gap: 8px;
+}
+
+.header .theme-select,
+.header .language-select {
+    padding: 6px 24px 6px 12px;
+    font-size: 13px;
+    min-width: 100px;
+}
+
+.header.scrolled .theme-select,
+.header.scrolled .language-select {
+    padding: 5px 20px 5px 10px;
+    font-size: 12px;
+    min-width: 90px;
+}
+
+/* 深色模式头部玻璃效果 */
+[data-theme="dark"] .header {
+    background: rgba(13, 13, 13, 0.85);
+}
+
+[data-theme="dark"] .header.scrolled {
+    background: rgba(13, 13, 13, 0.95);
 }
 
 /* 分支切换样式 */
