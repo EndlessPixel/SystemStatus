@@ -112,9 +112,6 @@
     color: #ffffff;
 }
 
-[data-theme="high-contrast"] .status-tip {
-    border: 2px solid;
-}
 
 [data-theme="high-contrast"] .toggle-all-container button {
     background: #000000;
@@ -316,36 +313,6 @@ body {
 
 .branch-switcher button:hover {
     background-color: var(--apple-accent-hover);
-}
-
-/* 状态提示 */
-.status-tip {
-    padding: 12px 20px;
-    border-radius: 10px;
-    margin-bottom: 24px;
-    text-align: center;
-    font-size: 14px;
-    font-weight: 500;
-    background-color: var(--apple-card-bg);
-    border: 1px solid var(--apple-border);
-}
-
-.tip-success {
-    color: var(--apple-success);
-    border-color: rgba(52, 199, 89, 0.2);
-    background-color: rgba(52, 199, 89, 0.05);
-}
-
-.tip-warning {
-    color: var(--apple-warning);
-    border-color: rgba(255, 149, 0, 0.2);
-    background-color: rgba(255, 149, 0, 0.05);
-}
-
-.tip-error {
-    color: var(--apple-error);
-    border-color: rgba(255, 59, 48, 0.2);
-    background-color: rgba(255, 59, 48, 0.05);
 }
 
 /* 卡片容器（硬件信息） */
@@ -867,11 +834,7 @@ body {
     padding: 10px 0;
 }
 
-/* 状态提示增加间距 */
-.status-tip {
-    margin-bottom: 35px;
     /* 增加底部间距 */
-}
 
 /* 卡片容器增加间距 */
 .card-container {
@@ -985,28 +948,6 @@ body {
     .panel {
         padding: 20px;
     }
-}
-
-/* 重试按钮样式 */
-.retry-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 24px;
-}
-
-.retry-btn {
-    padding: 12px 24px;
-    background-color: var(--apple-accent);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.2s ease;
-}
-
-.retry-btn:hover {
-    background-color: var(--apple-accent-hover);
 }
 
 footer {
