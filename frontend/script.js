@@ -515,15 +515,6 @@ function clearOldData() {
 }
 
 function updateStatusTip(text, type = "success") {
-    const tipEl = document.getElementById("status-tip");
-    if (!tipEl) return;
-
-    tipEl.textContent = text;
-    tipEl.className = "status-tip";
-    if (type === "success") tipEl.classList.add("tip-success");
-    else if (type === "warning") tipEl.classList.add("tip-warning");
-    else if (type === "error") tipEl.classList.add("tip-error");
-
     // 使用提示框组件显示提示
     const isSuccess = (type === "success");
     if (typeof showPrompt === 'function') {
@@ -1590,7 +1581,7 @@ const MAX_RETRY_COUNT = 5;
 
 async function retryBackendConnection() {
     updateStatusTip(t('retrying'), "warning");
-    hideRetryButton();
+    // 隐藏重试按钮
 
     const backendAvailable = await checkBackendStatus();
 
@@ -1619,24 +1610,12 @@ async function retryBackendConnection() {
             setTimeout(retryBackendConnection, 1000);
         } else {
             updateStatusTip(t('maxRetriesReached'), "error");
-            showRetryButton();
+            // 显示重试按钮提示
         }
     }
 }
 
-function showRetryButton() {
-    const retryContainer = document.getElementById('retry-container');
-    if (retryContainer) {
-        retryContainer.style.display = 'flex';
-    }
-}
 
-function hideRetryButton() {
-    const retryContainer = document.getElementById('retry-container');
-    if (retryContainer) {
-        retryContainer.style.display = 'none';
-    }
-}
 
 function clearAllIntervals() {
     if (realTimeDataInterval) {
@@ -1751,7 +1730,7 @@ async function init() {
     } else {
         console.log('[Init] 后端不可用，尝试加载缓存并重试');
         await loadFromCache();
-        showRetryButton();
+        // 显示重试按钮提示
         retryBackendConnection();
     }
     
