@@ -478,12 +478,12 @@ function clearOldData() {
         { id: 'mem-total', text: t('loading') },
         { id: 'gpu-model', text: t('loading') },
         { id: 'gpu-status', text: t('loading') },
-        { id: 'net-upload-speed', text: '0 KB/s' },
-        { id: 'net-download-speed', text: '0 KB/s' },
+        { id: 'net-upload-speed', text: `0 ${t('speedUnit')}` },
+        { id: 'net-download-speed', text: `0 ${t('speedUnit')}` },
         { id: 'system-load', text: '0.00' },
         { id: 'process-count', text: '0' },
-        { id: 'cpu-temperature', text: `0${currentLanguage === 'zh' ? '°C' : '°C'}` },
-        { id: 'boot-time', text: `0${t('days')}0${t('hoursShort')}0${t('minutesShort')}` }
+        { id: 'cpu-temperature', text: `0${t('temperatureUnit')}` },
+        { id: 'boot-time', text: `0${t('days')} 0${t('hoursShort')} 0${t('minutesShort')}` }
     ];
 
     resetElements.forEach(item => {
@@ -1107,163 +1107,66 @@ async function loadFromCache() {
     }
 }
 function renderHardwareInfo(data) {
-    if (!data) return;
-    cachedHardwareInfo = data;
-
-    const cpuModelEl = document.getElementById('cpu-model');
-    const cpuCoresEl = document.getElementById('cpu-cores');
+    if (!data) return;cachedHardwareInfo = data;const cpuModelEl = document.getElementById('cpu-model');const cpuCoresEl = document.getElementById('cpu-cores');
     if (cpuModelEl) cpuModelEl.textContent = data.cpu?.model || t('unknownCPU');
-    if (cpuCoresEl) cpuCoresEl.textContent = `${data.cpu?.cores || 0} (${t('physicalCores')}: ${data.cpu?.physical_cores || 0})`;
-
-    const memModelEl = document.getElementById('mem-model');
-    const memTotalEl = document.getElementById('mem-total');
+    if (cpuCoresEl) cpuCoresEl.textContent = `${data.cpu?.cores || 0} (${t('physicalCores')}: ${data.cpu?.physical_cores || 0})`;const memModelEl = document.getElementById('mem-model');const memTotalEl = document.getElementById('mem-total');
     if (memModelEl) memModelEl.textContent = data.memory?.model || t('unknownMemory');
-    if (memTotalEl) memTotalEl.textContent = data.memory?.total || 0;
-    const gpuModelEl = document.getElementById('gpu-model');
-    const gpuStatusEl = document.getElementById('gpu-status');
+    if (memTotalEl) memTotalEl.textContent = data.memory?.total || 0;const gpuModelEl = document.getElementById('gpu-model');const gpuStatusEl = document.getElementById('gpu-status');
     if (gpuModelEl) gpuModelEl.textContent = data.gpu?.model || t('unknownGPU');
-    if (gpuStatusEl) gpuStatusEl.textContent = data.gpu?.available ? t('available') : t('unavailable');
-    const netContainer = document.getElementById('network-info');
-    if (netContainer) {
-        netContainer.innerHTML = '';
-        if (data.network && data.network.length > 0) {
-            const table = document.createElement('table');
-            table.className = 'network-table';
-            data.network.forEach(iface => {
-                const row = document.createElement('tr');
-                row.className = 'network-row';
-                const icon = getNetworkIcon(iface.name);
-                const type = getNetworkType(iface.name);
-                const typeClass = getTypeClass(iface.name);
-                row.innerHTML = `<td class="network-icon">${icon}</td><td class="network-name">${iface.name}</td><td class="network-type ${typeClass}"><span>${type}</span></td><td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>`;
-                table.appendChild(row);
-            }); netContainer.appendChild(table);
-        } else { netContainer.innerHTML = `<p>${t('noNetwork')}</p>`; }
-    }
-}
+    if (gpuStatusEl) gpuStatusEl.textContent = data.gpu?.available ? t('available') : t('unavailable');const netContainer = document.getElementById('network-info');
+    if (netContainer) {netContainer.innerHTML = '';
+    if (data.network && data.network.length > 0) {const table = document.createElement('table');table.className = 'network-table';data.network.forEach(iface => {const row = document.createElement('tr');row.className = 'network-row';const icon = getNetworkIcon(iface.name);const type = getNetworkType(iface.name);const typeClass = getTypeClass(iface.name);row.innerHTML = `<td class="network-icon">${icon}</td><td class="network-name">${iface.name}</td><td class="network-type ${typeClass}"><span>${type}</span></td><td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>`;table.appendChild(row);}); netContainer.appendChild(table);} else { netContainer.innerHTML = `<p>${t('noNetwork')}</p>`; }}}
 function updateNetworkTypeLabels() {
-    if (!cachedHardwareInfo) return;
-    const cpuCoresEl = document.getElementById('cpu-cores');
-    if (cpuCoresEl) {
-        cpuCoresEl.textContent = `${cachedHardwareInfo.cpu?.cores || 0} (${t('physicalCores')}: ${cachedHardwareInfo.cpu?.physical_cores || 0})`;
-    }
-    const gpuStatusEl = document.getElementById('gpu-status');
-    if (gpuStatusEl) {
-        gpuStatusEl.textContent = cachedHardwareInfo.gpu?.available ? t('available') : t('unavailable');
-    }
-    const netContainer = document.getElementById('network-info');
-    if (netContainer && cachedHardwareInfo.network && cachedHardwareInfo.network.length > 0) {
-        netContainer.innerHTML = '';
-        const table = document.createElement('table');
-        table.className = 'network-table';
-        cachedHardwareInfo.network.forEach(iface => {
-            const row = document.createElement('tr'); row.className = 'network-row'; const icon = getNetworkIcon(iface.name); const type = getNetworkType(iface.name); const typeClass = getTypeClass(iface.name);
-            row.innerHTML = `<td class="network-icon">${icon}</td><td class="network-name">${iface.name}</td><td class="network-type ${typeClass}"><span>${type}</span></td><td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>`; table.appendChild(row);
-        }); netContainer.appendChild(table);
-    } else if (netContainer) { netContainer.innerHTML = `<p>${t('noNetwork')}</p>`; }
-}
+    if (!cachedHardwareInfo) return;const cpuCoresEl = document.getElementById('cpu-cores');
+    if (cpuCoresEl) {cpuCoresEl.textContent = `${cachedHardwareInfo.cpu?.cores || 0} (${t('physicalCores')}: ${cachedHardwareInfo.cpu?.physical_cores || 0})`;}const gpuStatusEl = document.getElementById('gpu-status');
+    if (gpuStatusEl) {gpuStatusEl.textContent = cachedHardwareInfo.gpu?.available ? t('available') : t('unavailable');}const netContainer = document.getElementById('network-info');
+    if (netContainer && cachedHardwareInfo.network && cachedHardwareInfo.network.length > 0) {netContainer.innerHTML = '';const table = document.createElement('table');table.className = 'network-table';cachedHardwareInfo.network.forEach(iface => {const row = document.createElement('tr'); row.className = 'network-row'; const icon = getNetworkIcon(iface.name); const type = getNetworkType(iface.name); const typeClass = getTypeClass(iface.name);row.innerHTML = `<td class="network-icon">${icon}</td><td class="network-name">${iface.name}</td><td class="network-type ${typeClass}"><span>${type}</span></td><td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>`; table.appendChild(row);}); netContainer.appendChild(table);} else if (netContainer) { netContainer.innerHTML = `<p>${t('noNetwork')}</p>`; }}
 function getNetworkIcon(name) { const nameLower = name.toLowerCase(); if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) { return '📶'; } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) { return '🔌'; } else if (nameLower.includes('vpn') || nameLower.includes('tunnel')) { return '🔒'; } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) { return '📱'; } else { return '🌐'; } }
 function getNetworkType(name) { const nameLower = name.toLowerCase(); if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) { return t('wifi'); } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) { return t('ethernet'); } else if (nameLower.includes('vpn')) { return t('vpn'); } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) { return t('bluetooth'); } else { return t('other'); } }
 function getTypeClass(name) { const nameLower = name.toLowerCase(); if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) { return 'type-wifi'; } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) { return 'type-ethernet'; } else if (nameLower.includes('vpn')) { return 'type-vpn'; } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) { return 'type-bluetooth'; } else { return 'type-other'; } }
-function renderDiskUsage(disks) {
-    const container = document.getElementById('disk-container'); if (!container) return; if (!disks || disks.length === 0) { container.innerHTML = `<p>${t('noDisk')}</p>`; return; }
-    const existingItems = container.querySelectorAll('.disk-item'); const existingCount = existingItems.length; const newCount = disks.length;
-    if (existingCount !== newCount) { container.innerHTML = ''; disks.forEach(disk => { createDiskItem(container, disk, true); }); return; }
-    disks.forEach((disk, index) => { const diskItem = existingItems[index]; updateDiskItem(diskItem, disk); });
-}
+function renderDiskUsage(disks) {const container = document.getElementById('disk-container'); if (!container) return; if (!disks || disks.length === 0) { container.innerHTML = `<p>${t('noDisk')}</p>`; return; }const existingItems = container.querySelectorAll('.disk-item'); const existingCount = existingItems.length; const newCount = disks.length;if (existingCount !== newCount) { container.innerHTML = ''; disks.forEach(disk => { createDiskItem(container, disk, true); }); return; }disks.forEach((disk, index) => { const diskItem = existingItems[index]; updateDiskItem(diskItem, disk); });}
 function createDiskItem(container, disk, withAnimation = false) {
-    const diskItem = document.createElement('div'); diskItem.className = 'disk-item'; diskItem.dataset.device = disk.device; diskItem.dataset.mountpoint = disk.mountpoint;
-    let fillClass = 'low-fill'; if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill'; else if (disk.usage_percent >= 70) fillClass = 'high-fill'; const progressBar = document.createElement('div'); progressBar.className = 'progress-bar'; const progressFill = document.createElement('div'); progressFill.className = `progress-fill ${fillClass}`;
+    const diskItem = document.createElement('div'); diskItem.className = 'disk-item'; diskItem.dataset.device = disk.device; diskItem.dataset.mountpoint = disk.mountpoint;let fillClass = 'low-fill'; if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill'; else if (disk.usage_percent >= 70) fillClass = 'high-fill'; const progressBar = document.createElement('div'); progressBar.className = 'progress-bar'; const progressFill = document.createElement('div'); progressFill.className = `progress-fill ${fillClass}`;
     if (withAnimation) { progressFill.style.width = '0%'; setTimeout(() => { progressFill.style.width = `${disk.usage_percent}%`; }, 100); } else { progressFill.style.width = `${disk.usage_percent}%`; } progressBar.appendChild(progressFill);
-    diskItem.innerHTML = `<h4>${disk.device} (${disk.mountpoint})</h4><div class="disk-info"><span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span><span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span></div>`;
-    diskItem.insertBefore(progressBar, diskItem.querySelector('.disk-info').nextSibling); container.appendChild(diskItem);
+    diskItem.innerHTML = `<h4>${disk.device} (${disk.mountpoint})</h4><div class="disk-info"><span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span><span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span></div>`;diskItem.insertBefore(progressBar, diskItem.querySelector('.disk-info').nextSibling); container.appendChild(diskItem);
 }
-function updateDiskItem(diskItem, disk) {
-    if (!diskItem) return; const progressFill = diskItem.querySelector('.progress-fill');
-    if (progressFill) { let fillClass = 'low-fill'; if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill'; else if (disk.usage_percent >= 70) fillClass = 'high-fill'; progressFill.className = `progress-fill ${fillClass}`; progressFill.style.width = `${disk.usage_percent}%`; }
-    const diskInfo = diskItem.querySelector('.disk-info'); if (diskInfo) { diskInfo.innerHTML = `<span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span><span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span>`; }
-}
+function updateDiskItem(diskItem, disk) {if (!diskItem) return; const progressFill = diskItem.querySelector('.progress-fill');if (progressFill) { let fillClass = 'low-fill'; if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill'; else if (disk.usage_percent >= 70) fillClass = 'high-fill'; progressFill.className = `progress-fill ${fillClass}`; progressFill.style.width = `${disk.usage_percent}%`; }const diskInfo = diskItem.querySelector('.disk-info'); if (diskInfo) { diskInfo.innerHTML = `<span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span><span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span>`; }}
 function updateNetSpeedDisplay(upload, download) { const uploadEl = document.getElementById('net-upload-speed'); const downloadEl = document.getElementById('net-download-speed'); if (uploadEl) { animateNumber(uploadEl, upload, false, ' KB/s'); } if (downloadEl) { animateNumber(downloadEl, download, false, ' KB/s'); } }
 async function getHardwareInfo() { if (!(await checkBackendStatus())) return; try { const response = await fetch(`${API_BASE}/hardware-info`); if (!response.ok) throw new Error(`HTTP错误：${response.status}`); const data = await response.json(); renderHardwareInfo(data); const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}'); localCache.hardware_info = data; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache)); } catch (error) { console.error('获取最新硬件信息失败:', error); showPrompt(`获取最新硬件信息失败: ${t('getHardwareInfoError')}`, false); } }
-async function updateRealTimeData() {
-    if (!(await checkBackendStatus())) return; try {
-        const response = await fetch(`${API_BASE}/real-time-data`);
-        const data = await response.json(); const sampleInterval = getSampleInterval();
-        const sampledCpuUsage = sampleChartData(data.cpu_usage, sampleInterval); const sampledMemUsage = sampleChartData(data.mem_usage, sampleInterval);
-        const sampledGpuUsage = sampleChartData(data.gpu_usage, sampleInterval); const sampledNetUpload = sampleChartData(data.net_upload_speed, sampleInterval);
-        const sampledNetDownload = sampleChartData(data.net_download_speed, sampleInterval); const sampledSystemLoad = sampleChartData(data.system_load, sampleInterval);
-        const sampledProcessCount = sampleChartData(data.process_count, sampleInterval); const sampledCpuTemp = sampleChartData(data.cpu_temperature, sampleInterval);
-        if (chart) { chart.setOption({ series: [{ data: sampledCpuUsage }, { data: sampledMemUsage }, { data: sampledGpuUsage }] }); }
-        if (netChart) { netChart.setOption({ series: [{ data: sampledNetUpload }, { data: sampledNetDownload }] }); }
-        if (systemChart) { systemChart.setOption({ series: [{ data: sampledSystemLoad }, { data: sampledProcessCount }, { data: sampledCpuTemp }] }); }
-        const cpuUsage = data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0;
-        const memUsage = data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0;
-        const gpuUsage = data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0; const cpuUsageEl = document.getElementById('cpu-usage-current');
-        const memUsageEl = document.getElementById('mem-usage-current'); const gpuUsageEl = document.getElementById('gpu-usage-current');
-        if (cpuUsageEl) animateNumber(cpuUsageEl, cpuUsage, true); if (memUsageEl) animateNumber(memUsageEl, memUsage, true); if (gpuUsageEl) animateNumber(gpuUsageEl, gpuUsage, true);
-        updateCPUCores(data.cpu_core_usage, true); const uploadSpeed = data.net_upload_speed.length > 0 ? data.net_upload_speed[data.net_upload_speed.length - 1][1] : 0;
-        const downloadSpeed = data.net_download_speed.length > 0 ? data.net_download_speed[data.net_download_speed.length - 1][1] : 0; updateNetSpeedDisplay(uploadSpeed, downloadSpeed);
-        const systemLoad = data.system_load.length > 0 ? data.system_load[data.system_load.length - 1][1] : 0;
-        const processCount = data.process_count.length > 0 ? data.process_count[data.process_count.length - 1][1] : 0;
-        const cpuTemperature = data.cpu_temperature.length > 0 ? data.cpu_temperature[data.cpu_temperature.length - 1][1] : 0;
-        const systemLoadEl = document.getElementById('system-load');
-        if (systemLoadEl) { animateNumber(systemLoadEl, systemLoad, false); } const processCountEl = document.getElementById('process-count');
-        if (processCountEl) { animateNumber(processCountEl, processCount, false); } const cpuTemperatureEl = document.getElementById('cpu-temperature');
-        if (cpuTemperatureEl) { animateNumber(cpuTemperatureEl, cpuTemperature, false, '°C'); } const bootTimeEl = document.getElementById('boot-time');
-        if (bootTimeEl && data.boot_time) {
-            const bootTime = new Date(data.boot_time * 1000); const now = new Date();
-            const diffMs = now - bootTime; const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-            bootTimeEl.textContent = `${diffDays}${t('days')}${diffHours}${t('hoursShort')}${diffMinutes}${t('minutesShort')}`;
-        }
-        const batteryInfoEl = document.getElementById('battery-info');
-        if (batteryInfoEl && data.battery_info) {
-            const battery = data.battery_info; if (battery.percent !== undefined) {
-                if (battery.plugged) {
-                    batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${t('batteryCharging')} ${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;
-                } else {
-                    const secsLeft = battery.secsleft; let timeLeft = ''; if (secsLeft > 0) {
-                        const hours = Math.floor(secsLeft / 3600); const minutes = Math.floor((secsLeft % 3600) / 60);
-                        timeLeft = `, ${t('estimatedTimeLeft')} ${hours}${t('hours')}${minutes}${t('minutes')}`;
-                    }
-                    batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${battery.percent.toFixed(0)}% (${t('batteryUnplugged')}${timeLeft})`;
-                }
-            }
-        } const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
-        localCache.real_time_data = {
-            cpu_usage: data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0,
-            mem_usage: data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0,
-            gpu_usage: data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0,
-            net_upload_speed: uploadSpeed, net_download_speed: downloadSpeed, system_load: systemLoad,
-            process_count: processCount, cpu_temperature: cpuTemperature, boot_time: data.boot_time,
-            battery_info: data.battery_info, cpu_core_usage: data.cpu_core_usage, timestamp: data.timestamp
-        }; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
-    } catch (error) { console.error(`${t('realTimeErrorError')}:`, error); showPrompt(`${t('realTimeErrorError')}`, false); }
-}
-function updateCPUCores(coreUsages, withAnimation = false) {
-    const container = document.getElementById('cpu-cores-container'); if (!container) return;
-    if (coreUsages && coreUsages.length > 0) { cachedCpuCores = [...coreUsages]; }
-    if (!coreUsages || coreUsages.length === 0) { container.innerHTML = `<p>${t('noCPUCores')}</p>`; cachedCpuCores = []; return; }
-    const existingCoreBoxes = container.querySelectorAll('.core-box');
-    const existingCount = existingCoreBoxes.length;
-    const newCount = coreUsages.length;
-    if (existingCount !== newCount) {
-        container.innerHTML = ''; coreUsages.forEach((usage, index) => {
-            const coreBox = document.createElement('div'); coreBox.className = 'core-box';
-            const coreNumEl = document.createElement('div'); coreNumEl.className = 'core-num';
-            coreNumEl.textContent = `${t('core')} ${index + 1}`; const coreUsageEl = document.createElement('div');
-            coreUsageEl.className = 'core-usage'; coreUsageEl.textContent = `${usage.toFixed(1)}%`;
-            coreBox.appendChild(coreNumEl); coreBox.appendChild(coreUsageEl); container.appendChild(coreBox);
-        });
-    } coreUsages.forEach((usage, index) => {
-        const coreBox = container.children[index]; if (!coreBox) return;
-        const coreNumEl = coreBox.querySelector('.core-num'); if (coreNumEl) { coreNumEl.textContent = `${t('core')} ${index + 1}`; }
-        const coreUsageEl = coreBox.querySelector('.core-usage');
-        if (coreUsageEl) { if (withAnimation) { animateNumber(coreUsageEl, usage, true); } else { coreUsageEl.textContent = `${usage.toFixed(1)}%`; } }
-        coreBox.className = 'core-box'; if (usage < 30) coreBox.classList.add('low'); else if (usage < 70) coreBox.classList.add('medium');
-        else coreBox.classList.add('high');
-    });
-} let autoRetryInterval = null; let retryCount = 0; const MAX_RETRY_COUNT = 5;
+async function updateRealTimeData() {if (!(await checkBackendStatus())) return; try {const response = await fetch(`${API_BASE}/real-time-data`);const data = await response.json(); const sampleInterval = getSampleInterval();
+const sampledCpuUsage = sampleChartData(data.cpu_usage, sampleInterval); const sampledMemUsage = sampleChartData(data.mem_usage, sampleInterval);
+const sampledGpuUsage = sampleChartData(data.gpu_usage, sampleInterval); const sampledNetUpload = sampleChartData(data.net_upload_speed, sampleInterval);
+const sampledNetDownload = sampleChartData(data.net_download_speed, sampleInterval); const sampledSystemLoad = sampleChartData(data.system_load, sampleInterval);
+const sampledProcessCount = sampleChartData(data.process_count, sampleInterval); const sampledCpuTemp = sampleChartData(data.cpu_temperature, sampleInterval);
+if (chart) { chart.setOption({ series: [{ data: sampledCpuUsage }, { data: sampledMemUsage }, { data: sampledGpuUsage }] }); }
+if (netChart) { netChart.setOption({ series: [{ data: sampledNetUpload }, { data: sampledNetDownload }] }); }
+if (systemChart) { systemChart.setOption({ series: [{ data: sampledSystemLoad }, { data: sampledProcessCount }, { data: sampledCpuTemp }] }); }
+const cpuUsage = data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0;
+const memUsage = data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0;
+const gpuUsage = data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0; const cpuUsageEl = document.getElementById('cpu-usage-current');
+const memUsageEl = document.getElementById('mem-usage-current'); const gpuUsageEl = document.getElementById('gpu-usage-current');
+if (cpuUsageEl) animateNumber(cpuUsageEl, cpuUsage, true); if (memUsageEl) animateNumber(memUsageEl, memUsage, true); if (gpuUsageEl) animateNumber(gpuUsageEl, gpuUsage, true);
+updateCPUCores(data.cpu_core_usage, true); const uploadSpeed = data.net_upload_speed.length > 0 ? data.net_upload_speed[data.net_upload_speed.length - 1][1] : 0;
+const downloadSpeed = data.net_download_speed.length > 0 ? data.net_download_speed[data.net_download_speed.length - 1][1] : 0; updateNetSpeedDisplay(uploadSpeed, downloadSpeed);
+const systemLoad = data.system_load.length > 0 ? data.system_load[data.system_load.length - 1][1] : 0;
+const processCount = data.process_count.length > 0 ? data.process_count[data.process_count.length - 1][1] : 0;
+const cpuTemperature = data.cpu_temperature.length > 0 ? data.cpu_temperature[data.cpu_temperature.length - 1][1] : 0;
+const systemLoadEl = document.getElementById('system-load');
+if (systemLoadEl) { animateNumber(systemLoadEl, systemLoad, false); } const processCountEl = document.getElementById('process-count');
+if (processCountEl) { animateNumber(processCountEl, processCount, false); } const cpuTemperatureEl = document.getElementById('cpu-temperature');
+if (cpuTemperatureEl) { animateNumber(cpuTemperatureEl, cpuTemperature, false, '°C'); } const bootTimeEl = document.getElementById('boot-time');
+if (bootTimeEl && data.boot_time) {const bootTime = new Date(data.boot_time * 1000); const now = new Date();
+const diffMs = now - bootTime; const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));bootTimeEl.textContent = `${diffDays}${t('days')}${diffHours}${t('hoursShort')}${diffMinutes}${t('minutesShort')}`;}
+const batteryInfoEl = document.getElementById('battery-info');if (batteryInfoEl && data.battery_info) {const battery = data.battery_info; if (battery.percent !== undefined) {
+if (battery.plugged) {batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${t('batteryCharging')} ${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;} else {
+const secsLeft = battery.secsleft; let timeLeft = ''; if (secsLeft > 0) {const hours = Math.floor(secsLeft / 3600); const minutes = Math.floor((secsLeft % 3600) / 60);timeLeft = `, ${t('estimatedTimeLeft')} ${hours}${t('hours')}${minutes}${t('minutes')}`;}
+batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${battery.percent.toFixed(0)}% (${t('batteryUnplugged')}${timeLeft})`;}}} const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
+localCache.real_time_data = {cpu_usage: data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0,mem_usage: data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0,gpu_usage: data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0,net_upload_speed: uploadSpeed, net_download_speed: downloadSpeed, system_load: systemLoad,process_count: processCount, cpu_temperature: cpuTemperature, boot_time: data.boot_time,battery_info: data.battery_info, cpu_core_usage: data.cpu_core_usage, timestamp: data.timestamp}; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));} catch (error) { console.error(`${t('realTimeErrorError')}:`, error); showPrompt(`${t('realTimeErrorError')}`, false); }}
+function updateCPUCores(coreUsages, withAnimation = false) {const container = document.getElementById('cpu-cores-container'); if (!container) return;if (coreUsages && coreUsages.length > 0) { cachedCpuCores = [...coreUsages]; }if (!coreUsages || coreUsages.length === 0) { container.innerHTML = `<p>${t('noCPUCores')}</p>`; cachedCpuCores = []; return; }const existingCoreBoxes = container.querySelectorAll('.core-box');const existingCount = existingCoreBoxes.length;const newCount = coreUsages.length;
+if (existingCount !== newCount) {container.innerHTML = ''; coreUsages.forEach((usage, index) => {const coreBox = document.createElement('div'); coreBox.className = 'core-box';
+const coreNumEl = document.createElement('div'); coreNumEl.className = 'core-num';coreNumEl.textContent = `${t('core')} ${index + 1}`; const coreUsageEl = document.createElement('div');coreUsageEl.className = 'core-usage'; coreUsageEl.textContent = `${usage.toFixed(1)}%`;coreBox.appendChild(coreNumEl); coreBox.appendChild(coreUsageEl); container.appendChild(coreBox);});
+} coreUsages.forEach((usage, index) => {const coreBox = container.children[index]; if (!coreBox) return;const coreNumEl = coreBox.querySelector('.core-num'); if (coreNumEl) { coreNumEl.textContent = `${t('core')} ${index + 1}`; }const coreUsageEl = coreBox.querySelector('.core-usage');
+if (coreUsageEl) { if (withAnimation) { animateNumber(coreUsageEl, usage, true); } else { coreUsageEl.textContent = `${usage.toFixed(1)}%`; } }coreBox.className = 'core-box'; if (usage < 30) coreBox.classList.add('low'); else if (usage < 70) coreBox.classList.add('medium');else coreBox.classList.add('high');});} let autoRetryInterval = null; let retryCount = 0; const MAX_RETRY_COUNT = 5;
 async function retryBackendConnection() {
     updateStatusTip(t('retrying'), "warning");
     const backendAvailable = await checkBackendStatus();
@@ -1314,7 +1217,7 @@ async function loadVersionInfo() {
 async function init() {
     initI18n(); initTheme(); initHeaderScroll(); loadVersionInfo(); initChart(); adjustChartHeight(); let resizeTimer; window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { adjustChartHeight(); updateRealTimeData(); }, 250); }); initToggleButtons(); const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) { retryBtn.addEventListener('click', retryBackendConnection); } const backendAvailable = await checkBackendStatus();
-    if (backendAvailable) { updateStatusTip(t('connected'), "success"); await loadFromCache(); getHardwareInfo(); updateRealTimeData(); updateDiskUsage(); clearAllIntervals(); realTimeDataInterval = setInterval(updateRealTimeData, 2000); diskUsageInterval = setInterval(updateDiskUsage, 10000); hardwareInfoInterval = setInterval(getHardwareInfo, 30000); } else { await loadFromCache(); retryBackendConnection(); } showPrompt("正在从后端加载数据...", true);
+    if (backendAvailable) { updateStatusTip(t('connected'), "success"); await loadFromCache(); getHardwareInfo(); updateRealTimeData(); updateDiskUsage(); clearAllIntervals(); realTimeDataInterval = setInterval(updateRealTimeData, 2000); diskUsageInterval = setInterval(updateDiskUsage, 10000); hardwareInfoInterval = setInterval(getHardwareInfo, 30000); } else { await loadFromCache(); retryBackendConnection(); } showPrompt(t('loadingData'), true);
 } let allChartsCollapsed = false;
 function initToggleButtons() {
     const toggleBtns = document.querySelectorAll('.chart-toggle-btn'); toggleBtns.forEach(btn => { btn.addEventListener('click', () => { const targetId = btn.dataset.target; toggleChart(targetId, btn); }); });
@@ -1327,7 +1230,7 @@ function toggleChart(chartId, btn) {
 }
 function toggleAllCharts() {
     allChartsCollapsed = !allChartsCollapsed; const toggleAllBtn = document.getElementById('toggle-all-btn'); const toggleBtns = document.querySelectorAll('.chart-toggle-btn'); const chartContainers = document.querySelectorAll('.chart-container'); const panels = document.querySelectorAll('.chart-panel');
-    if (toggleAllBtn) { toggleAllBtn.classList.toggle('collapsed', allChartsCollapsed); const textEl = toggleAllBtn.querySelector('.toggle-text'); if (textEl) { textEl.textContent = allChartsCollapsed ? '展开所有图表' : '折叠所有图表'; } } toggleBtns.forEach(btn => { btn.classList.toggle('collapsed', allChartsCollapsed); }); chartContainers.forEach(container => { container.classList.toggle('collapsed', allChartsCollapsed); }); panels.forEach(panel => { panel.classList.toggle('collapsed', allChartsCollapsed); });
+    if (toggleAllBtn) { toggleAllBtn.classList.toggle('collapsed', allChartsCollapsed); const textEl = toggleAllBtn.querySelector('.toggle-text'); if (textEl) { textEl.textContent = allChartsCollapsed ? t('expandAll') : t('collapseAll'); } } toggleBtns.forEach(btn => { btn.classList.toggle('collapsed', allChartsCollapsed); }); chartContainers.forEach(container => { container.classList.toggle('collapsed', allChartsCollapsed); }); panels.forEach(panel => { panel.classList.toggle('collapsed', allChartsCollapsed); });
     if (!allChartsCollapsed) { setTimeout(() => { ['net-chart', 'system-chart', 'usage-chart'].forEach(resizeChart); }, 450); }
 }
 function resizeChart(chartId) { let chartInstance = null; if (chartId === 'usage-chart') chartInstance = chart; else if (chartId === 'net-chart') chartInstance = netChart; else if (chartId === 'system-chart') chartInstance = systemChart; if (chartInstance) { setTimeout(() => { chartInstance.resize(); }, 50); } } document.addEventListener('DOMContentLoaded', init);

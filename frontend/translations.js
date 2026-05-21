@@ -757,6 +757,14 @@ window.LANGUAGES = {
         noDisk: "디스크 정보를 찾을 수 없음",
         core: "코어",
         noCPUCores: "CPU 코어 정보를 찾을 수 없음",
+
+        // 数据加载
+        loadingData: "백엔드에서 데이터 로딩 중...",
+        loading: "로딩 중...",
+        speedUnit: "KB/s",
+        temperatureUnit: "°C",
+        bootTimeFormat: "부팅 시간 형식",
+        diskError: "디스크 오류",
     },
 
     // 法语
@@ -905,6 +913,14 @@ window.LANGUAGES = {
         noDisk: "Informations disque non détectées",
         core: "Cœur",
         noCPUCores: "Informations cœurs CPU non détectées",
+
+        // 数据加载
+        loadingData: "Chargement des données depuis le backend...",
+        loading: "Chargement...",
+        speedUnit: "KB/s",
+        temperatureUnit: "°C",
+        bootTimeFormat: "Format du temps de démarrage",
+        diskError: "Erreur de disque",
     },
 };
 
