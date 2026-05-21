@@ -601,6 +601,14 @@ window.LANGUAGES = {
         noDisk: "Информация о диске не обнаружена",
         core: "Ядро",
         noCPUCores: "Информация о ядрах ЦПУ не обнаружена",
+
+        // 数据加载
+        loadingData: "Загрузка данных с бэкенда...",
+        loading: "Загрузка...",
+        speedUnit: "KB/s",
+        temperatureUnit: "°C",
+        bootTimeFormat: "Формат времени загрузки",
+        diskError: "Ошибка диска",
     },
 
     // 韩语
