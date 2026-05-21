@@ -523,6 +523,12 @@ function updateStatusTip(text, type = "success") {
     if (type === "success") tipEl.classList.add("tip-success");
     else if (type === "warning") tipEl.classList.add("tip-warning");
     else if (type === "error") tipEl.classList.add("tip-error");
+
+    // 使用提示框组件显示提示
+    const isSuccess = (type === "success");
+    if (typeof showPrompt === 'function') {
+        showPrompt(text, isSuccess);
+    }
 }
 
 // 获取屏幕宽度对应的最大数据点数
