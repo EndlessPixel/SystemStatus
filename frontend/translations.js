@@ -446,6 +446,14 @@ window.LANGUAGES = {
         noDisk: "ディスク情報が検出されません",
         core: "コア",
         noCPUCores: "CPUコア情報が検出されません",
+
+        // 数据加载
+        loadingData: "バックエンドからデータを読み込み中...",
+        loading: "読み込み中...",
+        speedUnit: "KB/s",
+        temperatureUnit: "°C",
+        bootTimeFormat: "起動時間形式",
+        diskError: "ディスクエラー",
     },
     // 俄语
     'ru': {
