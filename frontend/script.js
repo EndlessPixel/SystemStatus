@@ -566,12 +566,24 @@ function sampleChartData(data, interval) {
 // Header滚动检测和悬浮效果
 function initHeaderScroll() {
     const header = document.querySelector('.header');
-    if (!header) return;
+    const headerPlaceholder = document.getElementById('header-placeholder');
+    if (!header || !headerPlaceholder) return;
     
     let lastScrollY = 0;
     let ticking = false;
     const SCROLL_UP_THRESHOLD = 80;    // 向上滚动超过80px时添加scrolled类
     const SCROLL_DOWN_THRESHOLD = 60;  // 向下滚动低于60px时移除scrolled类
+    
+    // 获取头部初始高度（包括margin和padding）
+    function getHeaderHeight() {
+        const styles = window.getComputedStyle(header);
+        return header.offsetHeight + 
+               parseInt(styles.marginTop) + 
+               parseInt(styles.marginBottom);
+    }
+    
+    // 初始化占位符高度
+    headerPlaceholder.style.height = getHeaderHeight() + 'px';
     
     function updateHeaderOnScroll() {
         const scrollY = window.scrollY;
@@ -580,8 +592,15 @@ function initHeaderScroll() {
         // 使用双阈值避免在临界点附近反复切换
         if (!isScrolled && scrollY > SCROLL_UP_THRESHOLD) {
             header.classList.add('scrolled');
+            // 滚动状态下，占位符高度使用较小的值
+            const smallHeight = getHeaderHeight();
+            headerPlaceholder.style.height = smallHeight + 'px';
         } else if (isScrolled && scrollY < SCROLL_DOWN_THRESHOLD) {
             header.classList.remove('scrolled');
+            // 恢复原始高度，需要重新计算（因为header可能已经改变）
+            setTimeout(() => {
+                headerPlaceholder.style.height = getHeaderHeight() + 'px';
+            }, 10);
         }
         
         lastScrollY = scrollY;
@@ -594,6 +613,13 @@ function initHeaderScroll() {
                 updateHeaderOnScroll();
             });
             ticking = true;
+        }
+    });
+    
+    // 窗口大小变化时更新占位符高度
+    window.addEventListener('resize', () => {
+        if (!header.classList.contains('scrolled')) {
+            headerPlaceholder.style.height = getHeaderHeight() + 'px';
         }
     });
     
@@ -1640,6 +1666,22 @@ async function updateDiskUsage() {
     }
 }
 
+async function loadVersionInfo() {
+    // 加载并显示版本信息
+    try {
+        const response = await fetch(`${API_BASE}/version`);
+        const versionData = await response.json();
+        
+        const versionElement = document.getElementById('version-info');
+        if (versionElement && versionData.git_commit) {
+            versionElement.textContent = `v${versionData.version} (${versionData.git_commit})`;
+            versionElement.style.display = 'inline';
+        }
+    } catch (error) {
+        console.log('获取版本信息失败（正常，可能不是Git仓库）:', error);
+    }
+}
+
 async function init() {
     console.log('[Init] SystemStatus 前端初始化开始');
     console.log('[Init] 当前页面地址:', window.location.href);
@@ -1654,6 +1696,9 @@ async function init() {
     
     initHeaderScroll();
     console.log('[Init] initHeaderScroll 完成');
+    
+    // 加载版本信息
+    loadVersionInfo();
     
     initChart();
     console.log('[Init] initChart 完成');

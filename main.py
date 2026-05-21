@@ -1,5 +1,6 @@
 import os
 import sys
+import subprocess
 
 # 在程序最顶部添加
 os.environ["PYTHONFAULTHANDLER"] = "0"
@@ -31,6 +32,31 @@ BASE_DIR = Path(__file__).parent.absolute()
 FRONTEND_DIR = BASE_DIR / "frontend"
 PUBLIC_DIR = BASE_DIR / "public"  # 公共静态文件目录，用于扩展性
 PORT = 8001  # 服务器默认端口号
+
+# 获取Git版本信息
+def get_git_commit_sha():
+    """获取当前Git仓库的commit SHA"""
+    git_dir = BASE_DIR / ".git"
+    if not git_dir.exists():
+        return None
+    
+    try:
+        result = subprocess.run(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception:
+        pass
+    
+    return None
+
+# 获取版本信息
+GIT_COMMIT_SHA = get_git_commit_sha()
 
 # 初始化FastAPI
 app = FastAPI(
