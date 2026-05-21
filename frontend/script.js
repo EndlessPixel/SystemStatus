@@ -23,21 +23,23 @@ function initI18n() {
     // 确保语言文件已加载
     if (!window.LANGUAGES) {
         console.error('Language files not loaded!');
+        // 显示错误提示
+        showPrompt('Language files not loaded!', false);
         return;
     }
-    
+
     const savedLang = localStorage.getItem(I18N_KEY);
     if (savedLang && window.LANGUAGES[savedLang]) {
         currentLanguage = savedLang;
     } else {
         const browserLang = navigator.language || navigator.userLanguage;
         // 自动检测浏览器语言
-        const detectedLang = Object.keys(window.LANGUAGE_CONFIG).find(lang => 
+        const detectedLang = Object.keys(window.LANGUAGE_CONFIG).find(lang =>
             browserLang.toLowerCase().startsWith(lang.toLowerCase())
         );
         currentLanguage = detectedLang || 'zh';
     }
-    
+
     initLanguageSelect();
     updateAllTranslations();
     updateLanguageSelect();
@@ -46,16 +48,16 @@ function initI18n() {
 function initLanguageSelect() {
     const select = document.getElementById('language-select');
     if (!select) return;
-    
+
     select.innerHTML = '';
-    
+
     Object.keys(window.LANGUAGE_CONFIG).forEach(langKey => {
         const option = document.createElement('option');
         option.value = langKey;
         option.textContent = window.LANGUAGE_CONFIG[langKey].nativeName;
         select.appendChild(option);
     });
-    
+
     // 添加事件监听器
     select.addEventListener('change', (e) => {
         setLanguage(e.target.value);
@@ -75,11 +77,11 @@ function setLanguage(lang) {
 
 function t(key, replacements = {}) {
     let text = window.LANGUAGES[currentLanguage][key] || window.LANGUAGES['zh'][key] || key;
-    
+
     Object.keys(replacements).forEach(placeholder => {
         text = text.replace(`{${placeholder}}`, replacements[placeholder]);
     });
-    
+
     return text;
 }
 
@@ -99,38 +101,38 @@ function updateAllTranslations() {
             el.textContent = t(key);
         }
     });
-    
+
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         el.placeholder = t(key);
     });
-    
+
     document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');
         el.setAttribute('title', t(key));
     });
-    
+
     updateSpecificTranslations();
 }
 
 function updateSpecificTranslations() {
     document.title = t('title');
-    
+
     const subTitle = document.querySelector('.sub-title');
     if (subTitle) {
         subTitle.textContent = t('title');
     }
-    
+
     const branchLabel = document.querySelector('.branch-switcher label');
     if (branchLabel) {
         branchLabel.textContent = t('selectServer');
     }
-    
+
     const switchBtn = document.getElementById('switch-btn');
     if (switchBtn) {
         switchBtn.textContent = t('switchBtn');
     }
-    
+
     const toggleAllBtn = document.getElementById('toggle-all-btn');
     if (toggleAllBtn) {
         const toggleText = toggleAllBtn.querySelector('.toggle-text');
@@ -138,22 +140,22 @@ function updateSpecificTranslations() {
             toggleText.textContent = t('collapseAll');
         }
     }
-    
+
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.textContent = t('retryConnection');
     }
-    
+
     const footerProject = document.querySelector('.project');
     if (footerProject) {
         footerProject.innerHTML = `${t('footerProject')} - Go to <a class="github-link" href="https://github.com/EndlessPixel/SystemStatus">${t('footerGithub')}</a>`;
     }
-    
+
     const footerCopyright = document.querySelector('.studio');
     if (footerCopyright) {
         footerCopyright.textContent = t('footerCopyright');
     }
-    
+
     // 直接更新网络类型标签，避免重新发起网络请求
     updateNetworkTypeLabels();
 }
@@ -250,7 +252,7 @@ function updateChartTranslations() {
 function initTheme() {
     // 初始化主题下拉框
     initThemeSelect();
-    
+
     const savedTheme = localStorage.getItem(THEME_KEY);
     if (savedTheme && window.THEME_CONFIG[savedTheme]) {
         setTheme(savedTheme);
@@ -264,9 +266,9 @@ function initTheme() {
 function initThemeSelect() {
     const select = document.getElementById('theme-select');
     if (!select) return;
-    
+
     select.innerHTML = '';
-    
+
     Object.keys(window.THEME_CONFIG).forEach(themeKey => {
         const theme = window.THEME_CONFIG[themeKey];
         const option = document.createElement('option');
@@ -274,7 +276,7 @@ function initThemeSelect() {
         option.textContent = t(theme.labelKey);
         select.appendChild(option);
     });
-    
+
     // 添加事件监听器
     select.addEventListener('change', (e) => {
         setTheme(e.target.value);
@@ -286,7 +288,7 @@ function setTheme(theme) {
     localStorage.setItem(THEME_KEY, theme);
     updateThemeSelect();
     updateChartTheme(theme);
-    
+
     // 更新body的class以支持特定的样式
     if (theme === 'dark') {
         document.body.classList.add('dark-mode');
@@ -298,12 +300,12 @@ function setTheme(theme) {
 function updateThemeSelect() {
     const select = document.getElementById('theme-select');
     if (!select) return;
-    
+
     const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-    
+
     // 检查是否真的需要重新生成选项
     let needsRegenerate = false;
-    
+
     // 如果选项数量不对，或者文本不匹配，就需要重新生成
     if (select.options.length !== Object.keys(window.THEME_CONFIG).length) {
         needsRegenerate = true;
@@ -320,11 +322,11 @@ function updateThemeSelect() {
             index++;
         }
     }
-    
+
     if (needsRegenerate) {
         // 重新生成所有选项以更新翻译
         select.innerHTML = '';
-        
+
         Object.keys(window.THEME_CONFIG).forEach(themeKey => {
             const theme = window.THEME_CONFIG[themeKey];
             const option = document.createElement('option');
@@ -333,7 +335,7 @@ function updateThemeSelect() {
             select.appendChild(option);
         });
     }
-    
+
     // 总是设置选中的主题
     select.value = currentTheme;
 }
@@ -565,27 +567,27 @@ function initHeaderScroll() {
     const header = document.querySelector('.header');
     const headerPlaceholder = document.getElementById('header-placeholder');
     if (!header || !headerPlaceholder) return;
-    
+
     let lastScrollY = 0;
     let ticking = false;
     const SCROLL_UP_THRESHOLD = 80;    // 向上滚动超过80px时添加scrolled类
     const SCROLL_DOWN_THRESHOLD = 60;  // 向下滚动低于60px时移除scrolled类
-    
+
     // 获取头部初始高度（包括margin和padding）
     function getHeaderHeight() {
         const styles = window.getComputedStyle(header);
-        return header.offsetHeight + 
-               parseInt(styles.marginTop) + 
-               parseInt(styles.marginBottom);
+        return header.offsetHeight +
+            parseInt(styles.marginTop) +
+            parseInt(styles.marginBottom);
     }
-    
+
     // 初始化占位符高度
     headerPlaceholder.style.height = getHeaderHeight() + 'px';
-    
+
     function updateHeaderOnScroll() {
         const scrollY = window.scrollY;
         const isScrolled = header.classList.contains('scrolled');
-        
+
         // 使用双阈值避免在临界点附近反复切换
         if (!isScrolled && scrollY > SCROLL_UP_THRESHOLD) {
             header.classList.add('scrolled');
@@ -599,11 +601,11 @@ function initHeaderScroll() {
                 headerPlaceholder.style.height = getHeaderHeight() + 'px';
             }, 10);
         }
-        
+
         lastScrollY = scrollY;
         ticking = false;
     }
-    
+
     window.addEventListener('scroll', () => {
         if (!ticking) {
             window.requestAnimationFrame(() => {
@@ -612,14 +614,14 @@ function initHeaderScroll() {
             ticking = true;
         }
     });
-    
+
     // 窗口大小变化时更新占位符高度
     window.addEventListener('resize', () => {
         if (!header.classList.contains('scrolled')) {
             headerPlaceholder.style.height = getHeaderHeight() + 'px';
         }
     });
-    
+
     // 初始化时检查一次
     updateHeaderOnScroll();
 }
@@ -667,7 +669,7 @@ function initChart() {
         const borderColor = '#e6e6e8';
         const bgColor = '#f5f5f7';
         const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
-        
+
         chart.setOption({
             backgroundColor: 'transparent',
             title: {
@@ -755,7 +757,7 @@ function initChart() {
         const borderColor = '#e6e6e8';
         const bgColor = '#f5f5f7';
         const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
-        
+
         netChart.setOption({
             backgroundColor: 'transparent',
             title: {
@@ -833,7 +835,7 @@ function initChart() {
         const borderColor = '#e6e6e8';
         const bgColor = '#f5f5f7';
         const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
-        
+
         systemChart.setOption({
             backgroundColor: 'transparent',
             title: {
@@ -939,6 +941,8 @@ async function checkBackendStatus() {
         return response.ok;
     } catch (error) {
         console.error("后端连接失败:", error);
+        // 显示错误提示
+        showPrompt(`后端连接失败: ${t('backendError')}`, false);
         return false;
     }
 }
@@ -955,10 +959,10 @@ async function loadLocalTmpJson() {
 
         // 转换时间戳为毫秒（如果需要）
         const rtData = cacheData.real_time_data;
-        const chartSeries = ['cpu_usage', 'mem_usage', 'gpu_usage', 
-            'net_upload_speed', 'net_download_speed', 
+        const chartSeries = ['cpu_usage', 'mem_usage', 'gpu_usage',
+            'net_upload_speed', 'net_download_speed',
             'system_load', 'process_count', 'cpu_temperature'];
-        
+
         chartSeries.forEach(key => {
             if (Array.isArray(rtData[key])) {
                 rtData[key] = rtData[key].map(item => [
@@ -994,11 +998,11 @@ async function loadLocalTmpJson() {
         }
 
         localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cacheData));
-        updateStatusTip(t('noCache'), "error");
         return true;
     } catch (error) {
         console.error("读取tmp.json失败:", error);
-        updateStatusTip(t('noCache'), "error");
+        // 显示错误提示
+        showPrompt(`读取tmp.json失败: ${t('readTmpJsonError')}`, false);
         return false;
     }
 }
@@ -1015,10 +1019,10 @@ async function loadFromCache() {
 
                 // 转换时间戳为毫秒（如果需要）
                 const rtData = cacheData.real_time_data;
-                const chartSeries = ['cpu_usage', 'mem_usage', 'gpu_usage', 
-                    'net_upload_speed', 'net_download_speed', 
+                const chartSeries = ['cpu_usage', 'mem_usage', 'gpu_usage',
+                    'net_upload_speed', 'net_download_speed',
                     'system_load', 'process_count', 'cpu_temperature'];
-                
+
                 chartSeries.forEach(key => {
                     if (Array.isArray(rtData[key])) {
                         rtData[key] = rtData[key].map(item => [
@@ -1105,7 +1109,7 @@ async function loadFromCache() {
 
 function renderHardwareInfo(data) {
     if (!data) return;
-    
+
     // 缓存硬件信息以便在语言切换时更新
     cachedHardwareInfo = data;
 
@@ -1131,460 +1135,158 @@ function renderHardwareInfo(data) {
             // 创建表格布局
             const table = document.createElement('table');
             table.className = 'network-table';
-            
+
             data.network.forEach(iface => {
                 const row = document.createElement('tr');
                 row.className = 'network-row';
-                
+
                 // 根据网卡名称添加图标和类型
                 const icon = getNetworkIcon(iface.name);
                 const type = getNetworkType(iface.name);
                 const typeClass = getTypeClass(iface.name);
-                
+
                 row.innerHTML = `
                     <td class="network-icon">${icon}</td>
                     <td class="network-name">${iface.name}</td>
                     <td class="network-type ${typeClass}"><span>${type}</span></td>
                     <td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>
                 `;
-                
+
                 table.appendChild(row);
             });
-            
+
             netContainer.appendChild(table);
         } else {
             netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
         }
     }
 }
-
-// 更新网络类型标签和其他可能需要翻译的元素（不重新请求网络）
 function updateNetworkTypeLabels() {
     if (!cachedHardwareInfo) return;
-    
-    // 更新CPU核心标签
     const cpuCoresEl = document.getElementById('cpu-cores');
     if (cpuCoresEl) {
         cpuCoresEl.textContent = `${cachedHardwareInfo.cpu?.cores || 0} (${t('physicalCores')}: ${cachedHardwareInfo.cpu?.physical_cores || 0})`;
     }
-    
-    // 更新GPU状态
     const gpuStatusEl = document.getElementById('gpu-status');
     if (gpuStatusEl) {
         gpuStatusEl.textContent = cachedHardwareInfo.gpu?.available ? t('available') : t('unavailable');
     }
-    
-    // 更新网络信息
     const netContainer = document.getElementById('network-info');
     if (netContainer && cachedHardwareInfo.network && cachedHardwareInfo.network.length > 0) {
         netContainer.innerHTML = '';
         const table = document.createElement('table');
         table.className = 'network-table';
-        
         cachedHardwareInfo.network.forEach(iface => {
-            const row = document.createElement('tr');
-            row.className = 'network-row';
-            
-            const icon = getNetworkIcon(iface.name);
-            const type = getNetworkType(iface.name);
-            const typeClass = getTypeClass(iface.name);
-            
-            row.innerHTML = `
-                <td class="network-icon">${icon}</td>
-                <td class="network-name">${iface.name}</td>
-                <td class="network-type ${typeClass}"><span>${type}</span></td>
-                <td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>
-            `;
-            
-            table.appendChild(row);
-        });
-        
-        netContainer.appendChild(table);
-    } else if (netContainer) {
-        netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
-    }
+            const row = document.createElement('tr'); row.className = 'network-row'; const icon = getNetworkIcon(iface.name); const type = getNetworkType(iface.name); const typeClass = getTypeClass(iface.name);
+            row.innerHTML = `<td class="network-icon">${icon}</td><td class="network-name">${iface.name}</td><td class="network-type ${typeClass}"><span>${type}</span></td><td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>`; table.appendChild(row);
+        }); netContainer.appendChild(table);
+    } else if (netContainer) { netContainer.innerHTML = `<p>${t('noNetwork')}</p>`; }
 }
-
-// 获取网卡图标
-function getNetworkIcon(name) {
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) {
-        return '📶';
-    } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) {
-        return '🔌';
-    } else if (nameLower.includes('vpn') || nameLower.includes('tunnel')) {
-        return '🔒';
-    } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) {
-        return '📱';
-    } else {
-        return '🌐';
-    }
-}
-
-// 获取网卡类型标签
-function getNetworkType(name) {
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) {
-        return t('wifi');
-    } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) {
-        return t('ethernet');
-    } else if (nameLower.includes('vpn')) {
-        return t('vpn');
-    } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) {
-        return t('bluetooth');
-    } else {
-        return t('other');
-    }
-}
-
-// 获取类型样式类
-function getTypeClass(name) {
-    const nameLower = name.toLowerCase();
-    if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) {
-        return 'type-wifi';
-    } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) {
-        return 'type-ethernet';
-    } else if (nameLower.includes('vpn')) {
-        return 'type-vpn';
-    } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) {
-        return 'type-bluetooth';
-    } else {
-        return 'type-other';
-    }
-}
-
+function getNetworkIcon(name) { const nameLower = name.toLowerCase(); if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) { return '📶'; } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) { return '🔌'; } else if (nameLower.includes('vpn') || nameLower.includes('tunnel')) { return '🔒'; } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) { return '📱'; } else { return '🌐'; } }
+function getNetworkType(name) { const nameLower = name.toLowerCase(); if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) { return t('wifi'); } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) { return t('ethernet'); } else if (nameLower.includes('vpn')) { return t('vpn'); } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) { return t('bluetooth'); } else { return t('other'); } }
+function getTypeClass(name) { const nameLower = name.toLowerCase(); if (nameLower.includes('wlan') || nameLower.includes('wi-fi') || nameLower.includes('wifi') || nameLower.includes('无线')) { return 'type-wifi'; } else if (nameLower.includes('ethernet') || nameLower.includes('以太网') || nameLower.includes('本地连接')) { return 'type-ethernet'; } else if (nameLower.includes('vpn')) { return 'type-vpn'; } else if (nameLower.includes('bluetooth') || nameLower.includes('蓝牙')) { return 'type-bluetooth'; } else { return 'type-other'; } }
 function renderDiskUsage(disks) {
-    const container = document.getElementById('disk-container');
-    if (!container) return;
-
-    if (!disks || disks.length === 0) {
-        container.innerHTML = `<p>${t('noDisk')}</p>`;
-        return;
-    }
-
-    const existingItems = container.querySelectorAll('.disk-item');
-    const existingCount = existingItems.length;
-    const newCount = disks.length;
-
-    if (existingCount !== newCount) {
-        container.innerHTML = '';
-        disks.forEach(disk => {
-            createDiskItem(container, disk, true);
-        });
-        return;
-    }
-
-    disks.forEach((disk, index) => {
-        const diskItem = existingItems[index];
-        updateDiskItem(diskItem, disk);
-    });
+    const container = document.getElementById('disk-container'); if (!container) return; if (!disks || disks.length === 0) { container.innerHTML = `<p>${t('noDisk')}</p>`; return; }
+    const existingItems = container.querySelectorAll('.disk-item'); const existingCount = existingItems.length; const newCount = disks.length;
+    if (existingCount !== newCount) { container.innerHTML = ''; disks.forEach(disk => { createDiskItem(container, disk, true); }); return; }
+    disks.forEach((disk, index) => { const diskItem = existingItems[index]; updateDiskItem(diskItem, disk); });
 }
-
 function createDiskItem(container, disk, withAnimation = false) {
-    const diskItem = document.createElement('div');
-    diskItem.className = 'disk-item';
-    diskItem.dataset.device = disk.device;
-    diskItem.dataset.mountpoint = disk.mountpoint;
-
-    let fillClass = 'low-fill';
-    if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill';
-    else if (disk.usage_percent >= 70) fillClass = 'high-fill';
-
-    const progressBar = document.createElement('div');
-    progressBar.className = 'progress-bar';
-
-    const progressFill = document.createElement('div');
-    progressFill.className = `progress-fill ${fillClass}`;
-    if (withAnimation) {
-        progressFill.style.width = '0%';
-        setTimeout(() => {
-            progressFill.style.width = `${disk.usage_percent}%`;
-        }, 100);
-    } else {
-        progressFill.style.width = `${disk.usage_percent}%`;
-    }
-    progressBar.appendChild(progressFill);
-
-    diskItem.innerHTML = `
-        <h4>${disk.device} (${disk.mountpoint})</h4>
-        <div class="disk-info">
-            <span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span>
-            <span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span>
-        </div>
-    `;
-
-    diskItem.insertBefore(progressBar, diskItem.querySelector('.disk-info').nextSibling);
-    container.appendChild(diskItem);
+    const diskItem = document.createElement('div'); diskItem.className = 'disk-item'; diskItem.dataset.device = disk.device; diskItem.dataset.mountpoint = disk.mountpoint;
+    let fillClass = 'low-fill'; if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill'; else if (disk.usage_percent >= 70) fillClass = 'high-fill'; const progressBar = document.createElement('div'); progressBar.className = 'progress-bar'; const progressFill = document.createElement('div'); progressFill.className = `progress-fill ${fillClass}`;
+    if (withAnimation) { progressFill.style.width = '0%'; setTimeout(() => { progressFill.style.width = `${disk.usage_percent}%`; }, 100); } else { progressFill.style.width = `${disk.usage_percent}%`; } progressBar.appendChild(progressFill);
+    diskItem.innerHTML = `<h4>${disk.device} (${disk.mountpoint})</h4><div class="disk-info"><span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span><span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span></div>`;
+    diskItem.insertBefore(progressBar, diskItem.querySelector('.disk-info').nextSibling); container.appendChild(diskItem);
 }
-
 function updateDiskItem(diskItem, disk) {
-    if (!diskItem) return;
-
-    const progressFill = diskItem.querySelector('.progress-fill');
-    if (progressFill) {
-        let fillClass = 'low-fill';
-        if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill';
-        else if (disk.usage_percent >= 70) fillClass = 'high-fill';
-
-        progressFill.className = `progress-fill ${fillClass}`;
-        progressFill.style.width = `${disk.usage_percent}%`;
-    }
-
-    const diskInfo = diskItem.querySelector('.disk-info');
-    if (diskInfo) {
-        diskInfo.innerHTML = `
-            <span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span>
-            <span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span>
-        `;
-    }
+    if (!diskItem) return; const progressFill = diskItem.querySelector('.progress-fill');
+    if (progressFill) { let fillClass = 'low-fill'; if (disk.usage_percent >= 30 && disk.usage_percent < 70) fillClass = 'medium-fill'; else if (disk.usage_percent >= 70) fillClass = 'high-fill'; progressFill.className = `progress-fill ${fillClass}`; progressFill.style.width = `${disk.usage_percent}%`; }
+    const diskInfo = diskItem.querySelector('.disk-info'); if (diskInfo) { diskInfo.innerHTML = `<span class="disk-percent">${disk.usage_percent.toFixed(1)}%</span><span class="disk-size">${disk.used.toFixed(1)}GB / ${disk.total.toFixed(1)}GB</span>`; }
 }
-
-function updateNetSpeedDisplay(upload, download) {
-    const uploadEl = document.getElementById('net-upload-speed');
-    const downloadEl = document.getElementById('net-download-speed');
-
-    if (uploadEl) {
-        animateNumber(uploadEl, upload, false, ' KB/s');
-    }
-
-    if (downloadEl) {
-        animateNumber(downloadEl, download, false, ' KB/s');
-    }
-}
-
-async function getHardwareInfo() {
-    if (!(await checkBackendStatus())) return;
-
-    try {
-        const response = await fetch(`${API_BASE}/hardware-info`);
-        if (!response.ok) throw new Error(`HTTP错误：${response.status}`);
-
-        const data = await response.json();
-        renderHardwareInfo(data);
-
-        const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
-        localCache.hardware_info = data;
-        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
-
-    } catch (error) {
-        console.error('获取最新硬件信息失败:', error);
-    }
-}
-
+function updateNetSpeedDisplay(upload, download) { const uploadEl = document.getElementById('net-upload-speed'); const downloadEl = document.getElementById('net-download-speed'); if (uploadEl) { animateNumber(uploadEl, upload, false, ' KB/s'); } if (downloadEl) { animateNumber(downloadEl, download, false, ' KB/s'); } }
+async function getHardwareInfo() { if (!(await checkBackendStatus())) return; try { const response = await fetch(`${API_BASE}/hardware-info`); if (!response.ok) throw new Error(`HTTP错误：${response.status}`); const data = await response.json(); renderHardwareInfo(data); const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}'); localCache.hardware_info = data; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache)); } catch (error) { console.error('获取最新硬件信息失败:', error); showPrompt(`获取最新硬件信息失败: ${t('getHardwareInfoError')}`, false); } }
 async function updateRealTimeData() {
-    if (!(await checkBackendStatus())) return;
-
-    try {
+    if (!(await checkBackendStatus())) return; try {
         const response = await fetch(`${API_BASE}/real-time-data`);
-        const data = await response.json();
-
-        // 根据屏幕宽度获取采样间隔
-        const sampleInterval = getSampleInterval();
-
-        // 对数据进行采样
-        const sampledCpuUsage = sampleChartData(data.cpu_usage, sampleInterval);
-        const sampledMemUsage = sampleChartData(data.mem_usage, sampleInterval);
-        const sampledGpuUsage = sampleChartData(data.gpu_usage, sampleInterval);
-        const sampledNetUpload = sampleChartData(data.net_upload_speed, sampleInterval);
-        const sampledNetDownload = sampleChartData(data.net_download_speed, sampleInterval);
-        const sampledSystemLoad = sampleChartData(data.system_load, sampleInterval);
-        const sampledProcessCount = sampleChartData(data.process_count, sampleInterval);
-        const sampledCpuTemp = sampleChartData(data.cpu_temperature, sampleInterval);
-
-        if (chart) {
-            chart.setOption({
-                series: [
-                    { data: sampledCpuUsage },
-                    { data: sampledMemUsage },
-                    { data: sampledGpuUsage }
-                ]
-            });
-        }
-
-        if (netChart) {
-            netChart.setOption({
-                series: [
-                    { data: sampledNetUpload },
-                    { data: sampledNetDownload }
-                ]
-            });
-        }
-
-        if (systemChart) {
-            systemChart.setOption({
-                series: [
-                    { data: sampledSystemLoad },
-                    { data: sampledProcessCount },
-                    { data: sampledCpuTemp }
-                ]
-            });
-        }
-
+        const data = await response.json(); const sampleInterval = getSampleInterval();
+        const sampledCpuUsage = sampleChartData(data.cpu_usage, sampleInterval); const sampledMemUsage = sampleChartData(data.mem_usage, sampleInterval);
+        const sampledGpuUsage = sampleChartData(data.gpu_usage, sampleInterval); const sampledNetUpload = sampleChartData(data.net_upload_speed, sampleInterval);
+        const sampledNetDownload = sampleChartData(data.net_download_speed, sampleInterval); const sampledSystemLoad = sampleChartData(data.system_load, sampleInterval);
+        const sampledProcessCount = sampleChartData(data.process_count, sampleInterval); const sampledCpuTemp = sampleChartData(data.cpu_temperature, sampleInterval);
+        if (chart) { chart.setOption({ series: [{ data: sampledCpuUsage }, { data: sampledMemUsage }, { data: sampledGpuUsage }] }); }
+        if (netChart) { netChart.setOption({ series: [{ data: sampledNetUpload }, { data: sampledNetDownload }] }); }
+        if (systemChart) { systemChart.setOption({ series: [{ data: sampledSystemLoad }, { data: sampledProcessCount }, { data: sampledCpuTemp }] }); }
         const cpuUsage = data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0;
         const memUsage = data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0;
-        const gpuUsage = data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0;
-
-        const cpuUsageEl = document.getElementById('cpu-usage-current');
-        const memUsageEl = document.getElementById('mem-usage-current');
-        const gpuUsageEl = document.getElementById('gpu-usage-current');
-
-        if (cpuUsageEl) animateNumber(cpuUsageEl, cpuUsage, true);
-        if (memUsageEl) animateNumber(memUsageEl, memUsage, true);
-        if (gpuUsageEl) animateNumber(gpuUsageEl, gpuUsage, true);
-
-        updateCPUCores(data.cpu_core_usage, true);
-
-        const uploadSpeed = data.net_upload_speed.length > 0 ? data.net_upload_speed[data.net_upload_speed.length - 1][1] : 0;
-        const downloadSpeed = data.net_download_speed.length > 0 ? data.net_download_speed[data.net_download_speed.length - 1][1] : 0;
-        updateNetSpeedDisplay(uploadSpeed, downloadSpeed);
-
+        const gpuUsage = data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0; const cpuUsageEl = document.getElementById('cpu-usage-current');
+        const memUsageEl = document.getElementById('mem-usage-current'); const gpuUsageEl = document.getElementById('gpu-usage-current');
+        if (cpuUsageEl) animateNumber(cpuUsageEl, cpuUsage, true); if (memUsageEl) animateNumber(memUsageEl, memUsage, true); if (gpuUsageEl) animateNumber(gpuUsageEl, gpuUsage, true);
+        updateCPUCores(data.cpu_core_usage, true); const uploadSpeed = data.net_upload_speed.length > 0 ? data.net_upload_speed[data.net_upload_speed.length - 1][1] : 0;
+        const downloadSpeed = data.net_download_speed.length > 0 ? data.net_download_speed[data.net_download_speed.length - 1][1] : 0; updateNetSpeedDisplay(uploadSpeed, downloadSpeed);
         const systemLoad = data.system_load.length > 0 ? data.system_load[data.system_load.length - 1][1] : 0;
         const processCount = data.process_count.length > 0 ? data.process_count[data.process_count.length - 1][1] : 0;
         const cpuTemperature = data.cpu_temperature.length > 0 ? data.cpu_temperature[data.cpu_temperature.length - 1][1] : 0;
-
         const systemLoadEl = document.getElementById('system-load');
-        if (systemLoadEl) {
-            animateNumber(systemLoadEl, systemLoad, false);
-        }
-
-        const processCountEl = document.getElementById('process-count');
-        if (processCountEl) {
-            animateNumber(processCountEl, processCount, false);
-        }
-
-        const cpuTemperatureEl = document.getElementById('cpu-temperature');
-        if (cpuTemperatureEl) {
-            animateNumber(cpuTemperatureEl, cpuTemperature, false, '°C');
-        }
-
-        const bootTimeEl = document.getElementById('boot-time');
+        if (systemLoadEl) { animateNumber(systemLoadEl, systemLoad, false); } const processCountEl = document.getElementById('process-count');
+        if (processCountEl) { animateNumber(processCountEl, processCount, false); } const cpuTemperatureEl = document.getElementById('cpu-temperature');
+        if (cpuTemperatureEl) { animateNumber(cpuTemperatureEl, cpuTemperature, false, '°C'); } const bootTimeEl = document.getElementById('boot-time');
         if (bootTimeEl && data.boot_time) {
-            const bootTime = new Date(data.boot_time * 1000);
-            const now = new Date();
-            const diffMs = now - bootTime;
-            const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const bootTime = new Date(data.boot_time * 1000); const now = new Date();
+            const diffMs = now - bootTime; const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const diffHours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)); const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
             bootTimeEl.textContent = `${diffDays}${t('days')}${diffHours}${t('hoursShort')}${diffMinutes}${t('minutesShort')}`;
         }
-
         const batteryInfoEl = document.getElementById('battery-info');
         if (batteryInfoEl && data.battery_info) {
-            const battery = data.battery_info;
-            if (battery.percent !== undefined) {
+            const battery = data.battery_info; if (battery.percent !== undefined) {
                 if (battery.plugged) {
                     batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${t('batteryCharging')} ${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;
                 } else {
-                    const secsLeft = battery.secsleft;
-                    let timeLeft = '';
-                    if (secsLeft > 0) {
-                        const hours = Math.floor(secsLeft / 3600);
-                        const minutes = Math.floor((secsLeft % 3600) / 60);
+                    const secsLeft = battery.secsleft; let timeLeft = ''; if (secsLeft > 0) {
+                        const hours = Math.floor(secsLeft / 3600); const minutes = Math.floor((secsLeft % 3600) / 60);
                         timeLeft = `, ${t('estimatedTimeLeft')} ${hours}${t('hours')}${minutes}${t('minutes')}`;
                     }
                     batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${battery.percent.toFixed(0)}% (${t('batteryUnplugged')}${timeLeft})`;
                 }
             }
-        }
-
-        const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
+        } const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
         localCache.real_time_data = {
             cpu_usage: data.cpu_usage.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0,
             mem_usage: data.mem_usage.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0,
             gpu_usage: data.gpu_usage.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0,
-            net_upload_speed: uploadSpeed,
-            net_download_speed: downloadSpeed,
-            system_load: systemLoad,
-            process_count: processCount,
-            cpu_temperature: cpuTemperature,
-            boot_time: data.boot_time,
-            battery_info: data.battery_info,
-            cpu_core_usage: data.cpu_core_usage,
-            timestamp: data.timestamp
-        };
-        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
-
-    } catch (error) {
-        console.error('获取实时数据失败:', error);
-    }
+            net_upload_speed: uploadSpeed, net_download_speed: downloadSpeed, system_load: systemLoad,
+            process_count: processCount, cpu_temperature: cpuTemperature, boot_time: data.boot_time,
+            battery_info: data.battery_info, cpu_core_usage: data.cpu_core_usage, timestamp: data.timestamp
+        }; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
+    } catch (error) { console.error('获取实时数据失败:', error); showPrompt(`获取实时数据失败: ${t('realTimeErrorError')}`, false); }
 }
-
 function updateCPUCores(coreUsages, withAnimation = false) {
-    const container = document.getElementById('cpu-cores-container');
-    if (!container) return;
-
-    // 保存核心数据用于语言切换
-    if (coreUsages && coreUsages.length > 0) {
-        cachedCpuCores = [...coreUsages];
-    }
-
-    if (!coreUsages || coreUsages.length === 0) {
-        container.innerHTML = `<p>${t('noCPUCores')}</p>`;
-        cachedCpuCores = [];
-        return;
-    }
-
+    const container = document.getElementById('cpu-cores-container'); if (!container) return;
+    if (coreUsages && coreUsages.length > 0) { cachedCpuCores = [...coreUsages]; }
+    if (!coreUsages || coreUsages.length === 0) { container.innerHTML = `<p>${t('noCPUCores')}</p>`; cachedCpuCores = []; return; }
     const existingCoreBoxes = container.querySelectorAll('.core-box');
     const existingCount = existingCoreBoxes.length;
     const newCount = coreUsages.length;
-
     if (existingCount !== newCount) {
-        container.innerHTML = '';
-
-        coreUsages.forEach((usage, index) => {
-            const coreBox = document.createElement('div');
-            coreBox.className = 'core-box';
-
-            const coreNumEl = document.createElement('div');
-            coreNumEl.className = 'core-num';
-            coreNumEl.textContent = `${t('core')} ${index + 1}`;
-
-            const coreUsageEl = document.createElement('div');
-            coreUsageEl.className = 'core-usage';
-            coreUsageEl.textContent = `${usage.toFixed(1)}%`;
-
-            coreBox.appendChild(coreNumEl);
-            coreBox.appendChild(coreUsageEl);
-            container.appendChild(coreBox);
+        container.innerHTML = ''; coreUsages.forEach((usage, index) => {
+            const coreBox = document.createElement('div'); coreBox.className = 'core-box';
+            const coreNumEl = document.createElement('div'); coreNumEl.className = 'core-num';
+            coreNumEl.textContent = `${t('core')} ${index + 1}`; const coreUsageEl = document.createElement('div');
+            coreUsageEl.className = 'core-usage'; coreUsageEl.textContent = `${usage.toFixed(1)}%`;
+            coreBox.appendChild(coreNumEl); coreBox.appendChild(coreUsageEl); container.appendChild(coreBox);
         });
-    }
-
-    coreUsages.forEach((usage, index) => {
-        const coreBox = container.children[index];
-        if (!coreBox) return;
-
-        // 更新核心编号文本（用于语言切换时更新翻译）
-        const coreNumEl = coreBox.querySelector('.core-num');
-        if (coreNumEl) {
-            coreNumEl.textContent = `${t('core')} ${index + 1}`;
-        }
-
+    } coreUsages.forEach((usage, index) => {
+        const coreBox = container.children[index]; if (!coreBox) return;
+        const coreNumEl = coreBox.querySelector('.core-num'); if (coreNumEl) { coreNumEl.textContent = `${t('core')} ${index + 1}`; }
         const coreUsageEl = coreBox.querySelector('.core-usage');
-        if (coreUsageEl) {
-            if (withAnimation) {
-                animateNumber(coreUsageEl, usage, true);
-            } else {
-                coreUsageEl.textContent = `${usage.toFixed(1)}%`;
-            }
-        }
-
-        coreBox.className = 'core-box';
-        if (usage < 30) coreBox.classList.add('low');
-        else if (usage < 70) coreBox.classList.add('medium');
+        if (coreUsageEl) { if (withAnimation) { animateNumber(coreUsageEl, usage, true); } else { coreUsageEl.textContent = `${usage.toFixed(1)}%`; } }
+        coreBox.className = 'core-box'; if (usage < 30) coreBox.classList.add('low'); else if (usage < 70) coreBox.classList.add('medium');
         else coreBox.classList.add('high');
     });
-}
-
-let autoRetryInterval = null;
-let retryCount = 0;
-const MAX_RETRY_COUNT = 5;
-
+} let autoRetryInterval = null; let retryCount = 0; const MAX_RETRY_COUNT = 5;
 async function retryBackendConnection() {
     updateStatusTip(t('retrying'), "warning");
-    // 隐藏重试按钮
-
     const backendAvailable = await checkBackendStatus();
-
     if (backendAvailable) {
         updateStatusTip(t('connected'), "success");
         await loadFromCache();
@@ -1609,213 +1311,43 @@ async function retryBackendConnection() {
             updateStatusTip(t('retryInSeconds', { count: MAX_RETRY_COUNT - retryCount }), "error");
             setTimeout(retryBackendConnection, 1000);
         } else {
-            updateStatusTip(t('maxRetriesReached'), "error");
-            // 显示重试按钮提示
+            showPrompt(`最大重试次数已达到: ${t('maxRetriesReachedError')}`, false);
         }
     }
 }
-
-
-
-function clearAllIntervals() {
-    if (realTimeDataInterval) {
-        clearInterval(realTimeDataInterval);
-        realTimeDataInterval = null;
-    }
-    if (diskUsageInterval) {
-        clearInterval(diskUsageInterval);
-        diskUsageInterval = null;
-    }
-    if (hardwareInfoInterval) {
-        clearInterval(hardwareInfoInterval);
-        hardwareInfoInterval = null;
-    }
-}
-
+function clearAllIntervals() { if (realTimeDataInterval) { clearInterval(realTimeDataInterval); realTimeDataInterval = null; } if (diskUsageInterval) { clearInterval(diskUsageInterval); diskUsageInterval = null; } if (hardwareInfoInterval) { clearInterval(hardwareInfoInterval); hardwareInfoInterval = null; } }
 async function updateDiskUsage() {
-    if (!(await checkBackendStatus())) return;
-
-    try {
-        const response = await fetch(`${API_BASE}/disk-usage`);
-        const disks = await response.json();
-        renderDiskUsage(disks);
-
-        const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}');
-        localCache.disk_usage = disks;
-        localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
-
+    if (!(await checkBackendStatus())) return; try {
+        const response = await fetch(`${API_BASE}/disk-usage`); const disks = await response.json(); renderDiskUsage(disks);
+        const localCache = JSON.parse(localStorage.getItem(LOCAL_CACHE_KEY) || '{}'); localCache.disk_usage = disks; localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
     } catch (error) {
         console.error('获取硬盘信息失败:', error);
-        const container = document.getElementById('disk-container');
-        if (container) container.innerHTML = `<p>${t('noDisk')}</p>`;
+        showPrompt(`获取硬盘信息失败: ${t('diskError')}`, false); const container = document.getElementById('disk-container'); if (container) container.innerHTML = `<p>${t('noDisk')}</p>`;
     }
 }
-
 async function loadVersionInfo() {
-    // 加载并显示版本信息
     try {
-        const response = await fetch(`${API_BASE}/version`);
-        const versionData = await response.json();
-        
-        const versionElement = document.getElementById('version-info');
-        if (versionElement && versionData.git_commit) {
-            versionElement.textContent = `v${versionData.version} (${versionData.git_commit})`;
-            versionElement.style.display = 'inline';
-        }
-    } catch (error) {
-        console.log('获取版本信息失败（正常，可能不是Git仓库）:', error);
-    }
+        const response = await fetch(`${API_BASE}/version`); const versionData = await response.json(); const versionElement = document.getElementById('version-info');
+        if (versionElement && versionData.git_commit) { versionElement.textContent = `v${versionData.version} (${versionData.git_commit})`; versionElement.style.display = 'inline'; }
+    } catch (error) { console.log('获取版本信息失败:', error); }
 }
-
 async function init() {
-    console.log('[Init] SystemStatus 前端初始化开始');
-    console.log('[Init] 当前页面地址:', window.location.href);
-    console.log('[Init] 当前主机:', window.location.hostname);
-    console.log('[Init] API_BASE:', API_BASE);
-    
-    initI18n();
-    console.log('[Init] initI18n 完成');
-    
-    initTheme();
-    console.log('[Init] initTheme 完成');
-    
-    initHeaderScroll();
-    console.log('[Init] initHeaderScroll 完成');
-    
-    // 加载版本信息
-    loadVersionInfo();
-    
-    initChart();
-    console.log('[Init] initChart 完成');
-    
-    adjustChartHeight();
-    console.log('[Init] adjustChartHeight 完成');
-
-    // 添加窗口resize事件监听
-    let resizeTimer;
-    window.addEventListener('resize', () => {
-        clearTimeout(resizeTimer);
-        resizeTimer = setTimeout(() => {
-            adjustChartHeight();
-            updateRealTimeData();
-        }, 250);
-    });
-
-    initToggleButtons();
-    console.log('[Init] initToggleButtons 完成');
-
-    const retryBtn = document.getElementById('retry-btn');
-    if (retryBtn) {
-        retryBtn.addEventListener('click', retryBackendConnection);
-    }
-
-    console.log('[Init] 开始检查后端状态');
-    const backendAvailable = await checkBackendStatus();
-    console.log('[Init] 后端状态检查结果:', backendAvailable);
-
-    if (backendAvailable) {
-        console.log('[Init] 后端可用，开始加载数据');
-        updateStatusTip(t('connected'), "success");
-        await loadFromCache();
-        getHardwareInfo();
-        updateRealTimeData();
-        updateDiskUsage();
-
-        clearAllIntervals();
-
-        realTimeDataInterval = setInterval(updateRealTimeData, 2000);
-        diskUsageInterval = setInterval(updateDiskUsage, 10000);
-        hardwareInfoInterval = setInterval(getHardwareInfo, 30000);
-        console.log('[Init] 数据轮询已启动');
-    } else {
-        console.log('[Init] 后端不可用，尝试加载缓存并重试');
-        await loadFromCache();
-        // 显示重试按钮提示
-        retryBackendConnection();
-    }
-    
-    console.log('[Init] SystemStatus 初始化完成');
-}
-
-let allChartsCollapsed = false;
-
+    initI18n(); initTheme(); initHeaderScroll(); loadVersionInfo(); initChart(); adjustChartHeight(); let resizeTimer; window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => { adjustChartHeight(); updateRealTimeData(); }, 250); }); initToggleButtons(); const retryBtn = document.getElementById('retry-btn');
+    if (retryBtn) { retryBtn.addEventListener('click', retryBackendConnection); } const backendAvailable = await checkBackendStatus();
+    if (backendAvailable) { updateStatusTip(t('connected'), "success"); await loadFromCache(); getHardwareInfo(); updateRealTimeData(); updateDiskUsage(); clearAllIntervals(); realTimeDataInterval = setInterval(updateRealTimeData, 2000); diskUsageInterval = setInterval(updateDiskUsage, 10000); hardwareInfoInterval = setInterval(getHardwareInfo, 30000); } else { await loadFromCache(); retryBackendConnection(); } showPrompt("正在从后端加载数据...", true);
+} let allChartsCollapsed = false;
 function initToggleButtons() {
-    const toggleBtns = document.querySelectorAll('.chart-toggle-btn');
-    toggleBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const targetId = btn.dataset.target;
-            toggleChart(targetId, btn);
-        });
-    });
-
-    const toggleAllBtn = document.getElementById('toggle-all-btn');
-    if (toggleAllBtn) {
-        toggleAllBtn.addEventListener('click', toggleAllCharts);
-    }
+    const toggleBtns = document.querySelectorAll('.chart-toggle-btn'); toggleBtns.forEach(btn => { btn.addEventListener('click', () => { const targetId = btn.dataset.target; toggleChart(targetId, btn); }); });
+    const toggleAllBtn = document.getElementById('toggle-all-btn'); if (toggleAllBtn) { toggleAllBtn.addEventListener('click', toggleAllCharts); }
 }
-
 function toggleChart(chartId, btn) {
-    const chartContainer = document.getElementById(chartId);
-    const panel = chartContainer?.closest('.chart-panel');
-
-    if (!chartContainer || !panel) return;
-
-    const isCollapsed = chartContainer.classList.toggle('collapsed');
-    btn.classList.toggle('collapsed', isCollapsed);
-    panel.classList.toggle('collapsed', isCollapsed);
-
-    if (!isCollapsed) {
-        setTimeout(() => {
-            resizeChart(chartId);
-        }, 450);
-    }
+    const chartContainer = document.getElementById(chartId); const panel = chartContainer?.closest('.chart-panel');
+    if (!chartContainer || !panel) return; const isCollapsed = chartContainer.classList.toggle('collapsed'); btn.classList.toggle('collapsed', isCollapsed);
+    panel.classList.toggle('collapsed', isCollapsed); if (!isCollapsed) { setTimeout(() => { resizeChart(chartId); }, 450); }
 }
-
 function toggleAllCharts() {
-    allChartsCollapsed = !allChartsCollapsed;
-    const toggleAllBtn = document.getElementById('toggle-all-btn');
-    const toggleBtns = document.querySelectorAll('.chart-toggle-btn');
-    const chartContainers = document.querySelectorAll('.chart-container');
-    const panels = document.querySelectorAll('.chart-panel');
-
-    if (toggleAllBtn) {
-        toggleAllBtn.classList.toggle('collapsed', allChartsCollapsed);
-        const textEl = toggleAllBtn.querySelector('.toggle-text');
-        if (textEl) {
-            textEl.textContent = allChartsCollapsed ? '展开所有图表' : '折叠所有图表';
-        }
-    }
-
-    toggleBtns.forEach(btn => {
-        btn.classList.toggle('collapsed', allChartsCollapsed);
-    });
-
-    chartContainers.forEach(container => {
-        container.classList.toggle('collapsed', allChartsCollapsed);
-    });
-
-    panels.forEach(panel => {
-        panel.classList.toggle('collapsed', allChartsCollapsed);
-    });
-
-    if (!allChartsCollapsed) {
-        setTimeout(() => {
-            ['net-chart', 'system-chart', 'usage-chart'].forEach(resizeChart);
-        }, 450);
-    }
+    allChartsCollapsed = !allChartsCollapsed; const toggleAllBtn = document.getElementById('toggle-all-btn'); const toggleBtns = document.querySelectorAll('.chart-toggle-btn'); const chartContainers = document.querySelectorAll('.chart-container'); const panels = document.querySelectorAll('.chart-panel');
+    if (toggleAllBtn) { toggleAllBtn.classList.toggle('collapsed', allChartsCollapsed); const textEl = toggleAllBtn.querySelector('.toggle-text'); if (textEl) { textEl.textContent = allChartsCollapsed ? '展开所有图表' : '折叠所有图表'; } } toggleBtns.forEach(btn => { btn.classList.toggle('collapsed', allChartsCollapsed); }); chartContainers.forEach(container => { container.classList.toggle('collapsed', allChartsCollapsed); }); panels.forEach(panel => { panel.classList.toggle('collapsed', allChartsCollapsed); });
+    if (!allChartsCollapsed) { setTimeout(() => { ['net-chart', 'system-chart', 'usage-chart'].forEach(resizeChart); }, 450); }
 }
-
-function resizeChart(chartId) {
-    let chartInstance = null;
-    if (chartId === 'usage-chart') chartInstance = chart;
-    else if (chartId === 'net-chart') chartInstance = netChart;
-    else if (chartId === 'system-chart') chartInstance = systemChart;
-
-    if (chartInstance) {
-        setTimeout(() => {
-            chartInstance.resize();
-        }, 50);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', init);
+function resizeChart(chartId) { let chartInstance = null; if (chartId === 'usage-chart') chartInstance = chart; else if (chartId === 'net-chart') chartInstance = netChart; else if (chartId === 'system-chart') chartInstance = systemChart; if (chartInstance) { setTimeout(() => { chartInstance.resize(); }, 50); } } document.addEventListener('DOMContentLoaded', init);
