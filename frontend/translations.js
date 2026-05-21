@@ -294,6 +294,14 @@ window.LANGUAGES = {
         noDisk: "No disk detected",
         core: "Core",
         noCPUCores: "No CPU cores detected",
+
+        // 数据加载
+        loadingData: "Loading data from backend...",
+        loading: "Loading...",
+        speedUnit: "KB/s",
+        temperatureUnit: "°C",
+        bootTimeFormat: "Boot time format",
+        diskError: "Disk error",
     },
     'ja': {
         // 页面标题
