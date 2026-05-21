@@ -17,21 +17,17 @@
 <body>
     <div class="container">
         <header class="header">
-            <h1>SystemStatus</h1>
-            <p class="sub-title">系统监控面板</p>
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>SystemStatus</h1>
+                    <span class="sub-title" data-i18n="subtitle">系统监控面板</span>
+                </div>
+                <div class="header-right">
+                    <select id="theme-select" class="theme-select"></select>
+                    <select id="language-select" class="language-select"></select>
+                </div>
+            </div>
         </header>
-
-        <div class="controls-container">
-            <div class="theme-select-container">
-                <select id="theme-select" class="theme-select">
-                </select>
-            </div>
-
-            <div class="language-select-container">
-                <select id="language-select" class="language-select">
-                </select>
-            </div>
-        </div>
 
         <div id="status-tip" class="status-tip tip-success">
             正在连接后端服务...

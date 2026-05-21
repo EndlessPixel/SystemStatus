@@ -563,6 +563,44 @@ function sampleChartData(data, interval) {
     return sampled;
 }
 
+// Header滚动检测和悬浮效果
+function initHeaderScroll() {
+    const header = document.querySelector('.header');
+    if (!header) return;
+    
+    let lastScrollY = 0;
+    let ticking = false;
+    const SCROLL_UP_THRESHOLD = 80;    // 向上滚动超过80px时添加scrolled类
+    const SCROLL_DOWN_THRESHOLD = 60;  // 向下滚动低于60px时移除scrolled类
+    
+    function updateHeaderOnScroll() {
+        const scrollY = window.scrollY;
+        const isScrolled = header.classList.contains('scrolled');
+        
+        // 使用双阈值避免在临界点附近反复切换
+        if (!isScrolled && scrollY > SCROLL_UP_THRESHOLD) {
+            header.classList.add('scrolled');
+        } else if (isScrolled && scrollY < SCROLL_DOWN_THRESHOLD) {
+            header.classList.remove('scrolled');
+        }
+        
+        lastScrollY = scrollY;
+        ticking = false;
+    }
+    
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(() => {
+                updateHeaderOnScroll();
+            });
+            ticking = true;
+        }
+    });
+    
+    // 初始化时检查一次
+    updateHeaderOnScroll();
+}
+
 // 根据屏幕宽度动态调整图表高度
 function adjustChartHeight() {
     const screenWidth = window.innerWidth;
@@ -1613,6 +1651,9 @@ async function init() {
     
     initTheme();
     console.log('[Init] initTheme 完成');
+    
+    initHeaderScroll();
+    console.log('[Init] initHeaderScroll 完成');
     
     initChart();
     console.log('[Init] initChart 完成');
