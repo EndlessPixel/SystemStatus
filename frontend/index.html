@@ -36,29 +36,29 @@
         <div class="card-container">
             <div class="card">
                 <h3 class="card-title" data-i18n="cpu">CPU</h3>
-                <p id="cpu-model" class="card-content">加载中...</p>
-                <p class="card-content"><span data-i18n="cores">核心数</span>: <span id="cpu-cores">加载中...</span></p>
+                <p id="cpu-model" class="card-content" data-i18n="loading">加载中...</p>
+                <p class="card-content"><span data-i18n="cores">核心数</span>: <span id="cpu-cores" data-i18n="loading">加载中...</span></p>
             </div>
             <div class="card">
                 <h3 class="card-title" data-i18n="memory">内存</h3>
-                <p id="mem-model" class="card-content">加载中...</p>
-                <p class="card-content"><span data-i18n="total">总容量</span>: <span id="mem-total">加载中...</span> GB</p>
+                <p id="mem-model" class="card-content" data-i18n="loading">加载中...</p>
+                <p class="card-content"><span data-i18n="total">总容量</span>: <span id="mem-total" data-i18n="loading">加载中...</span> GB</p>
             </div>
             <div class="card">
                 <h3 class="card-title" data-i18n="gpu">显卡</h3>
-                <p id="gpu-model" class="card-content">加载中...</p>
-                <p class="card-content"><span data-i18n="status">状态</span>: <span id="gpu-status">加载中...</span></p>
+                <p id="gpu-model" class="card-content" data-i18n="loading">加载中...</p>
+                <p class="card-content"><span data-i18n="status">状态</span>: <span id="gpu-status" data-i18n="loading">加载中...</span></p>
             </div>
             <div class="card">
                 <h3 class="card-title" data-i18n="network">网卡</h3>
-                <div id="network-info" class="card-content">加载中...</div>
+                <div id="network-info" class="card-content" data-i18n="loading">加载中...</div>
             </div>
         </div>
 
         <div class="toggle-all-container">
             <button id="toggle-all-btn" class="toggle-btn toggle-all-btn">
                 <span class="toggle-icon">▼</span>
-                <span class="toggle-text">折叠所有图表</span>
+                <span class="toggle-text" data-i18n="collapseAll">折叠所有图表</span>
             </button>
         </div>
 
@@ -69,7 +69,7 @@
                     <span class="toggle-icon">▼</span>
                 </button>
             </div>
-            <div id="cpu-cores-container" class="cpu-cores-container chart-container">
+            <div id="cpu-cores-container" class="cpu-cores-container chart-container" data-i18n="loading">
                 加载中...
             </div>
         </div>
@@ -81,7 +81,7 @@
                     <span class="toggle-icon">▼</span>
                 </button>
             </div>
-            <div id="disk-container" class="disk-container chart-container">
+            <div id="disk-container" class="disk-container chart-container" data-i18n="loading">
                 加载中...
             </div>
         </div>
