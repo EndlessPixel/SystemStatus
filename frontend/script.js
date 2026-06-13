@@ -105,76 +105,30 @@ function updateAllTranslations() {
 
 function updateSpecificTranslations() {
     document.title = t('title');
-
     const subTitle = document.querySelector('.sub-title');
-    if (subTitle) {
-        subTitle.textContent = t('title');
-    }
-
+    if (subTitle) {subTitle.textContent = t('title');}
     const branchLabel = document.querySelector('.branch-switcher label');
-    if (branchLabel) {
-        branchLabel.textContent = t('selectServer');
-    }
-
+    if (branchLabel) {branchLabel.textContent = t('selectServer');}
     const switchBtn = document.getElementById('switch-btn');
-    if (switchBtn) {
-        switchBtn.textContent = t('switchBtn');
-    }
-
+    if (switchBtn) {switchBtn.textContent = t('switchBtn');}
     const toggleAllBtn = document.getElementById('toggle-all-btn');
-    if (toggleAllBtn) {
-        const toggleText = toggleAllBtn.querySelector('.toggle-text');
-        if (toggleText) {
-            toggleText.textContent = t('collapseAll');
-        }
-    }
-
+    if (toggleAllBtn) {const toggleText = toggleAllBtn.querySelector('.toggle-text');if (toggleText) {toggleText.textContent = t('collapseAll');}}
     const retryBtn = document.getElementById('retry-btn');
-    if (retryBtn) {
-        retryBtn.textContent = t('retryConnection');
-    }
-
+    if (retryBtn) {retryBtn.textContent = t('retryConnection');}
     const footerProject = document.querySelector('.project');
-    if (footerProject) {
-        footerProject.innerHTML = `${t('footerProject')} - Go to <a class="github-link" href="https://github.com/EndlessPixel/SystemStatus">${t('footerGithub')}</a>`;
-    }
-
+    if (footerProject) {footerProject.innerHTML = `${t('footerProject')} - Go to <a class="github-link" href="https://github.com/EndlessPixel/SystemStatus">${t('footerGithub')}</a>`;}
     const footerCopyright = document.querySelector('.studio');
-    if (footerCopyright) {
-        footerCopyright.textContent = t('footerCopyright');
-    }
-
-    // 直接更新网络类型标签，避免重新发起网络请求
+    if (footerCopyright) {footerCopyright.textContent = t('footerCopyright');}
     updateNetworkTypeLabels();
 }
 
 function updateChartTranslations() {
-    if (chart) {
-        chart.setOption({
-            title: {
-                text: t('cpuMemoryGpuTrend')
-            },
-            legend: {
-                data: [t('cpuUsagePercent'), t('memoryUsagePercent'), t('gpuUsagePercent')]
-            },
-            xAxis: {
-                name: t('time')
-            },
-            yAxis: {
-                name: t('usagePercent')
-            },
-            series: [{
-                    name: t('cpuUsagePercent')
-                },
-                {
-                    name: t('memoryUsagePercent')
-                },
-                {
-                    name: t('gpuUsagePercent')
-                }
-            ]
-        });
-    }
+    if (chart) {chart.setOption({
+            title: {text: t('cpuMemoryGpuTrend')},
+            legend: {data: [t('cpuUsagePercent'), t('memoryUsagePercent'), t('gpuUsagePercent')]},
+            xAxis: {name: t('time')},
+            yAxis: {name: t('usagePercent')},
+            series: [{name: t('cpuUsagePercent')},{name: t('memoryUsagePercent')},{name: t('gpuUsagePercent')}]});}
 
     if (netChart) {
         netChart.setOption({
