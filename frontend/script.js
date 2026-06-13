@@ -10,36 +10,26 @@ const ANIMATION_FRAME = 16;
 let realTimeDataInterval = null;
 let diskUsageInterval = null;
 let hardwareInfoInterval = null;
-
-// i18n - 国际化功能
 const I18N_KEY = "system_monitor_language";
-
-// 当前语言 - 直接从 window 对象获取翻译数据
 let currentLanguage = 'zh';
-let cachedHardwareInfo = null; // 缓存硬件信息，避免重复请求
-let cachedCpuCores = []; // 缓存CPU核心数据，用于语言切换时更新
-
+let cachedHardwareInfo = null;
+let cachedCpuCores = [];
 function initI18n() {
-    // 确保语言文件已加载
     if (!window.LANGUAGES) {
         console.error('Language files not loaded!');
-        // 显示错误提示
         showPrompt('Language files not loaded!', false);
         return;
     }
-
     const savedLang = localStorage.getItem(I18N_KEY);
     if (savedLang && window.LANGUAGES[savedLang]) {
         currentLanguage = savedLang;
     } else {
         const browserLang = navigator.language || navigator.userLanguage;
-        // 自动检测浏览器语言
         const detectedLang = Object.keys(window.LANGUAGE_CONFIG).find(lang =>
             browserLang.toLowerCase().startsWith(lang.toLowerCase())
         );
         currentLanguage = detectedLang || 'zh';
     }
-
     initLanguageSelect();
     updateAllTranslations();
     updateLanguageSelect();
@@ -69,19 +59,17 @@ function setLanguage(lang) {
         currentLanguage = lang;
         localStorage.setItem(I18N_KEY, lang);
         updateAllTranslations();
-        updateLanguageSelect(); // 重新生成语言选项
-        updateThemeSelect(); // 重新生成主题选项（因为主题选项有翻译）
+        updateLanguageSelect();
+        updateThemeSelect();
         updateChartTranslations();
     }
 }
 
 function t(key, replacements = {}) {
     let text = window.LANGUAGES[currentLanguage][key] || window.LANGUAGES['zh'][key] || key;
-
     Object.keys(replacements).forEach(placeholder => {
         text = text.replace(`{${placeholder}}`, replacements[placeholder]);
     });
-
     return text;
 }
 
