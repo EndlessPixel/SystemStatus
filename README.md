@@ -1,4 +1,4 @@
-# SystemStatus Monitor
+# SystemStatus
 
 <p align="center">
   <a href="https://hub.docker.com/r/systemmini/systemstatus">
