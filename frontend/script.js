@@ -2042,7 +2042,7 @@ function toggleAllCharts() {
     });
     if (!allChartsCollapsed) {
         setTimeout(() => {
-            ['net-chart', 'system-chart', 'usage-chart'].forEach(resizeChart);
+            ['net-chart', 'system-chart', 'usage-chart', 'freq-chart'].forEach(resizeChart);
         }, 450);
     }
 }
@@ -2052,6 +2052,7 @@ function resizeChart(chartId) {
     if (chartId === 'usage-chart') chartInstance = chart;
     else if (chartId === 'net-chart') chartInstance = netChart;
     else if (chartId === 'system-chart') chartInstance = systemChart;
+    else if (chartId === 'freq-chart') chartInstance = freqChart;
     if (chartInstance) {
         setTimeout(() => {
             chartInstance.resize();
