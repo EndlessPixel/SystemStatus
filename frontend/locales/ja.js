@@ -157,4 +157,8 @@ window.LANGUAGE_DATA['ja'] = {
         diskError: "ディスクエラー",
     // 俄语
 
+        cpuFreqTrend: "CPU周波数トレンド",
+        cpuCurrentFreq: "現在の周波数",
+        cpuMaxFreq: "最大周波数",
+        cpuMinFreq: "最小周波数"
 };

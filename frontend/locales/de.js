@@ -157,4 +157,8 @@ window.LANGUAGE_DATA['de'] = {
         bootTimeFormat: "Betriebszeit-Format",
         diskError: "Festplattenfehler",
 
+        cpuFreqTrend: "CPU-Taktverlauf",
+        cpuCurrentFreq: "Aktuelle Taktfrequenz",
+        cpuMaxFreq: "Max. Taktfrequenz",
+        cpuMinFreq: "Min. Taktfrequenz"
 };
