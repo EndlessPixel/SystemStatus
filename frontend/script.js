@@ -18,6 +18,7 @@ const I18N_KEY = "system_monitor_language";
 let currentLanguage = 'zh';
 let cachedHardwareInfo = null;
 let cachedCpuCores = [];
+let appConfig = { show_network: true, show_battery: true };
 function initI18n() {
     if (!window.LANGUAGES) {
         console.error('Language files not loaded!');
@@ -1787,10 +1788,37 @@ async function loadVersionInfo() {
         console.log('获取版本信息失败:', error);
     }
 }
+async function loadAppConfig() {
+    try {
+        const resp = await fetch(`${API_BASE}/config`);
+        if (resp.ok) {
+            appConfig = await resp.json();
+        }
+    } catch (e) {
+        console.log('获取 /api/config 失败，使用默认显示配置:', e);
+    }
+    applyDisplayConfig();
+}
+
+function applyDisplayConfig() {
+    // 网卡信息面板：隐藏其所在的 .card 容器
+    if (appConfig.show_network === false) {
+        const netEl = document.getElementById('network-info');
+        const netCard = netEl ? netEl.closest('.card') : null;
+        if (netCard) netCard.style.display = 'none';
+    }
+    // 电池状态行
+    if (appConfig.show_battery === false) {
+        const batteryEl = document.getElementById('battery-info');
+        if (batteryEl) batteryEl.style.display = 'none';
+    }
+}
+
 async function init() {
     initI18n();
     initTheme();
     initHeaderScroll();
+    await loadAppConfig();
     loadVersionInfo();
     initChart();
     adjustChartHeight();

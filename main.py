@@ -18,10 +18,15 @@ import time
 from backend.hardware import init_nvml, shutdown_nvml
 from backend.monitor import collect_real_time_data, restore_from_cache, update_cache_file
 from backend.routers import api_router
+from backend.app_config import get_server_config
 BASE_DIR = Path(__file__).parent.absolute()
 FRONTEND_DIR = BASE_DIR / "frontend"
 PUBLIC_DIR = BASE_DIR / "public"
-PORT = 8001  # 服务器默认端口号
+
+# 监听地址与端口：优先使用 config.yml 中的 server 配置
+_SERVER_CFG = get_server_config()
+HOST = _SERVER_CFG.get("host", "0.0.0.0")
+PORT = int(_SERVER_CFG.get("port", 8001))
 
 # 获取Git版本信息
 def get_git_commit_sha():
@@ -167,5 +172,5 @@ if __name__ == "__main__":
     start_monitor()
     try:
         import uvicorn
-        uvicorn.run(app, host="0.0.0.0", port=PORT)
+        uvicorn.run(app, host=HOST, port=PORT)
     finally:shutdown_nvml()
