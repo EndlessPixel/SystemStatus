@@ -158,6 +158,9 @@ def get_hardware_info() -> Dict:
     for part in psutil.disk_partitions(all=False):
         if "cdrom" in part.opts or part.fstype == "":
             continue
+        # Linux 下过滤 /dev/loop* 循环设备（snap、docker 等挂载），避免冗余条目
+        if platform.system() == "Linux" and part.device.startswith("/dev/loop"):
+            continue
         try:
             usage = psutil.disk_usage(part.mountpoint)
             disks.append({
