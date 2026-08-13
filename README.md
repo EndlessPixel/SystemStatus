@@ -154,11 +154,11 @@ python main.py
 
 | 接口地址 | 请求方式 | 功能描述 |
 |---|---|---|
-| `/api/hardware-info` | GET | 获取硬件基础信息（CPU / 内存 / 显卡 / 网卡） |
-| `/api/real-time-data` | GET | 获取实时监控数据（折线图 + 核心占用） |
-| `/api/disk-usage` | GET | 获取硬盘分区占用信息 |
-| `/api/cache` | GET | 获取 `tmp.json` 缓存数据 |
+| `/api/ws` | WebSocket | 实时推送完整监控快照（硬件信息 + 实时数据 + 磁盘），约每秒一次 |
+| `/api/data` | GET | 一次性获取完整监控快照（用于初始化与降级） |
+| `/api/cache` | GET | 获取 `tmp.json` 缓存数据（无缓存时实时生成完整快照） |
 | `/api/version` | GET | 获取当前 Git 提交 SHA 版本信息 |
+| `/api/health` | GET | 轻量健康检查（不触发硬件采集） |
 
 ---
 

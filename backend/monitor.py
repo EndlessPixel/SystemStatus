@@ -227,3 +227,13 @@ def get_real_time_data() -> Dict:
         "battery_info": DATA_CACHE["battery_info"],
         "timestamp": time.time()
     }
+
+def get_full_snapshot() -> Dict:
+    """获取完整监控快照：硬件信息 + 实时数据 + 磁盘"""
+    hardware_info = get_hardware_info()
+    return {
+        "hardware_info": hardware_info,
+        "real_time_data": get_real_time_data(),
+        "disk_usage": hardware_info["disks"],
+        "timestamp": time.time(),
+    }
