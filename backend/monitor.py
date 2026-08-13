@@ -9,6 +9,7 @@ import json
 import os
 from typing import Dict, List
 from .hardware import get_hardware_info, NVML_AVAILABLE, NVML_HANDLE, shutdown_nvml
+from .app_config import get_display_config
 
 # 数据缓存
 DATA_CACHE = {
@@ -120,15 +121,16 @@ def collect_real_time_data():
         process_count = len(psutil.pids())
         DATA_CACHE["process_count"].append((timestamp, process_count))
 
-        # 电池状态
-        if hasattr(psutil, 'sensors_battery'):
-            battery = psutil.sensors_battery()
-            if battery:
-                DATA_CACHE["battery_info"] = {
-                    "percent": battery.percent,
-                    "plugged": battery.power_plugged,
-                    "secsleft": battery.secsleft
-                }
+        # 电池状态（show_battery 为 false 时跳过采集）
+        if get_display_config().get("show_battery", True):
+            if hasattr(psutil, 'sensors_battery'):
+                battery = psutil.sensors_battery()
+                if battery:
+                    DATA_CACHE["battery_info"] = {
+                        "percent": battery.percent,
+                        "plugged": battery.power_plugged,
+                        "secsleft": battery.secsleft
+                    }
 
         # CPU温度
         if hasattr(psutil, 'sensors_temperatures'):
