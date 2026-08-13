@@ -155,7 +155,6 @@ window.LANGUAGE_DATA['ru'] = {
         temperatureUnit: "°C",
         bootTimeFormat: "Формат времени загрузки",
         diskError: "Ошибка диска",
-    },
 
     // 韩语
 
