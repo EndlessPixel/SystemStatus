@@ -161,5 +161,50 @@ window.LANGUAGE_DATA['ko'] = {
         cpuFreqTrend: "CPU 주파수 추이",
         cpuCurrentFreq: "현재 주파수",
         cpuMaxFreq: "최대 주파수",
-        cpuMinFreq: "최소 주파수"
+        cpuMinFreq: "최소 주파수",
+
+        // 사이드바
+        appName: "SystemStatus",
+        navOverview: "기본 정보",
+        navCPU: "CPU 모니터",
+        navMemory: "메모리 모니터",
+        navDisk: "디스크 모니터",
+        navGPU: "GPU 모니터",
+        navNetwork: "네트워크 모니터",
+
+        // 하드웨어 개요
+        cpuInfo: "CPU 정보",
+        memoryInfo: "메모리 정보",
+        gpuInfo: "GPU 정보",
+        cpuModel: "CPU 모델",
+        cpuCores: "코어 수",
+        cpuArch: "아키텍처",
+        memoryTotal: "메모리 용량",
+        gbUnit: "GB",
+        memoryFrequency: "메모리 주파수",
+        memoryType: "메모리 종류",
+        notDetected: "감지되지 않음",
+        gpuStatus: "GPU 상태",
+
+        // 메모리
+        memoryUsageTrend: "메모리 사용률 추이",
+
+        // GPU 상세
+        gpuUsageTrend: "GPU 사용률 추이",
+        gpuMemoryUsed: "사용 중 VRAM",
+        gpuMemoryTotal: "전체 VRAM",
+        gpuTemperature: "GPU 온도",
+        gpuUtilization: "GPU 사용률",
+        gpuPowerDraw: "GPU 전력",
+        gpuPowerLimit: "전력 한도",
+
+        // 디스크 SMART
+        smartTitle: "SMART 속성",
+        smartAttr: "속성명",
+        smartValue: "현재값",
+        smartWorst: "최저값",
+        smartThresh: "임계값",
+        smartRaw: "원시값",
+        smartNoData: "SMART 데이터 없음 (root 권한 또는 smartmontools 필요)",
+        smartUnavailable: "미지원"
 };

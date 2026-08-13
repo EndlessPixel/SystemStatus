@@ -158,5 +158,50 @@ window.LANGUAGE_DATA['fr'] = {
         cpuFreqTrend: "Tendance fréquence CPU",
         cpuCurrentFreq: "Fréquence actuelle",
         cpuMaxFreq: "Fréquence max",
-        cpuMinFreq: "Fréquence min"
+        cpuMinFreq: "Fréquence min",
+
+        // Barre latérale
+        appName: "SystemStatus",
+        navOverview: "Aperçu",
+        navCPU: "Moniteur CPU",
+        navMemory: "Moniteur mémoire",
+        navDisk: "Moniteur disque",
+        navGPU: "Moniteur GPU",
+        navNetwork: "Moniteur réseau",
+
+        // Aperçu matériel
+        cpuInfo: "Infos CPU",
+        memoryInfo: "Infos mémoire",
+        gpuInfo: "Infos GPU",
+        cpuModel: "Modèle CPU",
+        cpuCores: "Cœurs",
+        cpuArch: "Architecture",
+        memoryTotal: "Taille mémoire",
+        gbUnit: "Go",
+        memoryFrequency: "Fréquence mémoire",
+        memoryType: "Type mémoire",
+        notDetected: "Non détecté",
+        gpuStatus: "État GPU",
+
+        // Mémoire
+        memoryUsageTrend: "Tendance mémoire",
+
+        // Détails GPU
+        gpuUsageTrend: "Tendance GPU",
+        gpuMemoryUsed: "VRAM utilisée",
+        gpuMemoryTotal: "VRAM totale",
+        gpuTemperature: "Temp GPU",
+        gpuUtilization: "Utilisation GPU",
+        gpuPowerDraw: "Conso GPU",
+        gpuPowerLimit: "Limite conso",
+
+        // Disque SMART
+        smartTitle: "Attributs SMART",
+        smartAttr: "Attribut",
+        smartValue: "Valeur",
+        smartWorst: "Pire",
+        smartThresh: "Seuil",
+        smartRaw: "Brut",
+        smartNoData: "Pas de données SMART (droits root ou smartmontools requis)",
+        smartUnavailable: "Non supporté"
 };

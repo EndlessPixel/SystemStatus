@@ -160,5 +160,50 @@ window.LANGUAGE_DATA['de'] = {
         cpuFreqTrend: "CPU-Taktverlauf",
         cpuCurrentFreq: "Aktuelle Taktfrequenz",
         cpuMaxFreq: "Max. Taktfrequenz",
-        cpuMinFreq: "Min. Taktfrequenz"
+        cpuMinFreq: "Min. Taktfrequenz",
+
+        // Seitenleiste
+        appName: "SystemStatus",
+        navOverview: "Übersicht",
+        navCPU: "CPU-Überwachung",
+        navMemory: "Speicher-Überwachung",
+        navDisk: "Festplatten-Überwachung",
+        navGPU: "GPU-Überwachung",
+        navNetwork: "Netzwerk-Überwachung",
+
+        // Hardware-Übersicht
+        cpuInfo: "CPU-Info",
+        memoryInfo: "Speicher-Info",
+        gpuInfo: "GPU-Info",
+        cpuModel: "CPU-Modell",
+        cpuCores: "Kerne",
+        cpuArch: "Architektur",
+        memoryTotal: "Speichergröße",
+        gbUnit: "GB",
+        memoryFrequency: "Speicherfrequenz",
+        memoryType: "Speichertyp",
+        notDetected: "Nicht erkannt",
+        gpuStatus: "GPU-Status",
+
+        // Speicher
+        memoryUsageTrend: "Speicher-Trend",
+
+        // GPU-Details
+        gpuUsageTrend: "GPU-Trend",
+        gpuMemoryUsed: "VRAM belegt",
+        gpuMemoryTotal: "VRAM gesamt",
+        gpuTemperature: "GPU-Temp",
+        gpuUtilization: "GPU-Auslastung",
+        gpuPowerDraw: "GPU-Leistung",
+        gpuPowerLimit: "Leistungslimit",
+
+        // Festplatte SMART
+        smartTitle: "SMART-Attribute",
+        smartAttr: "Attribut",
+        smartValue: "Wert",
+        smartWorst: "Schlechtester",
+        smartThresh: "Grenzwert",
+        smartRaw: "Rohwert",
+        smartNoData: "Keine SMART-Daten (Root-Rechte oder smartmontools nötig)",
+        smartUnavailable: "Nicht unterstützt"
 };

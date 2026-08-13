@@ -161,5 +161,50 @@ window.LANGUAGE_DATA['ru'] = {
         cpuFreqTrend: "График частоты ЦП",
         cpuCurrentFreq: "Текущая частота",
         cpuMaxFreq: "Макс. частота",
-        cpuMinFreq: "Мин. частота"
+        cpuMinFreq: "Мин. частота",
+
+        // Боковая панель
+        appName: "SystemStatus",
+        navOverview: "Обзор",
+        navCPU: "Монитор CPU",
+        navMemory: "Монитор памяти",
+        navDisk: "Монитор диска",
+        navGPU: "Монитор GPU",
+        navNetwork: "Монитор сети",
+
+        // Обзор оборудования
+        cpuInfo: "Инфо CPU",
+        memoryInfo: "Инфо памяти",
+        gpuInfo: "Инфо GPU",
+        cpuModel: "Модель CPU",
+        cpuCores: "Ядра",
+        cpuArch: "Архитектура",
+        memoryTotal: "Объём памяти",
+        gbUnit: "ГБ",
+        memoryFrequency: "Частота памяти",
+        memoryType: "Тип памяти",
+        notDetected: "Не обнаружено",
+        gpuStatus: "Статус GPU",
+
+        // Память
+        memoryUsageTrend: "Тренд памяти",
+
+        // Детали GPU
+        gpuUsageTrend: "Тренд GPU",
+        gpuMemoryUsed: "VRAM исп",
+        gpuMemoryTotal: "VRAM всего",
+        gpuTemperature: "Темп GPU",
+        gpuUtilization: "Загрузка GPU",
+        gpuPowerDraw: "Мощность GPU",
+        gpuPowerLimit: "Лимит мощн",
+
+        // Диск SMART
+        smartTitle: "SMART атрибуты",
+        smartAttr: "Атрибут",
+        smartValue: "Значение",
+        smartWorst: "Худшее",
+        smartThresh: "Порог",
+        smartRaw: "Исходн",
+        smartNoData: "Нет SMART данных (нужны права root или smartmontools)",
+        smartUnavailable: "Не поддерживается"
 };

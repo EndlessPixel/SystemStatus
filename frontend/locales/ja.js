@@ -160,5 +160,50 @@ window.LANGUAGE_DATA['ja'] = {
         cpuFreqTrend: "CPU周波数トレンド",
         cpuCurrentFreq: "現在の周波数",
         cpuMaxFreq: "最大周波数",
-        cpuMinFreq: "最小周波数"
+        cpuMinFreq: "最小周波数",
+
+        // サイドバー
+        appName: "SystemStatus",
+        navOverview: "基本情報",
+        navCPU: "CPU監視",
+        navMemory: "メモリ監視",
+        navDisk: "ディスク監視",
+        navGPU: "GPU監視",
+        navNetwork: "ネットワーク監視",
+
+        // ハードウェア概要
+        cpuInfo: "CPU情報",
+        memoryInfo: "メモリ情報",
+        gpuInfo: "GPU情報",
+        cpuModel: "CPUモデル",
+        cpuCores: "コア数",
+        cpuArch: "アーキテクチャ",
+        memoryTotal: "メモリ容量",
+        gbUnit: "GB",
+        memoryFrequency: "メモリ周波数",
+        memoryType: "メモリタイプ",
+        notDetected: "検出されません",
+        gpuStatus: "GPU状態",
+
+        // メモリ監視
+        memoryUsageTrend: "メモリ使用率トレンド",
+
+        // GPU詳細
+        gpuUsageTrend: "GPU使用率トレンド",
+        gpuMemoryUsed: "使用VRAM",
+        gpuMemoryTotal: "VRAM総量",
+        gpuTemperature: "GPU温度",
+        gpuUtilization: "GPU使用率",
+        gpuPowerDraw: "GPU消費電力",
+        gpuPowerLimit: "電力制限",
+
+        // ディスク SMART
+        smartTitle: "SMART属性",
+        smartAttr: "属性名",
+        smartValue: "現在値",
+        smartWorst: "最悪値",
+        smartThresh: "しきい値",
+        smartRaw: "生値",
+        smartNoData: "SMARTデータなし（root権限またはsmartmontoolsが必要）",
+        smartUnavailable: "非対応"
 };
