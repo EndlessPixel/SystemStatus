@@ -395,6 +395,13 @@ function updateChartTheme(theme) {
     });
 }
 
+function formatTime(ts) {
+    const d = new Date(ts);
+    if (isNaN(d.getTime())) return '';
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function animateNumber(element, targetValue, isPercent = true, suffix = '') {
     if (!element) return;
 
