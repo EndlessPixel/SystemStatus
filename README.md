@@ -66,11 +66,46 @@ docker run -d \
 
 ### 环境准备
 
-确保已安装 **Python 3.8+**，然后安装依赖：
+确保已安装 **Python 3.8+**，然后根据操作系统安装对应依赖：
 
 ```bash
-pip install -r requirements.txt
+# Linux / macOS 等类 Unix 系统
+pip install -r requirements-unix.txt
+
+# Windows 系统（额外包含 wmi 依赖）
+pip install -r requirements-windows.txt
 ```
+
+> 📦 依赖文件已按平台拆分：
+> - `requirements-unix.txt`：通用依赖（不含 `wmi`）
+> - `requirements-windows.txt`：在通用依赖基础上额外包含 `wmi`（Windows 硬件信息采集所需）
+
+#### 🐧 关于 Linux 的 `--break-system-packages`
+
+在较新的 Linux 发行版（如 Ubuntu 23.04+、Debian 12+、Fedora 等）中，系统的 `pip` 受 **PEP 668（Externally Managed Environment）** 保护，直接使用 `pip install` 会报错：
+
+```
+error: externally-managed-environment
+× This environment is externally managed
+```
+
+此时有两种推荐做法：
+
+**方式一（推荐）：使用虚拟环境**
+
+```bash
+python3 -m venv venv
+source venv/bin/activate        # Windows: venv\Scripts\activate
+pip install -r requirements-unix.txt
+```
+
+**方式二：强制安装到系统（不推荐，仅用于测试）**
+
+```bash
+pip install -r requirements-unix.txt --break-system-packages
+```
+
+`--break-system-packages` 会跳过外部管理环境的保护，把包装进系统 Python 目录，**可能干扰系统包管理器（apt/dnf 等）**，生产环境请优先使用虚拟环境。Docker 部署不受影响（`Dockerfile` 内为独立容器环境）。
 
 ### 启动服务
 
