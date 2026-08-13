@@ -17,6 +17,8 @@ DATA_CACHE = {
     "mem_usage": [],
     "gpu_usage": [],
     "cpu_core_usage": [],
+    "cpu_core_freq": [],
+    "cpu_freq": [],
     "net_upload_speed": [],
     "net_download_speed": [],
     "system_load": [],
@@ -68,13 +70,25 @@ def collect_real_time_data():
 
         # 清理过期缓存
         for key in ["cpu_usage", "mem_usage", "gpu_usage", "net_upload_speed",
-                    "net_download_speed", "system_load", "process_count", "cpu_temperature"]:
+                    "net_download_speed", "system_load", "process_count", "cpu_temperature",
+                    "cpu_freq"]:
             DATA_CACHE[key] = [item for item in DATA_CACHE[key] if timestamp - item[0] <= CACHE_DURATION]
 
         # 采集基础数据
         DATA_CACHE["cpu_usage"].append((timestamp, psutil.cpu_percent(interval=None)))
         DATA_CACHE["mem_usage"].append((timestamp, psutil.virtual_memory().percent))
         DATA_CACHE["cpu_core_usage"] = psutil.cpu_percent(interval=None, percpu=True)
+
+        # CPU 频率（总体 + 每核）
+        try:
+            freq = psutil.cpu_freq(percpu=True)
+            if freq:
+                DATA_CACHE["cpu_core_freq"] = [round(f.current, 0) for f in freq]
+                overall = psutil.cpu_freq(percpu=False)
+                if overall:
+                    DATA_CACHE["cpu_freq"].append((timestamp, round(overall.current, 0)))
+        except Exception:
+            pass
 
         # GPU占用率
         gpu_usage = 0
@@ -167,6 +181,8 @@ def update_cache_file():
                 "net_upload_speed": DATA_CACHE["net_upload_speed"],
                 "net_download_speed": DATA_CACHE["net_download_speed"],
                 "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
+                "cpu_core_freq": DATA_CACHE["cpu_core_freq"] or [],
+                "cpu_freq": DATA_CACHE["cpu_freq"],
                 "system_load": DATA_CACHE["system_load"],
                 "process_count": DATA_CACHE["process_count"],
                 "cpu_temperature": DATA_CACHE["cpu_temperature"],
@@ -200,6 +216,10 @@ def restore_from_cache():
 
             if "cpu_core_usage" in rt_data:
                 DATA_CACHE["cpu_core_usage"] = rt_data["cpu_core_usage"]
+            if "cpu_core_freq" in rt_data:
+                DATA_CACHE["cpu_core_freq"] = rt_data["cpu_core_freq"]
+            if "cpu_freq" in rt_data:
+                DATA_CACHE["cpu_freq"] = rt_data["cpu_freq"]
             if "boot_time" in rt_data:
                 DATA_CACHE["boot_time"] = rt_data["boot_time"]
             if "battery_info" in rt_data:
@@ -225,6 +245,8 @@ def get_real_time_data() -> Dict:
         "process_count": format_data(DATA_CACHE["process_count"]),
         "cpu_temperature": format_data(DATA_CACHE["cpu_temperature"]),
         "cpu_core_usage": DATA_CACHE["cpu_core_usage"],
+        "cpu_core_freq": DATA_CACHE["cpu_core_freq"],
+        "cpu_freq": format_data(DATA_CACHE["cpu_freq"]),
         "boot_time": DATA_CACHE["boot_time"],
         "battery_info": DATA_CACHE["battery_info"],
         "timestamp": time.time()
