@@ -2,6 +2,13 @@
 const API_BASE = "/api";
 const LOCAL_CACHE_KEY = "system_monitor_cache";
 const THEME_KEY = "system_monitor_theme";
+
+// 主题配置：键对应 data-theme 值，labelKey 指向 translations.js 中的文案键
+window.THEME_CONFIG = window.THEME_CONFIG || {
+    'light': { labelKey: 'themeLight' },
+    'dark': { labelKey: 'themeDark' },
+    'high-contrast': { labelKey: 'themeHighContrast' }
+};
 let chart = null;
 let netChart = null;
 let systemChart = null;
