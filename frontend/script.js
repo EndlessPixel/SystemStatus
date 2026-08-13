@@ -1171,6 +1171,8 @@ function initChart() {
     // CPU 频率趋势图（总体频率，单位 MHz）
     const freqDom = document.getElementById('freq-chart');
     if (freqDom) {
+        const textColor = '#86868b';
+        const borderColor = '#e6e6e8';
         freqChart = echarts.init(freqDom);
         freqChart.setOption({
             backgroundColor: 'transparent',
