@@ -70,6 +70,15 @@
             </button>
         </div>
 
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-label" data-i18n="bootTime">开机时间</span>: <span id="boot-time-info" class="status-value">-</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label" data-i18n="battery">电池</span>: <span id="battery-info" class="status-value">-</span>
+            </div>
+        </div>
+
         <div class="panel chart-panel" data-chart-id="cpu-cores-container">
             <div class="panel-header">
                 <h2 class="panel-title" data-i18n="cpuCoresUsage">CPU核心实时占用</h2>
@@ -80,6 +89,21 @@
             <div id="cpu-cores-container" class="cpu-cores-container chart-container" data-i18n="loading">
                 加载中...
             </div>
+        </div>
+
+        <div class="panel chart-panel" data-chart-id="cpu-freq-container">
+            <div class="panel-header">
+                <h2 class="panel-title" data-i18n="cpuFreqTrend">CPU频率趋势</h2>
+                <button class="toggle-btn chart-toggle-btn" data-target="cpu-freq-container">
+                    <span class="toggle-icon">▼</span>
+                </button>
+            </div>
+            <div class="freq-info">
+                <p><span data-i18n="cpuCurrentFreq">当前主频</span>: <span id="cpu-freq-current">0 MHz</span></p>
+                <p><span data-i18n="cpuMaxFreq">最大主频</span>: <span id="cpu-freq-max">0 MHz</span></p>
+                <p><span data-i18n="cpuMinFreq">最小主频</span>: <span id="cpu-freq-min">0 MHz</span></p>
+            </div>
+            <div id="freq-chart" class="chart-container"></div>
         </div>
 
         <div class="panel chart-panel" data-chart-id="disk-container">
@@ -119,8 +143,6 @@
                 <p><span data-i18n="systemLoad1Min">1分钟系统负载</span>: <span id="system-load">0.00</span></p>
                 <p><span data-i18n="processCount">当前进程数</span>: <span id="process-count">0</span></p>
                 <p><span data-i18n="cpuTemperature">CPU温度</span>: <span id="cpu-temperature">0°C</span></p>
-                <p><span data-i18n="bootTime">开机时间</span>: <span id="boot-time">0天0小时0分钟</span></p>
-                <p id="battery-info"><span data-i18n="batteryInfo">电池状态</span>: <span data-i18n="noBattery">未检测到电池信息</span></p>
             </div>
             <div id="system-chart" class="chart-container"></div>
         </div>

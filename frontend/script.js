@@ -12,6 +12,9 @@ window.THEME_CONFIG = window.THEME_CONFIG || {
 let chart = null;
 let netChart = null;
 let systemChart = null;
+let freqChart = null;
+let cpuFreqMax = 0;
+let cpuFreqMin = 0;
 const ANIMATION_DURATION = 800;
 const ANIMATION_FRAME = 16;
 const I18N_KEY = "system_monitor_language";
@@ -290,7 +293,7 @@ function updateChartTheme(theme) {
     const splitLineColor = theme === 'dark' ? '#2c2c2e' : '#f5f5f7';
 
     // 更新所有图表
-    [chart, netChart, systemChart].forEach(chartInstance => {
+    [chart, netChart, systemChart, freqChart].forEach(chartInstance => {
         if (chartInstance) {
             const option = {
                 title: {
@@ -526,8 +529,24 @@ function clearOldData() {
             text: `0${t('temperatureUnit')}`
         },
         {
-            id: 'boot-time',
+            id: 'boot-time-info',
             text: `0${t('days')} 0${t('hoursShort')} 0${t('minutesShort')}`
+        },
+        {
+            id: 'cpu-freq-current',
+            text: '0 MHz'
+        },
+        {
+            id: 'cpu-freq-max',
+            text: '0 MHz'
+        },
+        {
+            id: 'cpu-freq-min',
+            text: '0 MHz'
+        },
+        {
+            id: 'battery-info',
+            text: t('noBattery')
         }
     ];
 
@@ -548,7 +567,7 @@ function clearOldData() {
 
     const batteryInfoEl = document.getElementById('battery-info');
     if (batteryInfoEl) {
-        batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${t('noBattery')}`;
+        batteryInfoEl.textContent = t('noBattery');
     }
 
     const networkEl = document.getElementById('network-info');
@@ -691,7 +710,7 @@ function adjustChartHeight() {
     chartHeight = Math.min(Math.max(chartHeight, 200), 500);
 
     // 更新图表容器高度
-    const chartIds = ['usage-chart', 'net-chart', 'system-chart'];
+    const chartIds = ['usage-chart', 'net-chart', 'system-chart', 'freq-chart'];
     chartIds.forEach(id => {
         const chartDom = document.getElementById(id);
         if (chartDom) {
@@ -703,6 +722,7 @@ function adjustChartHeight() {
     if (chart) chart.resize();
     if (netChart) netChart.resize();
     if (systemChart) systemChart.resize();
+    if (freqChart) freqChart.resize();
 }
 
 function initChart() {
@@ -1147,6 +1167,83 @@ function initChart() {
             ]
         });
     }
+
+    // CPU 频率趋势图（总体频率，单位 MHz）
+    const freqDom = document.getElementById('freq-chart');
+    if (freqDom) {
+        freqChart = echarts.init(freqDom);
+        freqChart.setOption({
+            backgroundColor: 'transparent',
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: '3%',
+                top: '8%',
+                containLabel: true
+            },
+            tooltip: {
+                trigger: 'axis',
+                formatter: function (params) {
+                    const p = params[0];
+                    return `${formatTime(p.value[0])}<br/>${t('cpuCurrentFreq')}: ${(p.value[1] / 1000).toFixed(2)} GHz`;
+                }
+            },
+            xAxis: {
+                type: 'time',
+                axisLine: {
+                    lineStyle: {
+                        color: textColor
+                    }
+                },
+                axisLabel: {
+                    color: textColor,
+                    formatter: (value) => formatTime(value)
+                },
+                splitLine: {
+                    show: false
+                }
+            },
+            yAxis: {
+                type: 'value',
+                name: 'MHz',
+                nameTextStyle: {
+                    color: textColor
+                },
+                axisLine: {
+                    show: true,
+                    lineStyle: {
+                        color: textColor
+                    }
+                },
+                axisLabel: {
+                    color: textColor,
+                    formatter: (value) => (value / 1000).toFixed(1) + 'G'
+                },
+                splitLine: {
+                    lineStyle: {
+                        color: borderColor,
+                        type: 'dashed'
+                    }
+                }
+            },
+            series: [{
+                name: t('cpuCurrentFreq'),
+                type: 'line',
+                smooth: true,
+                showSymbol: false,
+                data: [],
+                lineStyle: {
+                    width: 2
+                },
+                areaStyle: {
+                    opacity: 0.1
+                },
+                itemStyle: {
+                    color: '#34c759'
+                }
+            }]
+        });
+    }
 }
 
 async function checkBackendStatus() {
@@ -1175,7 +1272,7 @@ async function loadLocalTmpJson() {
 
         const cacheData = await response.json();
         renderHardwareInfo(cacheData.hardware_info);
-        updateCPUCores(cacheData.real_time_data.cpu_core_usage);
+        updateCPUCores(cacheData.real_time_data.cpu_core_usage, cacheData.real_time_data.cpu_core_freq);
         renderDiskUsage(cacheData.disk_usage);
 
         // 转换时间戳为毫秒（如果需要）
@@ -1236,7 +1333,7 @@ async function loadFromCache() {
             const cacheData = await cacheResponse.json();
             if (!cacheData.error) {
                 renderHardwareInfo(cacheData.hardware_info);
-                updateCPUCores(cacheData.real_time_data.cpu_core_usage);
+                updateCPUCores(cacheData.real_time_data.cpu_core_usage, cacheData.real_time_data.cpu_core_freq);
                 renderDiskUsage(cacheData.disk_usage);
 
                 // 转换时间戳为毫秒（如果需要）
@@ -1290,7 +1387,7 @@ async function loadFromCache() {
         if (localCache) {
             const cacheData = JSON.parse(localCache);
             renderHardwareInfo(cacheData.hardware_info);
-            updateCPUCores(cacheData.real_time_data.cpu_core_usage);
+            updateCPUCores(cacheData.real_time_data.cpu_core_usage, cacheData.real_time_data.cpu_core_freq);
             renderDiskUsage(cacheData.disk_usage);
 
             let uploadSpeed = cacheData.real_time_data.net_upload_speed || 0;
@@ -1560,6 +1657,14 @@ function handleSnapshot(snapshot) {
             }]
         });
     }
+    const sampledCpuFreq = sampleChartData(data.cpu_freq, sampleInterval);
+    if (freqChart) {
+        freqChart.setOption({
+            series: [{
+                data: sampledCpuFreq
+            }]
+        });
+    }
     const cpuUsage = data.cpu_usage?.length > 0 ? data.cpu_usage[data.cpu_usage.length - 1][1] : 0;
     const memUsage = data.mem_usage?.length > 0 ? data.mem_usage[data.mem_usage.length - 1][1] : 0;
     const gpuUsage = data.gpu_usage?.length > 0 ? data.gpu_usage[data.gpu_usage.length - 1][1] : 0;
@@ -1569,7 +1674,22 @@ function handleSnapshot(snapshot) {
     if (cpuUsageEl) animateNumber(cpuUsageEl, cpuUsage, true);
     if (memUsageEl) animateNumber(memUsageEl, memUsage, true);
     if (gpuUsageEl) animateNumber(gpuUsageEl, gpuUsage, true);
-    updateCPUCores(data.cpu_core_usage, true);
+    updateCPUCores(data.cpu_core_usage, data.cpu_core_freq, true);
+    // 总体 CPU 频率文本（current/max/min，单位 MHz）
+    const cpuFreqArr = data.cpu_freq || [];
+    const cpuFreqLast = cpuFreqArr.length > 0 ? cpuFreqArr[cpuFreqArr.length - 1][1] : 0;
+    if (data.cpu_core_freq && data.cpu_core_freq.length > 0) {
+        for (const f of data.cpu_core_freq) {
+            if (f > cpuFreqMax) cpuFreqMax = f;
+            if (cpuFreqMin === 0 || f < cpuFreqMin) cpuFreqMin = f;
+        }
+    }
+    const freqCurEl = document.getElementById('cpu-freq-current');
+    if (freqCurEl) freqCurEl.textContent = `${cpuFreqLast} MHz`;
+    const freqMaxEl = document.getElementById('cpu-freq-max');
+    if (freqMaxEl) freqMaxEl.textContent = `${cpuFreqMax} MHz`;
+    const freqMinEl = document.getElementById('cpu-freq-min');
+    if (freqMinEl) freqMinEl.textContent = `${cpuFreqMin} MHz`;
     const uploadSpeed = data.net_upload_speed?.length > 0 ? data.net_upload_speed[data.net_upload_speed.length - 1][1] : 0;
     const downloadSpeed = data.net_download_speed?.length > 0 ? data.net_download_speed[data.net_download_speed.length - 1][1] : 0;
     updateNetSpeedDisplay(uploadSpeed, downloadSpeed);
@@ -1588,7 +1708,7 @@ function handleSnapshot(snapshot) {
     if (cpuTemperatureEl) {
         animateNumber(cpuTemperatureEl, cpuTemperature, false, '°C');
     }
-    const bootTimeEl = document.getElementById('boot-time');
+    const bootTimeEl = document.getElementById('boot-time-info');
     if (bootTimeEl && data.boot_time) {
         const bootTime = new Date(data.boot_time * 1000);
         const now = new Date();
@@ -1601,9 +1721,9 @@ function handleSnapshot(snapshot) {
     const batteryInfoEl = document.getElementById('battery-info');
     if (batteryInfoEl && data.battery_info) {
         const battery = data.battery_info;
-        if (battery.percent !== undefined) {
+        if (battery && battery.percent !== undefined) {
             if (battery.plugged) {
-                batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;
+                batteryInfoEl.textContent = `${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;
             } else {
                 const secsLeft = battery.secsleft;
                 let timeLeft = '';
@@ -1612,9 +1732,13 @@ function handleSnapshot(snapshot) {
                     const minutes = Math.floor((secsLeft % 3600) / 60);
                     timeLeft = `, ${t('estimatedTimeLeft')} ${hours}${t('hours')}${minutes}${t('minutes')}`;
                 }
-                batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${battery.percent.toFixed(0)}% (${t('batteryUnplugged')}${timeLeft})`;
+                batteryInfoEl.textContent = `${battery.percent.toFixed(0)}% (${t('batteryUnplugged')}${timeLeft})`;
             }
+        } else if (batteryInfoEl) {
+            batteryInfoEl.textContent = t('noBattery');
         }
+    } else if (batteryInfoEl) {
+        batteryInfoEl.textContent = t('noBattery');
     }
     if (snapshot.hardware_info) {
         renderHardwareInfo(snapshot.hardware_info);
@@ -1693,7 +1817,7 @@ function stopMonitoring() {
     }
 }
 
-function updateCPUCores(coreUsages, withAnimation = false) {
+function updateCPUCores(coreUsages, coreFreqs, withAnimation = false) {
     const container = document.getElementById('cpu-cores-container');
     if (!container) return;
     if (coreUsages && coreUsages.length > 0) {
@@ -1718,8 +1842,12 @@ function updateCPUCores(coreUsages, withAnimation = false) {
             const coreUsageEl = document.createElement('div');
             coreUsageEl.className = 'core-usage';
             coreUsageEl.textContent = `${usage.toFixed(1)}%`;
+            const coreFreqEl = document.createElement('div');
+            coreFreqEl.className = 'core-freq';
+            coreFreqEl.textContent = coreFreqs && coreFreqs[index] !== undefined ? `${(coreFreqs[index] / 1000).toFixed(2)} GHz` : '-';
             coreBox.appendChild(coreNumEl);
             coreBox.appendChild(coreUsageEl);
+            coreBox.appendChild(coreFreqEl);
             container.appendChild(coreBox);
         });
     }
@@ -1737,6 +1865,12 @@ function updateCPUCores(coreUsages, withAnimation = false) {
             } else {
                 coreUsageEl.textContent = `${usage.toFixed(1)}%`;
             }
+        }
+        const coreFreqEl = coreBox.querySelector('.core-freq');
+        if (coreFreqEl && coreFreqs && coreFreqs[index] !== undefined) {
+            coreFreqEl.textContent = `${(coreFreqs[index] / 1000).toFixed(2)} GHz`;
+        } else if (coreFreqEl) {
+            coreFreqEl.textContent = '-';
         }
         coreBox.className = 'core-box';
         if (usage < 30) coreBox.classList.add('low');

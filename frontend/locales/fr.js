@@ -155,4 +155,8 @@ window.LANGUAGE_DATA['fr'] = {
         temperatureUnit: "°C",
         bootTimeFormat: "Format du temps de démarrage",
         diskError: "Erreur de disque",
+        cpuFreqTrend: "Tendance fréquence CPU",
+        cpuCurrentFreq: "Fréquence actuelle",
+        cpuMaxFreq: "Fréquence max",
+        cpuMinFreq: "Fréquence min"
 };

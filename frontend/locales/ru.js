@@ -158,4 +158,8 @@ window.LANGUAGE_DATA['ru'] = {
 
     // 韩语
 
+        cpuFreqTrend: "График частоты ЦП",
+        cpuCurrentFreq: "Текущая частота",
+        cpuMaxFreq: "Макс. частота",
+        cpuMinFreq: "Мин. частота"
 };

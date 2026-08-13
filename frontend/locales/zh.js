@@ -157,4 +157,8 @@ window.LANGUAGE_DATA['zh'] = {
         bootTimeFormat: "开机时间格式",
         diskError: "硬盘错误",
 
+        cpuFreqTrend: "CPU频率趋势",
+        cpuCurrentFreq: "当前主频",
+        cpuMaxFreq: "最大主频",
+        cpuMinFreq: "最小主频"
 };

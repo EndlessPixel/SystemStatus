@@ -157,4 +157,8 @@ window.LANGUAGE_DATA['en'] = {
         bootTimeFormat: "Boot time format",
         diskError: "Disk error",
 
+        cpuFreqTrend: "CPU Frequency Trend",
+        cpuCurrentFreq: "Current Frequency",
+        cpuMaxFreq: "Max Frequency",
+        cpuMinFreq: "Min Frequency"
 };

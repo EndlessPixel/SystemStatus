@@ -158,4 +158,8 @@ window.LANGUAGE_DATA['ko'] = {
 
     // 法语
 
+        cpuFreqTrend: "CPU 주파수 추이",
+        cpuCurrentFreq: "현재 주파수",
+        cpuMaxFreq: "최대 주파수",
+        cpuMinFreq: "최소 주파수"
 };

@@ -594,38 +594,44 @@ body {
 
 /* 对于没有信息区域的面板（CPU核心、硬盘），折叠时进一步减小间距 */
 .chart-panel[data-chart-id="cpu-cores-container"],
-.chart-panel[data-chart-id="disk-container"] {
+.chart-panel[data-chart-id="disk-container"],
+.chart-panel[data-chart-id="cpu-freq-container"] {
     transition: padding 0.4s ease;
 }
 
 /* 折叠时面板内边距归零，避免残留空隙 */
 .chart-panel[data-chart-id="cpu-cores-container"].collapsed,
-.chart-panel[data-chart-id="disk-container"].collapsed {
+.chart-panel[data-chart-id="disk-container"].collapsed,
+.chart-panel[data-chart-id="cpu-freq-container"].collapsed {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
 }
 
 .chart-panel[data-chart-id="cpu-cores-container"]:not(.collapsed),
-.chart-panel[data-chart-id="disk-container"]:not(.collapsed) {
+.chart-panel[data-chart-id="disk-container"]:not(.collapsed),
+.chart-panel[data-chart-id="cpu-freq-container"]:not(.collapsed) {
     padding-top: 30px !important;
     padding-bottom: 30px !important;
 }
 
 .chart-panel[data-chart-id="cpu-cores-container"].collapsed .panel-header,
-.chart-panel[data-chart-id="disk-container"].collapsed .panel-header {
+.chart-panel[data-chart-id="disk-container"].collapsed .panel-header,
+.chart-panel[data-chart-id="cpu-freq-container"].collapsed .panel-header {
     margin-bottom: 0;
 }
 
 /* CPU核心和硬盘容器折叠时特殊处理 */
 #cpu-cores-container.collapsed,
-#disk-container.collapsed {
+#disk-container.collapsed,
+#cpu-freq-container.collapsed {
     margin-top: 0;
     margin-bottom: 0;
     padding-top: 0;
     padding-bottom: 0;
 }
 
-#cpu-cores-container:not(.collapsed) {
+#cpu-cores-container:not(.collapsed),
+#cpu-freq-container:not(.collapsed) {
     margin-top: 16px;
 }
 
@@ -688,6 +694,52 @@ body {
 .core-usage {
     font-size: 18px;
     font-weight: 600;
+}
+
+.core-freq {
+    font-size: 12px;
+    opacity: 0.85;
+    margin-top: 2px;
+}
+
+/* 上方状态条：开机时间 + 电池 */
+.status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 12px 20px;
+    margin-bottom: 16px;
+    background-color: var(--card-bg);
+    border-radius: 12px;
+    box-shadow: var(--apple-shadow);
+    font-size: 14px;
+    color: var(--text-color);
+}
+
+.status-bar .status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-bar .status-label {
+    font-weight: 500;
+    opacity: 0.8;
+}
+
+.status-bar .status-value {
+    font-variant-numeric: tabular-nums;
+}
+
+/* CPU 频率面板说明文字 */
+.freq-info {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 24px;
+    padding: 0 20px 12px;
+    font-size: 14px;
+    color: var(--text-color);
+    font-variant-numeric: tabular-nums;
 }
 
 /* 硬盘样式 */
