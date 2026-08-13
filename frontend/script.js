@@ -46,7 +46,7 @@ function initI18n() {
 }
 
 function initLanguageSelect() {
-    const select = document.getElementById('language-select');
+    const select = document.getElementById('lang-select');
     if (!select) return;
 
     select.innerHTML = '';
@@ -84,7 +84,7 @@ function t(key, replacements = {}) {
 }
 
 function updateLanguageSelect() {
-    const select = document.getElementById('language-select');
+    const select = document.getElementById('lang-select');
     if (select) {
         select.value = currentLanguage;
     }
@@ -2493,8 +2493,6 @@ function resizeChart(chartId) {
     else if (chartId === 'net-chart') chartInstance = netChart;
     else if (chartId === 'system-chart') chartInstance = systemChart;
     else if (chartId === 'cpu-freq-container') chartInstance = freqChart;
-    else if (chartId === 'cpu-cores-container') chartInstance = cpuCoresChart;
-    else if (chartId === 'disk-container') chartInstance = diskChart;
     else if (chartId === 'memory-chart') chartInstance = memoryChart;
     else if (chartId === 'gpu-chart') chartInstance = gpuChart;
     if (chartInstance) {
