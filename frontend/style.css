@@ -639,12 +639,12 @@ body {
     margin-top: 16px;
 }
 
-/* 确保信息在折叠时仍然显示 */
+/* 折叠时彻底收起信息文本块，避免残留空隙 */
 .chart-panel.collapsed .net-speed,
 .chart-panel.collapsed .system-info,
-.chart-panel.collapsed .usage-info {
-    display: flex;
-    margin-bottom: 0;
+.chart-panel.collapsed .usage-info,
+.chart-panel.collapsed .freq-info {
+    display: none;
 }
 
 /* 卡片按下去微微内陷，点按反馈更真实 */
