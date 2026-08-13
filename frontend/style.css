@@ -598,10 +598,11 @@ body {
     transition: padding 0.4s ease;
 }
 
+/* 折叠时面板内边距归零，避免残留空隙 */
 .chart-panel[data-chart-id="cpu-cores-container"].collapsed,
 .chart-panel[data-chart-id="disk-container"].collapsed {
-    padding-top: 15px !important;
-    padding-bottom: 15px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
 }
 
 .chart-panel[data-chart-id="cpu-cores-container"]:not(.collapsed),
