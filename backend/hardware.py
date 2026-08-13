@@ -86,7 +86,12 @@ def get_memory_model() -> str:
                 'dmidecode -t memory | grep -E "Manufacturer|Part Number"',
                 shell=True, text=True, stderr=subprocess.DEVNULL
             )
-            return output.strip()[:100]
+            lines = [line.strip() for line in output.split('\n') if line.strip()]
+            parts = []
+            for line in lines[:2]:
+                if ':' in line:
+                    parts.append(line.split(':', 1)[1].strip())
+            return " ".join(p for p in parts if p) or "DDR Series"
         return "DDR Series"
     except:
         return "DDR Series"
