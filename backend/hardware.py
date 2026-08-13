@@ -138,6 +138,173 @@ def get_gpu_info() -> Dict:
 
     return gpu_info
 
+
+def get_gpu_details() -> Dict:
+    """
+    获取 GPU 详细信息（基于 NVML，仅 NVIDIA 独显可用）
+    返回: {"available": bool, "model", "memory_total", "memory_used",
+           "temperature", "power_draw", "power_limit", "utilization"}
+    """
+    details = {
+        "available": False,
+        "model": "Unknown",
+        "memory_total": None,
+        "memory_used": None,
+        "temperature": None,
+        "power_draw": None,
+        "power_limit": None,
+        "utilization": None
+    }
+    global NVML_AVAILABLE, NVML_HANDLE
+    if not (NVML_AVAILABLE and NVML_HANDLE is not None):
+        return details
+    try:
+        import py3nvml.py3nvml as nvml
+        handle = NVML_HANDLE
+        details["available"] = True
+        try:
+            details["model"] = nvml.nvmlDeviceGetName(handle).decode("utf-8")
+        except Exception:
+            pass
+        try:
+            mem = nvml.nvmlDeviceGetMemoryInfo(handle)
+            details["memory_total"] = round(mem.total / (1024 ** 2), 0)  # MB
+            details["memory_used"] = round(mem.used / (1024 ** 2), 0)     # MB
+        except Exception:
+            pass
+        try:
+            details["temperature"] = nvml.nvmlDeviceGetTemperature(
+                handle, nvml.NVML_TEMPERATURE_GPU)
+        except Exception:
+            pass
+        try:
+            details["utilization"] = nvml.nvmlDeviceGetUtilizationRates(handle).gpu
+        except Exception:
+            pass
+        try:
+            details["power_draw"] = round(
+                nvml.nvmlDeviceGetPowerUsage(handle) / 1000.0, 1)  # W
+        except Exception:
+            pass
+        try:
+            details["power_limit"] = round(
+                nvml.nvmlDeviceGetEnforcedPowerLimit(handle) / 1000.0, 1)  # W
+        except Exception:
+            pass
+    except Exception:
+        pass
+    return details
+
+
+def get_memory_frequency() -> object:
+    """
+    获取内存频率（MHz），无法获取时返回 None
+    跨平台：Linux 读取 dmidecode / sysfs，Windows 读取 wmic
+    """
+    try:
+        if platform.system() == "Linux":
+            # 优先尝试 dmidecode（需 root）
+            try:
+                out = subprocess.check_output(
+                    "dmidecode -t memory 2>/dev/null | grep -i 'Speed' | "
+                    "grep -iv 'Unknown' | head -1",
+                    shell=True, text=True, stderr=subprocess.DEVNULL
+                ).strip()
+                if out:
+                    # 形如 "Speed: 3200 MT/s" 或 "Speed: 3200 MHz"
+                    parts = out.split(":")
+                    if len(parts) > 1:
+                        num = ''.join(c for c in parts[1] if c.isdigit())
+                        if num:
+                            return int(num)
+            except Exception:
+                pass
+            # 回退：sysfs 中读取（部分机型可用）
+            try:
+                for path in (
+                    "/sys/devices/system/edac/mc/mc0/dimm0/speed",
+                    "/sys/class/dmi/id/memory/speed",
+                ):
+                    if os.path.exists(path):
+                        with open(path, "r") as f:
+                            v = f.read().strip()
+                            num = ''.join(c for c in v if c.isdigit())
+                            if num:
+                                return int(num)
+            except Exception:
+                pass
+        elif platform.system() == "Windows":
+            out = subprocess.check_output(
+                'wmic memorychip get speed',
+                shell=True, text=True, stderr=subprocess.DEVNULL
+            )
+            lines = [l.strip() for l in out.split('\n') if l.strip().isdigit()]
+            if lines:
+                return int(lines[0])
+    except Exception:
+        pass
+    return None
+
+
+def get_disk_smart() -> List[Dict]:
+    """
+    获取硬盘 SMART 属性（需 smartmontools，Linux 下通常需要 root）
+    返回: [{"device": ..., "model": ..., "attributes": [{id,name,value,thresh,raw,worst}], "available": bool}, ...]
+    """
+    results = []
+    try:
+        partitions = [p.device for p in psutil.disk_partitions(all=False)]
+        # 去重磁盘设备（去掉分区号）
+        disk_devs = set()
+        for dev in partitions:
+            if platform.system() == "Linux":
+                # /dev/sda1 -> /dev/sda
+                import re
+                m = re.match(r"^(/dev/[a-z]+)", dev)
+                if m:
+                    disk_devs.add(m.group(1))
+            else:
+                disk_devs.add(dev)
+        disk_devs = list(disk_devs)[:8]  # 最多 8 块盘，避免超时
+        for dev in disk_devs:
+            entry = {"device": dev, "model": "", "available": False,
+                     "attributes": []}
+            try:
+                out = subprocess.check_output(
+                    ["smartctl", "-A", dev],
+                    text=True, stderr=subprocess.DEVNULL, timeout=8
+                )
+                entry["available"] = True
+                # 解析型号
+                for line in out.splitlines():
+                    if line.startswith("Device Model"):
+                        entry["model"] = line.split(":", 1)[1].strip()
+                        break
+                    if line.startswith("Model Family"):
+                        entry["model"] = line.split(":", 1)[1].strip()
+                        break
+                # 解析属性表（ID# ATTRIBUTE_NAME FLAG VALUE WORST THRESH TYPE UPDATED WHEN_RAW ...）
+                for line in out.splitlines():
+                    cols = line.split()
+                    if len(cols) >= 10 and cols[0].isdigit():
+                        try:
+                            entry["attributes"].append({
+                                "id": int(cols[0]),
+                                "name": cols[1],
+                                "value": int(cols[3]),
+                                "worst": int(cols[4]),
+                                "thresh": int(cols[5]),
+                                "raw": cols[9] if len(cols) > 9 else ""
+                            })
+                        except (ValueError, IndexError):
+                            continue
+            except Exception:
+                pass
+            results.append(entry)
+    except Exception:
+        pass
+    return results
+
 def get_hardware_info() -> Dict:
     """获取完整硬件信息"""
     # CPU
@@ -192,6 +359,13 @@ def get_hardware_info() -> Dict:
 
     # 显卡
     gpu_info = get_gpu_info()
+    gpu_details = get_gpu_details()
+
+    # 内存频率
+    mem_freq = get_memory_frequency()
+
+    # 硬盘 SMART
+    disk_smart = get_disk_smart()
 
     # 网卡（显示所有网卡）
     net_ifaces = []
@@ -206,7 +380,10 @@ def get_hardware_info() -> Dict:
     return {
         "cpu": cpu_info,
         "memory": mem_info,
+        "mem_frequency": mem_freq,
         "disks": disks,
+        "disk_smart": disk_smart,
         "gpu": gpu_info,
+        "gpu_details": gpu_details,
         "network": net_ifaces
     }
