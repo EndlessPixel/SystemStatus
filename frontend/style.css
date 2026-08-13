@@ -112,6 +112,16 @@
     color: #ffffff;
 }
 
+[data-theme="high-contrast"] .status-bar,
+[data-theme="high-contrast"] .panel-info,
+[data-theme="high-contrast"] .freq-info,
+[data-theme="high-contrast"] .net-speed,
+[data-theme="high-contrast"] .system-info,
+[data-theme="high-contrast"] .usage-info {
+    background: #000000;
+    border: 2px solid #ffffff;
+}
+
 
 [data-theme="high-contrast"] .toggle-all-container button {
     background: #000000;
@@ -592,58 +602,24 @@ body {
     padding-bottom: 0;
 }
 
-/* 对于没有信息区域的面板（CPU核心、硬盘），折叠时进一步减小间距 */
-.chart-panel[data-chart-id="cpu-cores-container"],
-.chart-panel[data-chart-id="disk-container"],
-.chart-panel[data-chart-id="cpu-freq-container"] {
+/* 所有图表面板统一的折叠行为：避免逐个面板硬编码导致的不一致 */
+.chart-panel {
     transition: padding 0.4s ease;
 }
 
-/* 折叠时面板内边距归零，避免残留空隙 */
-.chart-panel[data-chart-id="cpu-cores-container"].collapsed,
-.chart-panel[data-chart-id="disk-container"].collapsed,
-.chart-panel[data-chart-id="cpu-freq-container"].collapsed {
+.chart-panel.collapsed {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
 }
 
-.chart-panel[data-chart-id="cpu-cores-container"]:not(.collapsed),
-.chart-panel[data-chart-id="disk-container"]:not(.collapsed),
-.chart-panel[data-chart-id="cpu-freq-container"]:not(.collapsed) {
+.chart-panel:not(.collapsed) {
     padding-top: 30px !important;
     padding-bottom: 30px !important;
 }
 
-.chart-panel[data-chart-id="cpu-cores-container"].collapsed .panel-header,
-.chart-panel[data-chart-id="disk-container"].collapsed .panel-header,
-.chart-panel[data-chart-id="cpu-freq-container"].collapsed .panel-header {
-    margin-bottom: 0;
-}
-
-/* CPU核心和硬盘容器折叠时特殊处理 */
-#cpu-cores-container.collapsed,
-#disk-container.collapsed,
-#cpu-freq-container.collapsed {
-    margin-top: 0;
-    margin-bottom: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-}
-
-#cpu-cores-container:not(.collapsed),
-#cpu-freq-container:not(.collapsed) {
-    margin-top: 16px;
-}
-
-#disk-container:not(.collapsed) {
-    margin-top: 16px;
-}
-
-/* 折叠时彻底收起信息文本块，避免残留空隙 */
-.chart-panel.collapsed .net-speed,
-.chart-panel.collapsed .system-info,
-.chart-panel.collapsed .usage-info,
-.chart-panel.collapsed .freq-info {
+/* 折叠时彻底收起说明信息块（图表容器本身由 .chart-container.collapsed 收起），
+   消除残留空隙 */
+.chart-panel.collapsed .panel-info {
     display: none;
 }
 
@@ -709,11 +685,11 @@ body {
     gap: 24px;
     padding: 12px 20px;
     margin-bottom: 16px;
-    background-color: var(--card-bg);
+    background-color: var(--apple-card-bg);
     border-radius: 12px;
     box-shadow: var(--apple-shadow);
     font-size: 14px;
-    color: var(--text-color);
+    color: var(--apple-text-secondary);
 }
 
 .status-bar .status-item {
@@ -731,15 +707,42 @@ body {
     font-variant-numeric: tabular-nums;
 }
 
-/* CPU 频率面板说明文字 */
-.freq-info {
+/* 面板说明信息块（由模板统一生成 class=panel-info，旧 class 保留别名兼容）。
+   参考 CPU 频率趋势卡片的精致风格：内嵌圆角亚透明背景、统一间距、强调数值。 */
+.panel-info,
+.freq-info,
+.net-speed,
+.system-info,
+.usage-info {
     display: flex;
     flex-wrap: wrap;
-    gap: 24px;
-    padding: 0 20px 12px;
-    font-size: 14px;
-    color: var(--text-color);
+    gap: 12px 28px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    background-color: var(--apple-bg);
+    border: 1px solid var(--apple-border);
+    border-radius: 12px;
+    font-size: 13px;
+    color: var(--apple-text-secondary);
     font-variant-numeric: tabular-nums;
+}
+
+.panel-info p,
+.freq-info p,
+.net-speed p,
+.system-info p,
+.usage-info p {
+    margin: 0;
+    white-space: nowrap;
+}
+
+.panel-info span,
+.freq-info span,
+.net-speed span,
+.system-info span,
+.usage-info span {
+    color: var(--apple-accent);
+    font-weight: 600;
 }
 
 /* 硬盘样式 */
@@ -791,54 +794,6 @@ body {
     font-size: 13px;
 }
 
-/* 网卡流量样式 */
-.net-speed {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 16px;
-    font-size: 14px;
-}
-
-.net-speed span {
-    color: var(--apple-accent);
-    font-weight: 600;
-}
-
-.system-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    margin-bottom: 16px;
-    font-size: 14px;
-}
-
-.system-info p {
-    margin: 8px 0;
-}
-
-.system-info span {
-    color: var(--apple-accent);
-    font-weight: 600;
-}
-
-/* 系统资源趋势信息样式 */
-.usage-info {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 24px;
-    margin-bottom: 16px;
-    font-size: 14px;
-}
-
-.usage-info p {
-    margin: 8px 0;
-}
-
-.usage-info span {
-    color: var(--apple-accent);
-    font-weight: 600;
-}
-
 /* 图表容器 */
 .chart-container {
     width: 100%;
@@ -850,7 +805,7 @@ body {
 #net-chart,
 #system-chart,
 #usage-chart,
-#freq-chart {
+#cpu-freq-container {
     height: 400px;
 }
 
