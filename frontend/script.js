@@ -13,6 +13,8 @@ let chart = null;
 let netChart = null;
 let systemChart = null;
 let freqChart = null;
+let memoryChart = null;
+let gpuChart = null;
 let cpuFreqMax = 0;
 let cpuFreqMin = 0;
 const ANIMATION_DURATION = 800;
@@ -192,6 +194,24 @@ function updateChartTranslations() {
             ]
         });
     }
+
+    if (memoryChart) {
+        memoryChart.setOption({
+            title: { text: t('memoryUsageTrend') },
+            xAxis: { name: t('time') },
+            yAxis: { name: t('usagePercent') },
+            series: [{ name: t('memoryUsagePercent') }]
+        });
+    }
+
+    if (gpuChart) {
+        gpuChart.setOption({
+            title: { text: t('gpuUsageTrend') },
+            xAxis: { name: t('time') },
+            yAxis: { name: t('usagePercent') },
+            series: [{ name: t('gpuUsagePercent') }]
+        });
+    }
 }
 
 // 主题管理功能
@@ -293,7 +313,7 @@ function updateChartTheme(theme) {
     const splitLineColor = theme === 'dark' ? '#2c2c2e' : '#f5f5f7';
 
     // 更新所有图表
-    [chart, netChart, systemChart, freqChart].forEach(chartInstance => {
+    [chart, netChart, systemChart, freqChart, memoryChart, gpuChart].forEach(chartInstance => {
         if (chartInstance) {
             const option = {
                 title: {
@@ -720,7 +740,8 @@ function adjustChartHeight() {
     chartHeight = Math.min(Math.max(chartHeight, 200), 500);
 
     // 更新图表容器高度
-    const chartIds = ['usage-chart', 'net-chart', 'system-chart', 'cpu-freq-container'];
+    const chartIds = ['usage-chart', 'net-chart', 'system-chart', 'cpu-freq-container',
+        'cpu-cores-container', 'disk-container', 'memory-chart', 'gpu-chart'];
     chartIds.forEach(id => {
         const chartDom = document.getElementById(id);
         if (chartDom) {
@@ -733,6 +754,8 @@ function adjustChartHeight() {
     if (netChart) netChart.resize();
     if (systemChart) systemChart.resize();
     if (freqChart) freqChart.resize();
+    if (memoryChart) memoryChart.resize();
+    if (gpuChart) gpuChart.resize();
 }
 
 // 所有图表面板的统一配置。模板按此渲染，保证 data-chart-id / 内容容器 id / 折叠按钮 data-target 三者一致，
@@ -740,43 +763,22 @@ function adjustChartHeight() {
 // infoHtml：面板标题下方的说明文字（可含 data-i18n 与具体 span id），无则留空字符串。
 // contentHtml：主体内容（图表容器或动态列表容器），其 id 固定为 panel.id。
 const CHART_PANELS = [
+    // ===== 基础信息 =====
     {
-        id: 'cpu-cores-container',
-        titleI18n: 'cpuCoresUsage',
-        title: 'CPU核心实时占用',
-        infoHtml: '',
-        contentHtml: '加载中...'
-    },
-    {
-        id: 'cpu-freq-container',
-        titleI18n: 'cpuFreqTrend',
-        title: 'CPU频率趋势',
+        id: 'usage-chart',
+        section: 'overview',
+        titleI18n: 'systemResourceTrend',
+        title: '系统资源趋势',
         infoHtml: `
-            <p><span data-i18n="cpuCurrentFreq">当前主频</span>: <span id="cpu-freq-current">0 MHz</span></p>
-            <p><span data-i18n="cpuMaxFreq">最大主频</span>: <span id="cpu-freq-max">0 MHz</span></p>
-            <p><span data-i18n="cpuMinFreq">最小主频</span>: <span id="cpu-freq-min">0 MHz</span></p>
-        `,
-        contentHtml: ''  // 内部 echarts 容器由 initChart 按 id 初始化
-    },
-    {
-        id: 'disk-container',
-        titleI18n: 'diskUsage',
-        title: '硬盘占用率',
-        infoHtml: '',
-        contentHtml: '加载中...'
-    },
-    {
-        id: 'net-chart',
-        titleI18n: 'networkTraffic',
-        title: '网卡流量监控',
-        infoHtml: `
-            <p><span data-i18n="uploadSpeed">实时上传速度</span>: <span id="net-upload-speed">0 KB/s</span></p>
-            <p><span data-i18n="downloadSpeed">实时下载速度</span>: <span id="net-download-speed">0 KB/s</span></p>
+            <p><span data-i18n="cpuUsage">CPU占用率</span>: <span id="cpu-usage-current">0%</span></p>
+            <p><span data-i18n="memoryUsage">内存占用率</span>: <span id="mem-usage-current">0%</span></p>
+            <p><span data-i18n="gpuUsage">GPU占用率</span>: <span id="gpu-usage-current">0%</span></p>
         `,
         contentHtml: ''
     },
     {
         id: 'system-chart',
+        section: 'overview',
         titleI18n: 'systemLoad',
         title: '系统负载监控',
         infoHtml: `
@@ -786,14 +788,67 @@ const CHART_PANELS = [
         `,
         contentHtml: ''
     },
+    // ===== CPU 监控 =====
     {
-        id: 'usage-chart',
-        titleI18n: 'systemResourceTrend',
-        title: '系统资源趋势',
+        id: 'cpu-cores-container',
+        section: 'cpu',
+        titleI18n: 'cpuCoresUsage',
+        title: 'CPU核心实时占用',
+        infoHtml: '',
+        contentHtml: '加载中...'
+    },
+    {
+        id: 'cpu-freq-container',
+        section: 'cpu',
+        titleI18n: 'cpuFreqTrend',
+        title: 'CPU频率趋势',
         infoHtml: `
-            <p><span data-i18n="cpuUsage">CPU占用率</span>: <span id="cpu-usage-current">0%</span></p>
+            <p><span data-i18n="cpuCurrentFreq">当前主频</span>: <span id="cpu-freq-current">0 MHz</span></p>
+            <p><span data-i18n="cpuMaxFreq">最大主频</span>: <span id="cpu-freq-max">0 MHz</span></p>
+            <p><span data-i18n="cpuMinFreq">最小主频</span>: <span id="cpu-freq-min">0 MHz</span></p>
+        `,
+        contentHtml: ''  // 内部 echarts 容器由 initChart 按 id 初始化
+    },
+    // ===== 内存监控 =====
+    {
+        id: 'memory-chart',
+        section: 'memory',
+        titleI18n: 'memoryUsageTrend',
+        title: '内存占用率趋势',
+        infoHtml: `
             <p><span data-i18n="memoryUsage">内存占用率</span>: <span id="mem-usage-current">0%</span></p>
+        `,
+        contentHtml: ''
+    },
+    // ===== 硬盘监控 =====
+    {
+        id: 'disk-container',
+        section: 'disk',
+        titleI18n: 'diskUsage',
+        title: '硬盘占用率',
+        infoHtml: '',
+        contentHtml: '加载中...'
+    },
+    // ===== GPU 监控 =====
+    {
+        id: 'gpu-chart',
+        section: 'gpu',
+        titleI18n: 'gpuUsageTrend',
+        title: 'GPU占用率趋势',
+        infoHtml: `
             <p><span data-i18n="gpuUsage">GPU占用率</span>: <span id="gpu-usage-current">0%</span></p>
+        `,
+        contentHtml: ''
+    },
+    // ===== 网络监控 =====
+    {
+        id: 'net-chart',
+        section: 'network',
+        titleI18n: 'networkTraffic',
+        title: '网卡流量监控',
+        infoHtml: `
+            <p><span data-i18n="uploadSpeed">实时上传速度</span>: <span id="net-upload-speed">0 KB/s</span></p>
+            <p><span data-i18n="downloadSpeed">实时下载速度</span>: <span id="net-download-speed">0 KB/s</span></p>
         `,
         contentHtml: ''
     }
@@ -838,9 +893,11 @@ function createChartPanel(panel) {
 }
 
 function renderAllPanels() {
-    const root = document.getElementById('charts-root');
-    if (!root) return;
-    CHART_PANELS.forEach(panel => root.appendChild(createChartPanel(panel)));
+    CHART_PANELS.forEach(panel => {
+        const root = document.getElementById('charts-' + panel.section);
+        if (!root) return;
+        root.appendChild(createChartPanel(panel));
+    });
     // 面板为动态生成，需在生成后立即翻译其内部 data-i18n（标题、说明文字）
     if (typeof updateAllTranslations === 'function') {
         updateAllTranslations();
@@ -1000,6 +1057,114 @@ function initChart() {
                     }
                 }
             ]
+        });
+    }
+
+    // 内存占用率趋势
+    const memoryChartDom = document.getElementById('memory-chart');
+    if (memoryChartDom) {
+        memoryChart = echarts.init(memoryChartDom);
+        const textColor = '#86868b';
+        const primaryTextColor = '#1d1d1f';
+        const borderColor = '#e6e6e8';
+        const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
+        memoryChart.setOption({
+            backgroundColor: 'transparent',
+            title: {
+                text: t('memoryUsageTrend'),
+                textStyle: { color: textColor, fontSize: 16, fontWeight: 500 },
+                left: 'center',
+                padding: [0, 0, 20, 0]
+            },
+            tooltip: {
+                trigger: 'axis',
+                padding: 12,
+                backgroundColor: tooltipBgColor,
+                borderColor: borderColor,
+                borderWidth: 1,
+                extraCssText: 'border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);',
+                axisPointer: { type: 'line', lineStyle: { color: borderColor, type: 'dashed' } },
+                textStyle: { color: primaryTextColor, fontSize: 14 }
+            },
+            grid: { left: '5%', right: '5%', top: '18%', bottom: '12%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: [],
+                axisLabel: { color: textColor, fontSize: 12 },
+                splitLine: { show: false },
+                axisLine: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                min: 0,
+                max: 100,
+                axisLabel: { color: textColor, fontSize: 12, formatter: '{value}%' },
+                splitLine: { show: true, lineStyle: { color: borderColor, type: 'dashed' } }
+            },
+            series: [{
+                name: t('memoryUsagePercent'),
+                type: 'line',
+                data: [],
+                smooth: true,
+                lineStyle: { width: 2 },
+                areaStyle: { opacity: 0.12 },
+                itemStyle: { color: '#34c759' }
+            }]
+        });
+    }
+
+    // GPU 占用率趋势
+    const gpuChartDom = document.getElementById('gpu-chart');
+    if (gpuChartDom) {
+        gpuChart = echarts.init(gpuChartDom);
+        const textColor = '#86868b';
+        const primaryTextColor = '#1d1d1f';
+        const borderColor = '#e6e6e8';
+        const tooltipBgColor = 'rgba(255, 255, 255, 0.95)';
+        gpuChart.setOption({
+            backgroundColor: 'transparent',
+            title: {
+                text: t('gpuUsageTrend'),
+                textStyle: { color: textColor, fontSize: 16, fontWeight: 500 },
+                left: 'center',
+                padding: [0, 0, 20, 0]
+            },
+            tooltip: {
+                trigger: 'axis',
+                padding: 12,
+                backgroundColor: tooltipBgColor,
+                borderColor: borderColor,
+                borderWidth: 1,
+                extraCssText: 'border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);',
+                axisPointer: { type: 'line', lineStyle: { color: borderColor, type: 'dashed' } },
+                textStyle: { color: primaryTextColor, fontSize: 14 }
+            },
+            grid: { left: '5%', right: '5%', top: '18%', bottom: '12%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                boundaryGap: false,
+                data: [],
+                axisLabel: { color: textColor, fontSize: 12 },
+                splitLine: { show: false },
+                axisLine: { show: false }
+            },
+            yAxis: {
+                type: 'value',
+                min: 0,
+                max: 100,
+                axisLabel: { color: textColor, fontSize: 12, formatter: '{value}%' },
+                splitLine: { show: true, lineStyle: { color: borderColor, type: 'dashed' } }
+            },
+            series: [{
+                name: t('gpuUsagePercent'),
+                type: 'line',
+                data: [],
+                smooth: true,
+                lineStyle: { width: 2 },
+                areaStyle: { opacity: 0.12 },
+                itemStyle: { color: '#ff9500' }
+            }]
         });
     }
 
@@ -1584,56 +1749,47 @@ async function loadFromCache() {
 function renderHardwareInfo(data) {
     if (!data) return;
     cachedHardwareInfo = data;
-    const cpuModelEl = document.getElementById('cpu-model');
-    const cpuCoresEl = document.getElementById('cpu-cores');
-    if (cpuModelEl) cpuModelEl.textContent = data.cpu?.model || t('unknownCPU');
-    if (cpuCoresEl) cpuCoresEl.textContent = `${data.cpu?.cores || 0} (${t('physicalCores')}: ${data.cpu?.physical_cores || 0})`;
-    const memModelEl = document.getElementById('mem-model');
-    const memTotalEl = document.getElementById('mem-total');
-    if (memModelEl) memModelEl.textContent = data.memory?.model || t('unknownMemory');
-    if (memTotalEl) memTotalEl.textContent = data.memory?.total || 0;
-    const gpuModelEl = document.getElementById('gpu-model');
-    const gpuStatusEl = document.getElementById('gpu-status');
-    if (gpuModelEl) gpuModelEl.textContent = data.gpu?.model || t('unknownGPU');
-    if (gpuStatusEl) gpuStatusEl.textContent = data.gpu?.available ? t('available') : t('unavailable');
-    const netContainer = document.getElementById('network-info');
-    if (netContainer) {
-        netContainer.innerHTML = '';
-        if (data.network && data.network.length > 0) {
-            const table = document.createElement('table');
-            table.className = 'network-table';
-            data.network.forEach(iface => {
-                const row = document.createElement('tr');
-                row.className = 'network-row';
-                const icon = getNetworkIcon(iface.name);
-                const type = getNetworkType(iface.name);
-                const typeClass = getTypeClass(iface.name);
-                row.innerHTML = `<td class="network-icon">${icon}</td><td class="network-name">${iface.name}</td><td class="network-type ${typeClass}"><span>${type}</span></td><td class="network-ips">${iface.addresses.join(', ') || `<span class="no-ip">${t('noIP')}</span>`}</td>`;
-                table.appendChild(row);
-            });
-            netContainer.appendChild(table);
-        } else {
-            netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
-        }
-    }
+    renderOverviewCards(data);
+    renderNetworkInfo(data.network);
 }
 
-function updateNetworkTypeLabels() {
-    if (!cachedHardwareInfo) return;
-    const cpuCoresEl = document.getElementById('cpu-cores');
-    if (cpuCoresEl) {
-        cpuCoresEl.textContent = `${cachedHardwareInfo.cpu?.cores || 0} (${t('physicalCores')}: ${cachedHardwareInfo.cpu?.physical_cores || 0})`;
-    }
-    const gpuStatusEl = document.getElementById('gpu-status');
-    if (gpuStatusEl) {
-        gpuStatusEl.textContent = cachedHardwareInfo.gpu?.available ? t('available') : t('unavailable');
-    }
+// 基础信息：硬件概览卡片
+function renderOverviewCards(data) {
+    const container = document.getElementById('hardware-overview');
+    if (!container) return;
+    const cards = [];
+    cards.push(cardHTML('🧠', t('cpuInfo'), [
+        [t('cpuModel'), data.cpu?.model || t('unknownCPU')],
+        [t('cpuCores'), `${data.cpu?.cores || 0} (${t('physicalCores')}: ${data.cpu?.physical_cores || 0})`],
+        [t('cpuArch'), data.cpu?.arch || t('unknown')]
+    ]));
+    cards.push(cardHTML('💾', t('memoryInfo'), [
+        [t('memoryModel'), data.memory?.model || t('unknownMemory')],
+        [t('memoryTotal'), `${data.memory?.total || 0} ${t('gbUnit')}`],
+        [t('memoryFrequency'), data.mem_frequency ? `${data.mem_frequency} MHz` : t('notDetected')]
+    ]));
+    cards.push(cardHTML('🎮', t('gpuInfo'), [
+        [t('gpuModel'), data.gpu?.model || t('unknownGPU')],
+        [t('gpuStatus'), data.gpu?.available ? t('available') : t('unavailable')]
+    ]));
+    container.innerHTML = cards.join('');
+}
+
+function cardHTML(icon, title, rows) {
+    const body = rows.map(([k, v]) =>
+        `<div class="hw-row"><span class="hw-k">${k}</span><span class="hw-v">${v}</span></div>`
+    ).join('');
+    return `<div class="hw-card"><div class="hw-head"><span class="hw-icon">${icon}</span><span class="hw-title">${title}</span></div>${body}</div>`;
+}
+
+function renderNetworkInfo(network) {
     const netContainer = document.getElementById('network-info');
-    if (netContainer && cachedHardwareInfo.network && cachedHardwareInfo.network.length > 0) {
-        netContainer.innerHTML = '';
+    if (!netContainer) return;
+    netContainer.innerHTML = '';
+    if (network && network.length > 0) {
         const table = document.createElement('table');
         table.className = 'network-table';
-        cachedHardwareInfo.network.forEach(iface => {
+        network.forEach(iface => {
             const row = document.createElement('tr');
             row.className = 'network-row';
             const icon = getNetworkIcon(iface.name);
@@ -1643,9 +1799,81 @@ function updateNetworkTypeLabels() {
             table.appendChild(row);
         });
         netContainer.appendChild(table);
-    } else if (netContainer) {
+    } else {
         netContainer.innerHTML = `<p>${t('noNetwork')}</p>`;
     }
+}
+
+// 内存监控：内存频率 + 基本信息
+function renderMemoryInfo(hw) {
+    const container = document.getElementById('memory-info');
+    if (!container) return;
+    const mem = hw.memory || {};
+    const freq = hw.mem_frequency;
+    const rows = [
+        [t('memoryModel'), mem.model || t('unknownMemory')],
+        [t('memoryTotal'), `${mem.total || 0} ${t('gbUnit')}`],
+        [t('memoryFrequency'), freq ? `${freq} MHz` : t('notDetected')],
+        [t('memoryType'), mem.type || t('unknown')]
+    ];
+    container.innerHTML = `<div class="info-grid">` +
+        rows.map(([k, v]) => `<div class="info-item"><span class="info-k">${k}</span><span class="info-v">${v}</span></div>`).join('') +
+        `</div>`;
+}
+
+// GPU 监控：详情卡片（显存/温度/功耗/利用率）
+function renderGpuDetails(details) {
+    const container = document.getElementById('gpu-info');
+    if (!container) return;
+    if (!details || !details.available) {
+        container.innerHTML = `<div class="info-grid"><div class="info-item"><span class="info-k">${t('gpuStatus')}</span><span class="info-v">${t('unavailable')}</span></div></div>`;
+        return;
+    }
+    const memTotal = details.memory_total != null ? `${details.memory_total} MB` : t('unknown');
+    const memUsed = details.memory_used != null ? `${details.memory_used} MB` : t('unknown');
+    const temp = details.temperature != null ? `${details.temperature}°C` : t('unknown');
+    const util = details.utilization != null ? `${details.utilization}%` : t('unknown');
+    const power = details.power_draw != null ? `${details.power_draw} W` : t('unknown');
+    const powerLimit = details.power_limit != null ? `${details.power_limit} W` : t('unknown');
+    const rows = [
+        [t('gpuModel'), details.model || t('unknownGPU')],
+        [t('gpuMemoryUsed'), memUsed],
+        [t('gpuMemoryTotal'), memTotal],
+        [t('gpuTemperature'), temp],
+        [t('gpuUtilization'), util],
+        [t('gpuPowerDraw'), power],
+        [t('gpuPowerLimit'), powerLimit]
+    ];
+    container.innerHTML = `<div class="info-grid">` +
+        rows.map(([k, v]) => `<div class="info-item"><span class="info-k">${k}</span><span class="info-v">${v}</span></div>`).join('') +
+        `</div>`;
+}
+
+// 硬盘监控：SMART 属性表
+function renderSmartInfo(smartList) {
+    const container = document.getElementById('smart-container');
+    if (!container) return;
+    if (!smartList || smartList.length === 0) {
+        container.innerHTML = `<p class="smart-empty">${t('smartNoData')}</p>`;
+        return;
+    }
+    const html = smartList.map(disk => {
+        const head = `<div class="smart-disk-head">${disk.device}${disk.model ? ' — ' + disk.model : ''}${disk.available ? '' : ' (' + t('smartUnavailable') + ')'}</div>`;
+        if (!disk.available || !disk.attributes || disk.attributes.length === 0) {
+            return `<div class="smart-disk">${head}<p class="smart-empty">${t('smartUnavailable')}</p></div>`;
+        }
+        const rows = disk.attributes.map(a =>
+            `<tr><td>${a.id}</td><td>${a.name}</td><td>${a.value}</td><td>${a.worst}</td><td>${a.thresh}</td><td>${a.raw}</td></tr>`
+        ).join('');
+        return `<div class="smart-disk">${head}<table class="smart-table"><thead><tr><th>#</th><th>${t('smartAttr')}</th><th>${t('smartValue')}</th><th>${t('smartWorst')}</th><th>${t('smartThresh')}</th><th>${t('smartRaw')}</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    }).join('');
+    container.innerHTML = html;
+}
+
+function updateNetworkTypeLabels() {
+    if (!cachedHardwareInfo) return;
+    renderOverviewCards(cachedHardwareInfo);
+    renderNetworkInfo(cachedHardwareInfo.network);
 }
 
 function getNetworkIcon(name) {
@@ -1811,6 +2039,20 @@ function handleSnapshot(snapshot) {
             }]
         });
     }
+    if (memoryChart) {
+        memoryChart.setOption({
+            series: [{
+                data: sampledMemUsage
+            }]
+        });
+    }
+    if (gpuChart) {
+        gpuChart.setOption({
+            series: [{
+                data: sampledGpuUsage
+            }]
+        });
+    }
     const sampledCpuFreq = sampleChartData(data.cpu_freq, sampleInterval);
     if (freqChart) {
         freqChart.setOption({
@@ -1896,6 +2138,9 @@ function handleSnapshot(snapshot) {
     }
     if (snapshot.hardware_info) {
         renderHardwareInfo(snapshot.hardware_info);
+        renderMemoryInfo(snapshot.hardware_info);
+        renderGpuDetails(snapshot.hardware_info.gpu_details);
+        renderSmartInfo(snapshot.hardware_info.disk_smart);
     }
     if (snapshot.disk_usage) {
         renderDiskUsage(snapshot.disk_usage);
@@ -2119,6 +2364,7 @@ async function init() {
         }, 250);
     });
     initToggleButtons();
+    initSidebar();
     const retryBtn = document.getElementById('retry-btn');
     if (retryBtn) {
         retryBtn.addEventListener('click', retryBackendConnection);
@@ -2144,10 +2390,65 @@ function initToggleButtons() {
             toggleChart(targetId, btn);
         });
     });
-    const toggleAllBtn = document.getElementById('toggle-all-btn');
-    if (toggleAllBtn) {
-        toggleAllBtn.addEventListener('click', toggleAllCharts);
+    const collapseAllBtn = document.getElementById('collapse-all');
+    if (collapseAllBtn) {
+        collapseAllBtn.addEventListener('click', () => setAllChartsCollapsed(true));
     }
+    const expandAllBtn = document.getElementById('expand-all');
+    if (expandAllBtn) {
+        expandAllBtn.addEventListener('click', () => setAllChartsCollapsed(false));
+    }
+}
+
+// 侧边栏分区导航
+function initSidebar() {
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const section = item.dataset.section;
+            switchSection(section);
+            // 移动端点击后收起侧边栏
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            if (window.innerWidth <= 1024) {
+                sidebar?.classList.remove('open');
+                overlay?.classList.remove('show');
+            }
+        });
+    });
+
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const overlay = document.getElementById('sidebar-overlay');
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('open');
+            overlay?.classList.toggle('show');
+        });
+    }
+    if (overlay) {
+        overlay.addEventListener('click', () => {
+            sidebar?.classList.remove('open');
+            overlay.classList.remove('show');
+        });
+    }
+
+    // 根据 URL hash 或默认选中基础信息
+    const hash = window.location.hash?.replace('#', '');
+    if (hash && document.getElementById('section-' + hash)) {
+        switchSection(hash);
+    }
+}
+
+function switchSection(section) {
+    document.querySelectorAll('.nav-item').forEach(n => {
+        n.classList.toggle('active', n.dataset.section === section);
+    });
+    document.querySelectorAll('.content-section').forEach(s => {
+        s.classList.toggle('active', s.dataset.section === section);
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function toggleChart(chartId, btn) {
@@ -2164,19 +2465,11 @@ function toggleChart(chartId, btn) {
     }
 }
 
-function toggleAllCharts() {
-    allChartsCollapsed = !allChartsCollapsed;
-    const toggleAllBtn = document.getElementById('toggle-all-btn');
+function setAllChartsCollapsed(collapsed) {
+    allChartsCollapsed = collapsed;
     const toggleBtns = document.querySelectorAll('.chart-toggle-btn');
     const chartContainers = document.querySelectorAll('.chart-container');
     const panels = document.querySelectorAll('.chart-panel');
-    if (toggleAllBtn) {
-        toggleAllBtn.classList.toggle('collapsed', allChartsCollapsed);
-        const textEl = toggleAllBtn.querySelector('.toggle-text');
-        if (textEl) {
-            textEl.textContent = allChartsCollapsed ? t('expandAll') : t('collapseAll');
-        }
-    }
     toggleBtns.forEach(btn => {
         btn.classList.toggle('collapsed', allChartsCollapsed);
     });
@@ -2188,7 +2481,8 @@ function toggleAllCharts() {
     });
     if (!allChartsCollapsed) {
         setTimeout(() => {
-            ['net-chart', 'system-chart', 'usage-chart', 'cpu-freq-container'].forEach(resizeChart);
+            ['net-chart', 'system-chart', 'usage-chart', 'cpu-freq-container',
+                'cpu-cores-container', 'disk-container', 'memory-chart', 'gpu-chart'].forEach(resizeChart);
         }, 450);
     }
 }
@@ -2199,6 +2493,10 @@ function resizeChart(chartId) {
     else if (chartId === 'net-chart') chartInstance = netChart;
     else if (chartId === 'system-chart') chartInstance = systemChart;
     else if (chartId === 'cpu-freq-container') chartInstance = freqChart;
+    else if (chartId === 'cpu-cores-container') chartInstance = cpuCoresChart;
+    else if (chartId === 'disk-container') chartInstance = diskChart;
+    else if (chartId === 'memory-chart') chartInstance = memoryChart;
+    else if (chartId === 'gpu-chart') chartInstance = gpuChart;
     if (chartInstance) {
         setTimeout(() => {
             chartInstance.resize();
