@@ -160,5 +160,50 @@ window.LANGUAGE_DATA['zh'] = {
         cpuFreqTrend: "CPU频率趋势",
         cpuCurrentFreq: "当前主频",
         cpuMaxFreq: "最大主频",
-        cpuMinFreq: "最小主频"
+        cpuMinFreq: "最小主频",
+
+        // 侧边栏导航
+        appName: "SystemStatus",
+        navOverview: "基础信息",
+        navCPU: "CPU监控",
+        navMemory: "内存监控",
+        navDisk: "硬盘监控",
+        navGPU: "GPU监控",
+        navNetwork: "网络监控",
+
+        // 硬件概览卡片
+        cpuInfo: "CPU 信息",
+        memoryInfo: "内存信息",
+        gpuInfo: "显卡信息",
+        cpuModel: "CPU 型号",
+        cpuCores: "核心数",
+        cpuArch: "架构",
+        memoryTotal: "内存容量",
+        gbUnit: "GB",
+        memoryFrequency: "内存频率",
+        memoryType: "内存类型",
+        notDetected: "未检测到",
+        gpuStatus: "显卡状态",
+
+        // 内存监控
+        memoryUsageTrend: "内存占用率趋势",
+
+        // GPU 监控详情
+        gpuUsageTrend: "GPU占用率趋势",
+        gpuMemoryUsed: "显存已用",
+        gpuMemoryTotal: "显存总计",
+        gpuTemperature: "显卡温度",
+        gpuUtilization: "显卡利用率",
+        gpuPowerDraw: "显卡功耗",
+        gpuPowerLimit: "功耗上限",
+
+        // 硬盘 SMART
+        smartTitle: "SMART 属性",
+        smartAttr: "属性名",
+        smartValue: "当前值",
+        smartWorst: "最差值",
+        smartThresh: "阈值",
+        smartRaw: "原始值",
+        smartNoData: "未获取到 SMART 数据（可能需要 root 权限或安装 smartmontools）",
+        smartUnavailable: "不支持"
 };
