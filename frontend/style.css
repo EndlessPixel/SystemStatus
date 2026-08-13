@@ -849,7 +849,8 @@ body {
 /* 只有真正的ECharts图表容器才设置固定高度 */
 #net-chart,
 #system-chart,
-#usage-chart {
+#usage-chart,
+#freq-chart {
     height: 400px;
 }
 
