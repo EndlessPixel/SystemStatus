@@ -1,89 +1,76 @@
-"""
-API路由模块
-提供所有REST API接口
-"""
-from fastapi import APIRouter
-from typing import Dict
+from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse
+import time
 import json
-import sys
-from pathlib import Path
+import os
+import asyncio
 
-from ..hardware import get_hardware_info
-from ..monitor import get_real_time_data, DATA_CACHE, CACHE_FILE
+from .. import monitor
+from ..hardware import get_hardware_info, get_gpu_info
 
 api_router = APIRouter(prefix="/api")
 
-# 版本信息缓存
-_version_info = None
+CACHE_FILE = "tmp.json"
+WS_PUSH_INTERVAL = 1.0  # WebSocket 推送间隔（秒）
 
-def get_version_info():
-    """获取版本信息，单例模式"""
-    global _version_info
-    if _version_info is not None:
-        return _version_info
-    
-    # 尝试获取Git commit
-    git_commit_sha = None
-    base_dir = Path(__file__).parent.parent.parent.absolute()
-    git_dir = base_dir / ".git"
-    
-    if git_dir.exists():
-        try:
-            import subprocess
-            result = subprocess.run(
-                ["git", "rev-parse", "--short", "HEAD"],
-                cwd=str(base_dir),
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                git_commit_sha = result.stdout.strip()
-        except Exception:
-            pass
-    
-    _version_info = {
-        "version": "2.0.0",
-        "git_commit": git_commit_sha,
-        "has_git": git_dir.exists()
-    }
-    return _version_info
-
-@api_router.get("/version")
-async def version_info():
-    """获取版本信息"""
-    return get_version_info()
-
-@api_router.get("/hardware-info")
-async def hardware_info():
-    """获取硬件信息"""
-    return get_hardware_info()
-
-@api_router.get("/real-time-data")
-async def real_time_data():
-    """获取实时监控数据"""
-    return get_real_time_data()
-
-@api_router.get("/disk-usage")
-async def disk_usage():
-    """获取硬盘使用情况"""
-    return get_hardware_info()["disks"]
-
-@api_router.get("/cache")
-async def get_cache():
-    """获取缓存数据"""
-    try:
-        with open(CACHE_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except:
-        return {"error": "缓存文件不存在"}
 
 @api_router.get("/health")
 async def health_check():
     """轻量健康检查，不触发任何硬件采集，用于前端心跳检测"""
     return {"status": "ok"}
 
+
 @api_router.get("/")
 async def root():
     """健康检查"""
     return {"status": "ok", "message": "SystemStatus API"}
+
+
+@api_router.get("/version")
+async def get_version():
+    """获取Git版本信息"""
+    try:
+        import subprocess
+        git_hash = subprocess.check_output(
+            ['git', 'rev-parse', '--short', 'HEAD'],
+            cwd=os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+            stderr=subprocess.DEVNULL
+        ).decode('utf-8').strip()
+        return {"version": git_hash}
+    except:
+        return {"version": "unknown"}
+
+
+@api_router.get("/data")
+async def get_data():
+    """一次性获取完整监控快照（硬件信息 + 实时数据 + 磁盘）"""
+    return monitor.get_full_snapshot()
+
+
+@api_router.get("/cache")
+async def get_cache():
+    """从 tmp.json 缓存文件读取完整快照，文件不存在时实时生成"""
+    try:
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception:
+        pass
+    return monitor.get_full_snapshot()
+
+
+@api_router.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    """实时监控 WebSocket：连接后按固定间隔推送完整快照"""
+    await websocket.accept()
+    try:
+        while True:
+            try:
+                await websocket.send_json(monitor.get_full_snapshot())
+            except Exception:
+                break
+            await asyncio.sleep(WS_PUSH_INTERVAL)
+    except WebSocketDisconnect:
+        pass
+    except Exception:
+        pass
