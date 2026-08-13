@@ -155,7 +155,6 @@ window.LANGUAGE_DATA['ja'] = {
         temperatureUnit: "°C",
         bootTimeFormat: "起動時間形式",
         diskError: "ディスクエラー",
-    },
     // 俄语
 
 };

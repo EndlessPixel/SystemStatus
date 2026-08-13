@@ -155,7 +155,4 @@ window.LANGUAGE_DATA['fr'] = {
         temperatureUnit: "°C",
         bootTimeFormat: "Format du temps de démarrage",
         diskError: "Erreur de disque",
-    },
-};
-
 };

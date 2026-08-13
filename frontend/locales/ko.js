@@ -155,7 +155,6 @@ window.LANGUAGE_DATA['ko'] = {
         temperatureUnit: "°C",
         bootTimeFormat: "부팅 시간 형식",
         diskError: "디스크 오류",
-    },
 
     // 法语
 
