@@ -6,6 +6,7 @@ import platform
 import psutil
 from typing import Dict, List
 import subprocess
+from backend.app_config import get_disk_filter
 
 # NVML全局变量
 NVML_AVAILABLE = False
@@ -155,8 +156,23 @@ def get_hardware_info() -> Dict:
 
     # 硬盘
     disks = []
+    disk_filter = get_disk_filter()
+    filter_devices = set(disk_filter.get("devices", []))
+    filter_mountpoints = disk_filter.get("mountpoints", [])
+    filter_fstypes = set(disk_filter.get("fstypes", []))
+
     for part in psutil.disk_partitions(all=False):
         if "cdrom" in part.opts or part.fstype == "":
+            continue
+        # 命中任一过滤规则则跳过：设备名 / 挂载点 / 文件系统类型
+        if part.device in filter_devices:
+            continue
+        if part.fstype in filter_fstypes:
+            continue
+        if any(
+            part.mountpoint == mp or part.mountpoint.startswith(mp.rstrip("/") + "/")
+            for mp in filter_mountpoints
+        ):
             continue
         # Linux 下过滤 /dev/loop* 循环设备（snap、docker 等挂载），避免冗余条目
         if platform.system() == "Linux" and part.device.startswith("/dev/loop"):
