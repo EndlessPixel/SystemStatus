@@ -327,7 +327,8 @@ function updateChartTheme(theme) {
                     },
                     splitLine: {
                         lineStyle: {
-                            color: splitLineColor
+                            color: splitLineColor,
+                            type: 'dashed'
                         }
                     }
                 },
@@ -345,7 +346,8 @@ function updateChartTheme(theme) {
                     },
                     splitLine: {
                         lineStyle: {
-                            color: splitLineColor
+                            color: splitLineColor,
+                            type: 'dashed'
                         }
                     }
                 }
@@ -367,7 +369,8 @@ function updateChartTheme(theme) {
                         },
                         splitLine: {
                             lineStyle: {
-                                color: splitLineColor
+                                color: splitLineColor,
+                                type: 'dashed'
                             }
                         }
                     },
@@ -717,7 +720,7 @@ function adjustChartHeight() {
     chartHeight = Math.min(Math.max(chartHeight, 200), 500);
 
     // 更新图表容器高度
-    const chartIds = ['usage-chart', 'net-chart', 'system-chart', 'freq-chart'];
+    const chartIds = ['usage-chart', 'net-chart', 'system-chart', 'cpu-freq-container'];
     chartIds.forEach(id => {
         const chartDom = document.getElementById(id);
         if (chartDom) {
@@ -730,6 +733,118 @@ function adjustChartHeight() {
     if (netChart) netChart.resize();
     if (systemChart) systemChart.resize();
     if (freqChart) freqChart.resize();
+}
+
+// 所有图表面板的统一配置。模板按此渲染，保证 data-chart-id / 内容容器 id / 折叠按钮 data-target 三者一致，
+// 且折叠行为统一，避免各面板手工 HTML 不一致导致的折叠空隙等问题。
+// infoHtml：面板标题下方的说明文字（可含 data-i18n 与具体 span id），无则留空字符串。
+// contentHtml：主体内容（图表容器或动态列表容器），其 id 固定为 panel.id。
+const CHART_PANELS = [
+    {
+        id: 'cpu-cores-container',
+        titleI18n: 'cpuCoresUsage',
+        title: 'CPU核心实时占用',
+        infoHtml: '',
+        contentHtml: '加载中...'
+    },
+    {
+        id: 'cpu-freq-container',
+        titleI18n: 'cpuFreqTrend',
+        title: 'CPU频率趋势',
+        infoHtml: `
+            <p><span data-i18n="cpuCurrentFreq">当前主频</span>: <span id="cpu-freq-current">0 MHz</span></p>
+            <p><span data-i18n="cpuMaxFreq">最大主频</span>: <span id="cpu-freq-max">0 MHz</span></p>
+            <p><span data-i18n="cpuMinFreq">最小主频</span>: <span id="cpu-freq-min">0 MHz</span></p>
+        `,
+        contentHtml: ''  // 内部 echarts 容器由 initChart 按 id 初始化
+    },
+    {
+        id: 'disk-container',
+        titleI18n: 'diskUsage',
+        title: '硬盘占用率',
+        infoHtml: '',
+        contentHtml: '加载中...'
+    },
+    {
+        id: 'net-chart',
+        titleI18n: 'networkTraffic',
+        title: '网卡流量监控',
+        infoHtml: `
+            <p><span data-i18n="uploadSpeed">实时上传速度</span>: <span id="net-upload-speed">0 KB/s</span></p>
+            <p><span data-i18n="downloadSpeed">实时下载速度</span>: <span id="net-download-speed">0 KB/s</span></p>
+        `,
+        contentHtml: ''
+    },
+    {
+        id: 'system-chart',
+        titleI18n: 'systemLoad',
+        title: '系统负载监控',
+        infoHtml: `
+            <p><span data-i18n="systemLoad1Min">1分钟系统负载</span>: <span id="system-load">0.00</span></p>
+            <p><span data-i18n="processCount">当前进程数</span>: <span id="process-count">0</span></p>
+            <p><span data-i18n="cpuTemperature">CPU温度</span>: <span id="cpu-temperature">0°C</span></p>
+        `,
+        contentHtml: ''
+    },
+    {
+        id: 'usage-chart',
+        titleI18n: 'systemResourceTrend',
+        title: '系统资源趋势',
+        infoHtml: `
+            <p><span data-i18n="cpuUsage">CPU占用率</span>: <span id="cpu-usage-current">0%</span></p>
+            <p><span data-i18n="memoryUsage">内存占用率</span>: <span id="mem-usage-current">0%</span></p>
+            <p><span data-i18n="gpuUsage">GPU占用率</span>: <span id="gpu-usage-current">0%</span></p>
+        `,
+        contentHtml: ''
+    }
+];
+
+function createChartPanel(panel) {
+    const section = document.createElement('div');
+    section.className = 'panel chart-panel';
+    section.setAttribute('data-chart-id', panel.id);
+
+    const header = document.createElement('div');
+    header.className = 'panel-header';
+    const title = document.createElement('h2');
+    title.className = 'panel-title';
+    title.setAttribute('data-i18n', panel.titleI18n);
+    title.textContent = panel.title;
+    const toggleBtn = document.createElement('button');
+    toggleBtn.className = 'toggle-btn chart-toggle-btn';
+    toggleBtn.setAttribute('data-target', panel.id);
+    toggleBtn.innerHTML = '<span class="toggle-icon">▼</span>';
+    header.appendChild(title);
+    header.appendChild(toggleBtn);
+
+    const frag = document.createDocumentFragment();
+    if (panel.infoHtml) {
+        const info = document.createElement('div');
+        info.className = 'panel-info';
+        info.innerHTML = panel.infoHtml;
+        frag.appendChild(info);
+    }
+    const content = document.createElement('div');
+    content.id = panel.id;
+    content.className = 'content-slot chart-container';
+    if (panel.contentHtml) {
+        content.innerHTML = panel.contentHtml;
+    }
+    frag.appendChild(content);
+
+    section.appendChild(header);
+    section.appendChild(frag);
+    return section;
+}
+
+function renderAllPanels() {
+    const root = document.getElementById('charts-root');
+    if (!root) return;
+    CHART_PANELS.forEach(panel => root.appendChild(createChartPanel(panel)));
+    // 面板为动态生成，需在生成后立即翻译其内部 data-i18n（标题、说明文字）
+    if (typeof updateAllTranslations === 'function') {
+        updateAllTranslations();
+    }
 }
 
 function initChart() {
@@ -760,6 +875,14 @@ function initChart() {
                 backgroundColor: tooltipBgColor,
                 borderColor: borderColor,
                 borderWidth: 1,
+                extraCssText: 'border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);',
+                axisPointer: {
+                    type: 'line',
+                    lineStyle: {
+                        color: borderColor,
+                        type: 'dashed'
+                    }
+                },
                 textStyle: {
                     color: primaryTextColor,
                     fontSize: 14
@@ -800,7 +923,8 @@ function initChart() {
                 splitLine: {
                     show: true,
                     lineStyle: {
-                        color: bgColor
+                        color: borderColor,
+                        type: 'dashed'
                     }
                 }
             },
@@ -825,7 +949,8 @@ function initChart() {
                 splitLine: {
                     show: true,
                     lineStyle: {
-                        color: bgColor
+                        color: borderColor,
+                        type: 'dashed'
                     }
                 }
             },
@@ -905,6 +1030,14 @@ function initChart() {
                 backgroundColor: tooltipBgColor,
                 borderColor: borderColor,
                 borderWidth: 1,
+                extraCssText: 'border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);',
+                axisPointer: {
+                    type: 'line',
+                    lineStyle: {
+                        color: borderColor,
+                        type: 'dashed'
+                    }
+                },
                 textStyle: {
                     color: primaryTextColor,
                     fontSize: 14
@@ -945,7 +1078,8 @@ function initChart() {
                 splitLine: {
                     show: true,
                     lineStyle: {
-                        color: bgColor
+                        color: borderColor,
+                        type: 'dashed'
                     }
                 }
             },
@@ -969,7 +1103,8 @@ function initChart() {
                 splitLine: {
                     show: true,
                     lineStyle: {
-                        color: bgColor
+                        color: borderColor,
+                        type: 'dashed'
                     }
                 }
             },
@@ -1034,6 +1169,14 @@ function initChart() {
                 backgroundColor: tooltipBgColor,
                 borderColor: borderColor,
                 borderWidth: 1,
+                extraCssText: 'border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);',
+                axisPointer: {
+                    type: 'line',
+                    lineStyle: {
+                        color: borderColor,
+                        type: 'dashed'
+                    }
+                },
                 textStyle: {
                     color: primaryTextColor,
                     fontSize: 14
@@ -1074,7 +1217,8 @@ function initChart() {
                 splitLine: {
                     show: true,
                     lineStyle: {
-                        color: bgColor
+                        color: borderColor,
+                        type: 'dashed'
                     }
                 }
             },
@@ -1098,7 +1242,8 @@ function initChart() {
                     splitLine: {
                         show: true,
                         lineStyle: {
-                            color: bgColor
+                            color: borderColor,
+                            type: 'dashed'
                         }
                     }
                 },
@@ -1176,7 +1321,7 @@ function initChart() {
     }
 
     // CPU 频率趋势图（总体频率，单位 MHz）
-    const freqDom = document.getElementById('freq-chart');
+    const freqDom = document.getElementById('cpu-freq-container');
     if (freqDom) {
         const textColor = '#86868b';
         const borderColor = '#e6e6e8';
@@ -1963,6 +2108,7 @@ async function init() {
     initHeaderScroll();
     await loadAppConfig();
     loadVersionInfo();
+    renderAllPanels();
     initChart();
     adjustChartHeight();
     let resizeTimer;
@@ -2042,7 +2188,7 @@ function toggleAllCharts() {
     });
     if (!allChartsCollapsed) {
         setTimeout(() => {
-            ['net-chart', 'system-chart', 'usage-chart', 'freq-chart'].forEach(resizeChart);
+            ['net-chart', 'system-chart', 'usage-chart', 'cpu-freq-container'].forEach(resizeChart);
         }, 450);
     }
 }
@@ -2052,7 +2198,7 @@ function resizeChart(chartId) {
     if (chartId === 'usage-chart') chartInstance = chart;
     else if (chartId === 'net-chart') chartInstance = netChart;
     else if (chartId === 'system-chart') chartInstance = systemChart;
-    else if (chartId === 'freq-chart') chartInstance = freqChart;
+    else if (chartId === 'cpu-freq-container') chartInstance = freqChart;
     if (chartInstance) {
         setTimeout(() => {
             chartInstance.resize();
