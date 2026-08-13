@@ -107,6 +107,37 @@ pip install -r requirements-unix.txt --break-system-packages
 
 `--break-system-packages` 会跳过外部管理环境的保护，把包装进系统 Python 目录，**可能干扰系统包管理器（apt/dnf 等）**，生产环境请优先使用虚拟环境。Docker 部署不受影响（`Dockerfile` 内为独立容器环境）。
 
+### 配置文件 `config.yml`（可选）
+
+项目根目录下的 `config.yml` 用于自定义运行参数。**文件不存在或字段缺失时会自动使用内置默认值，不影响启动。**
+
+目前支持以下配置项：
+
+```yaml
+server:
+  host: 0.0.0.0      # 监听地址，0.0.0.0 表示允许外部访问
+  port: 8001         # 监听端口
+
+display:
+  show_network: true   # 是否显示网卡信息面板
+  show_battery: true   # 是否显示电池状态（关闭后后端不再采集电池数据）
+
+disk_filter:
+  devices: []                 # 按设备名完整匹配，如 /dev/nvme0n1p1
+  mountpoints:                # 按挂载点匹配（完整或前缀），如 /boot/efi、/snap
+    - /boot/efi
+  fstypes:                    # 按文件系统类型匹配，如 vfat、squashfs、tmpfs
+    - vfat
+    - squashfs
+    - tmpfs
+```
+
+- `server`：修改监听地址与端口（等价于原 `PORT` 常量），重启生效。
+- `display`：控制网卡、电池面板是否显示；`show_battery: false` 时后端完全跳过电池采集，更省资源。
+- `disk_filter`：被匹配到的分区不会出现在监控面板中（三者为「或」关系，命中任意一项即过滤）。默认值已包含 `/boot/efi` 以及 `vfat / squashfs / tmpfs`，可覆盖大多数发行版下冗余的 EFI、snap、loop 分区。
+
+> 💡 修改 `config.yml` 后重启服务生效；字段缺失或文件不存在时自动使用上方默认值。
+
 ### 启动服务
 
 ```bash
