@@ -78,6 +78,11 @@ async def get_cache():
     except:
         return {"error": "缓存文件不存在"}
 
+@api_router.get("/health")
+async def health_check():
+    """轻量健康检查，不触发任何硬件采集，用于前端心跳检测"""
+    return {"status": "ok"}
+
 @api_router.get("/")
 async def root():
     """健康检查"""

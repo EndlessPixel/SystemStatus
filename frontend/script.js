@@ -1149,7 +1149,7 @@ async function checkBackendStatus() {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-        const response = await fetch(`${API_BASE}/hardware-info`, {
+        const response = await fetch(`${API_BASE}/health`, {
             signal: controller.signal
         });
 
@@ -1165,8 +1165,8 @@ async function checkBackendStatus() {
 
 async function loadLocalTmpJson() {
     try {
-        const response = await fetch("tmp.json");
-        if (!response.ok) throw new Error("tmp.json不存在");
+        const response = await fetch(`${API_BASE}/cache`);
+        if (!response.ok) throw new Error("缓存接口不可用");
 
         const cacheData = await response.json();
         renderHardwareInfo(cacheData.hardware_info);
@@ -1513,7 +1513,6 @@ function updateNetSpeedDisplay(upload, download) {
     }
 }
 async function getHardwareInfo() {
-    if (!(await checkBackendStatus())) return;
     try {
         const response = await fetch(`${API_BASE}/hardware-info`);
         if (!response.ok) throw new Error(`HTTP错误：${response.status}`);
@@ -1524,11 +1523,10 @@ async function getHardwareInfo() {
         localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
     } catch (error) {
         console.error('获取最新硬件信息失败:', error);
-        showPrompt(`获取最新硬件信息失败: ${t('getHardwareInfoError')}`, false);
+        await loadFromCache();
     }
 }
 async function updateRealTimeData() {
-    if (!(await checkBackendStatus())) return;
     try {
         const response = await fetch(`${API_BASE}/real-time-data`);
         const data = await response.json();
@@ -1615,7 +1613,7 @@ async function updateRealTimeData() {
             const battery = data.battery_info;
             if (battery.percent !== undefined) {
                 if (battery.plugged) {
-                    batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${t('batteryCharging')} ${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;
+                    batteryInfoEl.innerHTML = `<span data-i18n="batteryInfo">${t('batteryInfo')}</span>: ${battery.percent.toFixed(0)}% (${t('batteryCharging')})`;
                 } else {
                     const secsLeft = battery.secsleft;
                     let timeLeft = '';
@@ -1646,7 +1644,7 @@ async function updateRealTimeData() {
         localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
     } catch (error) {
         console.error(`${t('realTimeErrorError')}:`, error);
-        showPrompt(`${t('realTimeErrorError')}`, false);
+        await loadFromCache();
     }
 }
 
@@ -1753,7 +1751,6 @@ function clearAllIntervals() {
     }
 }
 async function updateDiskUsage() {
-    if (!(await checkBackendStatus())) return;
     try {
         const response = await fetch(`${API_BASE}/disk-usage`);
         const disks = await response.json();
@@ -1763,9 +1760,7 @@ async function updateDiskUsage() {
         localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(localCache));
     } catch (error) {
         console.error('获取硬盘信息失败:', error);
-        showPrompt(`获取硬盘信息失败: ${t('diskError')}`, false);
-        const container = document.getElementById('disk-container');
-        if (container) container.innerHTML = `<p>${t('noDisk')}</p>`;
+        await loadFromCache();
     }
 }
 async function loadVersionInfo() {

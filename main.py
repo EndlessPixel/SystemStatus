@@ -63,7 +63,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_origin_regex=None,
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["*"],
@@ -148,9 +148,10 @@ async def custom_404_handler(request: Request, exc):
     )
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.warning(f"参数校验失败: {request.url} {exc}")
     return JSONResponse(
-        status_code=200,
-        content={"status": "ok", "message": "请求参数已接收"}
+        status_code=422,
+        content={"detail": exc.errors()}
     )
 collect_thread = None
 def start_monitor():
