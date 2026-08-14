@@ -74,6 +74,10 @@ last_net_bytes_sent = net_io_counters.bytes_sent
 last_net_bytes_recv = net_io_counters.bytes_recv
 last_net_time = time.time()
 
+# 每张网卡的实时上传/下载速率历史：{iface: {"up":[], "down":[]}}
+NET_IO_NIC_HISTORY = {}
+_NET_IO_NIC_LAST = {}  # {iface: (bytes_sent, bytes_recv, ts)}
+
 def calculate_net_speed():
     """计算网卡上传/下载速度（KB/s）"""
     global last_net_bytes_sent, last_net_bytes_recv, last_net_time
@@ -162,6 +166,27 @@ def collect_real_time_data():
         upload_speed, download_speed = calculate_net_speed()
         DATA_CACHE["net_upload_speed"].append((timestamp, upload_speed))
         DATA_CACHE["net_download_speed"].append((timestamp, download_speed))
+
+        # 每张网卡的实时上传/下载速率
+        try:
+            nic_counters = psutil.net_io_counters(pernic=True) or {}
+            for nic, c in nic_counters.items():
+                if nic not in NET_IO_NIC_HISTORY:
+                    NET_IO_NIC_HISTORY[nic] = {"up": [], "down": []}
+                last = _NET_IO_NIC_LAST.get(nic)
+                if last:
+                    dt = timestamp - last[2]
+                    if dt > 0.1:
+                        up_kbs = max(0.0, (c.bytes_sent - last[0]) / 1024 / dt)
+                        down_kbs = max(0.0, (c.bytes_recv - last[1]) / 1024 / dt)
+                        hist = NET_IO_NIC_HISTORY[nic]
+                        hist["up"].append((timestamp, round(up_kbs, 1)))
+                        hist["down"].append((timestamp, round(down_kbs, 1)))
+                        for kk in hist:
+                            hist[kk] = [x for x in hist[kk] if timestamp - x[0] <= CACHE_DURATION]
+                _NET_IO_NIC_LAST[nic] = (c.bytes_sent, c.bytes_recv, timestamp)
+        except Exception:
+            pass
 
         # 磁盘 IO（按物理磁盘聚合：读写速率 KB/s + 忙碌/等待占比 %）
         try:
@@ -360,12 +385,22 @@ def get_real_time_data() -> Dict:
             }
         return out
 
+    def format_net_io_per_nic() -> Dict:
+        out = {}
+        for nic, series in NET_IO_NIC_HISTORY.items():
+            out[nic] = {
+                "up": format_data(series.get("up", [])),
+                "down": format_data(series.get("down", [])),
+            }
+        return out
+
     return {
         "cpu_usage": format_data(DATA_CACHE["cpu_usage"]),
         "mem_usage": format_data(DATA_CACHE["mem_usage"]),
         "gpu_usage": format_data(DATA_CACHE["gpu_usage"]),
         "net_upload_speed": format_data(DATA_CACHE["net_upload_speed"]),
         "net_download_speed": format_data(DATA_CACHE["net_download_speed"]),
+        "net_io_per_nic": format_net_io_per_nic(),
         "system_load": format_data(DATA_CACHE["system_load"]),
         "process_count": format_data(DATA_CACHE["process_count"]),
         "cpu_temperature": format_data(DATA_CACHE["cpu_temperature"]),
