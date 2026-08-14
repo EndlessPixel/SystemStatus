@@ -162,6 +162,20 @@ python main.py
   - NVIDIA 显卡使用率检测（NVML）
 - **网络监控**：实时上下行流量（折线图）、网络接口名称与 IP 地址
 
+### 🔐 Linux 权限说明
+
+部分硬件信息依赖底层命令，**在 Linux 下需要 root 权限**才能读取，以普通用户运行时将返回空（页面显示 `—`）：
+
+| 信息 | 数据来源 | 是否需要 root |
+|---|---|---|
+| 内存型号 / 频率 | `dmidecode` / sysfs(EDAC/DMI) | ✅ 需要 |
+| 硬盘 SMART 属性 | `smartctl` | ✅ 需要 |
+| CPU 温度 | `sensors` / `coretemp` | ⚠️ 部分需要 |
+| CPU / 内存占用率、网络流量 | `psutil` | ❌ 不需要 |
+
+> 💡 **建议用 `sudo` 运行以获取完整信息**：`sudo python3 main.py`
+> 若不想给全部 root，可配置 NOPASSWD 的 `sudo dmidecode` / `sudo smartctl`（程序已自动尝试 `sudo -n`）。
+
 ### ⚡ 性能优化
 
 - 本地缓存文件 `tmp.json`，页面打开秒加载（默认先拉 `/api/cache`）
