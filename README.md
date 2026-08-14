@@ -8,6 +8,7 @@
   <img src="https://img.shields.io/github/license/EndlessPixel/SystemStatus" alt="License">
   <img src="https://img.shields.io/badge/Python-3.8+-blue?logo=python" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-Web%20Framework-green?logo=fastapi" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8?logo=tailwindcss" alt="Tailwind CSS">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey" alt="Platform">
 </p>
 
@@ -152,46 +153,60 @@ python main.py
 
 ### 🖥️ 硬件信息监控
 
-- **CPU**：型号、核心数、实时占用率（单核心 + 整体折线图）
-- **内存**：容量、型号、实时占用率
-- **硬盘**：分区列表、已用/总容量（GB 显示）、占用百分比
-- **网卡**：名称与 IPv4 地址
-- **显卡**：型号检测（兼容 **Intel 核显 + NVIDIA 独显**）
+- **基础信息**：CPU 型号/核心数、内存容量与型号、网卡、显卡、系统运行时长与负载、进程数
+- **CPU 监控**：型号、整体占用率（折线图）、每核心占用、CPU 频率（折线图）
+- **内存监控**：容量、实时占用率（折线图）、已用/可用详情、内存型号与频率
+- **硬盘监控**：分区列表、已用/总容量（GB 显示）、占用百分比色条
+- **GPU 监控**：型号、使用率、温度、显存占用与功耗（兼容 **Intel 核显 + NVIDIA 独显**）
   - Intel 核显使用率检测（wmic）
   - NVIDIA 显卡使用率检测（NVML）
+- **网络监控**：实时上下行流量（折线图）、网络接口名称与 IP 地址
 
 ### ⚡ 性能优化
 
-- 本地缓存文件 `tmp.json`，页面打开秒加载
-- 浏览器 `localStorage` 缓存，断网也能看历史数据
-- 每秒采集实时数据，折线图动态展示趋势
+- 本地缓存文件 `tmp.json`，页面打开秒加载（默认先拉 `/api/cache`）
+- WebSocket 每秒推送完整快照，折线图动态展示趋势
+- WebSocket 不可用时自动降级为 `/api/data` 轮询，保证可用性
 - 无 NVIDIA 显卡时自动禁用 NVML，避免错误刷屏
 - 使用 `wmic` 替代 `wmi` COM 接口，彻底解决 Win32 IUnknown 异常
-- 硬盘占用率增量更新，避免每次完全重绘
+- 切换侧边栏模块时按需重绘，图表自动 resize 防止错位
 - 重启服务器后自动从缓存恢复历史数据
 - 静态资源与后端服务合并，无需额外 http.server
 
 ### 🎨 主题与外观
 
-- Apple 风格极简设计，通透、圆角、细腻阴影
-- 三种主题：浅色模式 / 深色模式 / 高对比度模式
-- 主题通过下拉菜单快速切换
-- 折叠面板时自动消除空白空间
+- **Apple 风格极简设计**：通透、大圆角、细腻柔和阴影
+- **无边框层级**：不依赖任何边框线，而是通过「底色深浅」与「柔和色块」来区分层级（侧边栏、卡片、选中态均用色块而非描边）
+- **左侧固定侧边栏导航**：分为 基础信息、CPU 监控、内存监控、硬盘监控、GPU 监控、网络监控 六大模块，点击切换，当前模块以柔和蓝底色高亮
+- **深浅色自动适配**：跟随系统 `prefers-color-scheme`，自动切换浅色 / 深色配色
+- **Tailwind CSS v4**：通过 `@tailwindcss/browser` 运行时编译，配合 `style.css` 中自定义的 Apple 设计令牌（`@theme`）统一全站色彩与字体
 
 ### 🌍 多语言支持 (i18n)
 
-- 内置：**简体中文、English、日本語、Deutsch、Français、Русский**
+- 内置：**简体中文、English、日本語、Deutsch、Français、Русский、한국어**
 - 自动检测浏览器语言偏好
-- 所有 UI 元素（图表、下拉菜单、网络标签）完全翻译
-- 语言文件独立管理，方便扩展
+- 所有 UI 元素（侧边栏、卡片标题、图表标签、状态文本）完全翻译
+- 语言文件位于 `frontend/locales/`，由 `frontend/translations.js` 聚合为多语言对象，方便扩展
 
 ### 📱 UI/UX
 
-- 响应式布局，手机 / 平板 / 桌面端均友好
-- 硬盘占用率默认 2 列布局，窄屏自动切换 1 列
-- 所有图表面板支持折叠/展开，一键全部折叠/展开
-- 平滑的折叠/展开动画
-- 数字动画，数值变化更流畅
+- **响应式布局**：侧边栏固定，主内容区在手机 / 平板 / 桌面端均友好
+- **模块独立切换**：六大监控模块分屏展示，切换带淡入动画，互不干扰
+- 各大模块内置 **ECharts 实时折线图**（CPU/内存占用、CPU 频率、网络上下行），随 WebSocket 每秒刷新
+- 硬盘卡片默认 2 列布局，窄屏自动切换 1 列
+- 进度条 / 状态点纯色填充，无边框、无多余线条，保持 Apple 式克制
+
+### 🧩 前端技术栈
+
+| 技术 | 用途 | 来源 |
+|---|---|---|
+| **Tailwind CSS v4** | 工具类样式 + 设计令牌 | `@tailwindcss/browser`（CDN 运行时编译） |
+| **ECharts** | 实时折线图 / 趋势图 | `frontend/echarts_lib/echarts.js`（本地） |
+| **Tip 轻提示** | 状态/错误提示 | `frontend/tip_lib/`（本地） |
+| **原生 JS** | 侧边栏导航、WebSocket、渲染 | `frontend/script.js` |
+| **i18n** | 多语言文本 | `frontend/locales/*.js` + `frontend/translations.js` |
+
+> 💡 前端为纯静态资源，由后端 `StaticFiles` 挂载于 `/static`，无需独立构建步骤，开箱即用。
 
 ### 🔌 跨平台兼容
 

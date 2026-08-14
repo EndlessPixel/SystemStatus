@@ -3,207 +3,45 @@ window.LANGUAGE_DATA = window.LANGUAGE_DATA || {};
 window.LANGUAGE_DATA['ja'] = {
         // 页面标题
         title: "システム監視パネル",
-
-        // 服务器选择
-        selectServer: "監視サーバーを選択：",
-        switchBtn: "切り替え",
-
-        // 状态提示
-        connecting: "バックエンドサービスに接続中...",
-        connected: "接続に成功しました",
-        disconnected: "バックエンドが検出されません",
-        connectionFailed: "バックエンド接続に失敗しました",
-        usingCache: "キャッシュを使用して高速読み込み",
-        usingLocalCache: "バックエンドキャッシュが利用不可のため、ブラウザローカルキャッシュを使用",
-        noCache: "バックエンドが検出されず、利用可能なキャッシュもありません",
-
-        // 硬件卡片
-        cpu: "CPU",
-        memory: "メモリ",
-        gpu: "グラフィックカード",
-        network: "ネットワークカード",
-        cores: "コア数",
-        physicalCores: "物理コア",
-        total: "総容量",
-        status: "状態",
-        available: "利用可能",
-        unavailable: "利用不可",
-        loading: "読み込み中...",
-        unknown: "不明",
-        unknownCPU: "CPU不明",
-        unknownMemory: "メモリ不明",
-        unknownGPU: "グラフィックカード不明",
-
-        // 网络信息
-        noNetwork: "ネットワークカード情報が検出されません",
-        noIP: "IPなし",
-        wifi: "WiFi",
-        ethernet: "イーサネット",
-        vpn: "VPN",
-        bluetooth: "Bluetooth",
-        other: "その他",
-
-        // 面板标题
-        cpuCoresUsage: "CPUコアリアルタイム使用率",
-        diskUsage: "ディスク使用率",
-        networkTraffic: "ネットワークカードトラフィック監視",
-        systemLoad: "システム負荷監視",
-        systemResourceTrend: "システムリソース推移",
-
-        // 网络流量
-        uploadSpeed: "リアルタイムアップロード速度",
-        downloadSpeed: "リアルタイムダウンロード速度",
-
-        // 系统信息
-        systemLoad1Min: "1分間システム負荷",
-        processCount: "現在のプロセス数",
-        cpuTemperature: "CPU温度",
-        bootTime: "起動時間",
-        batteryInfo: "バッテリー状態",
-        noBattery: "バッテリー情報が検出されません",
-        batteryCharging: "充電中",
-        batteryUnplugged: "電源未接続",
-        estimatedTimeLeft: "残り時間",
-        hours: "時間",
-        minutes: "分",
-        days: "日",
-        hoursShort: "時間",
-        minutesShort: "分",
-
-        // 资源占用
-        cpuUsage: "CPU使用率",
-        memoryUsage: "メモリ使用率",
-        gpuUsage: "GPU使用率",
-
-        // 图表标题
-        cpuMemoryGpuTrend: "CPU/メモリ/GPU 使用率推移",
-        networkTrafficTrend: "ネットワークカードトラフィック速度推移",
-        systemLoadTrend: "システム負荷推移",
-
-        // 图表标签
-        cpuUsagePercent: "CPU使用率(%)",
-        memoryUsagePercent: "メモリ使用率(%)",
-        gpuUsagePercent: "GPU使用率(%)",
-        uploadSpeedLabel: "アップロード速度",
-        downloadSpeedLabel: "ダウンロード速度",
-        systemLoadLabel: "システム負荷",
-        processCountLabel: "プロセス数",
-        cpuTempLabel: "CPU温度",
-
-        // 轴标签
-        time: "時間",
-        usagePercent: "使用率(%)",
-        speedKb: "速度 (KB/s)",
-        loadProcess: "システム負荷/プロセス数",
-        temperatureC: "CPU温度(°C)",
-
-        // 折叠按钮
-        collapseAll: "すべてのグラフを折りたたむ",
-        expandAll: "すべてのグラフを展開する",
-
-        // 主题
-        darkMode: "ダークモード",
-        lightMode: "ライトモード",
-        highContrastMode: "ハイコントラストモード",
-        theme: "テーマ",
-        themeLight: "ライト",
-        themeDark: "ダーク",
-        themeHighContrast: "ハイコントラスト",
-
-        // 语言
-        language: "言語",
-        french: "Français",
-        german: "Deutsch",
-        russian: "Русский",
-        korean: "한국어",
-        chinese: "中国語",
-        english: "English",
-        japanese: "日本語",
-
-        // 重试
-        retryConnection: "バックエンド接続を再試行",
-        retrying: "バックエンドへの再接続を試行中...",
-        maxRetriesReached: "バックエンド接続に失敗、最大再試行回数に達しました",
-        retryInSeconds: "接続に失敗しました。{count}秒後に自動再試行...",
-
-        // 切换服务器
-        switchingTo: "{server}に切り替え中",
-        switchFailed: "切り替えに失敗しました",
-        configNotFound: "設定が存在しません",
-        switchSuccess: "{server}に切り替えに成功しました",
-        remoteAddressWarning: "現在の接続（リモートアドレス）はキャッシュを使用できません",
-        usingDefaultConfig: "設定の読み込みに失敗したため、デフォルトのローカルアドレスを使用",
-
-        // 底部信息
-        footerProject: "SystemStatus / EndlessPixel-SS",
-        footerCopyright: "Copyright © 2024-2026 EndlessPixel Studio. 全著作権所有。",
-        footerGithub: "GitHub",
-
-        // 图表加载
-        chartLoading: "グラフ読み込み中...",
-
-        // 其他
-        localServer: "ローカルサーバー",
-        noDisk: "ディスク情報が検出されません",
-        core: "コア",
-        noCPUCores: "CPUコア情報が検出されません",
-
-        // 数据加载
-        loadingData: "バックエンドからデータを読み込み中...",
-        loading: "読み込み中...",
-        speedUnit: "KB/s",
-        temperatureUnit: "°C",
-        bootTimeFormat: "起動時間形式",
-        diskError: "ディスクエラー",
-    // 俄语
-
-        cpuFreqTrend: "CPU周波数トレンド",
-        cpuCurrentFreq: "現在の周波数",
-        cpuMaxFreq: "最大周波数",
-        cpuMinFreq: "最小周波数",
-
-        // サイドバー
         appName: "SystemStatus",
-        navOverview: "基本情報",
-        navCPU: "CPU監視",
+        appDesc: "システム監視パネル",
+        pageTitle: "システム概要",
+        connecting: "接続中…",
+        connected: "接続済み",
+        disconnected: "切断されました",
+        navBasic: "基本情報",
+        navCpu: "CPU 監視",
         navMemory: "メモリ監視",
         navDisk: "ディスク監視",
-        navGPU: "GPU監視",
+        navGpu: "GPU 監視",
         navNetwork: "ネットワーク監視",
-
-        // ハードウェア概要
-        cpuInfo: "CPU情報",
-        memoryInfo: "メモリ情報",
-        gpuInfo: "GPU情報",
-        cpuModel: "CPUモデル",
-        cpuCores: "コア数",
-        cpuArch: "アーキテクチャ",
-        memoryTotal: "メモリ容量",
-        gbUnit: "GB",
-        memoryFrequency: "メモリ周波数",
-        memoryType: "メモリタイプ",
-        notDetected: "検出されません",
-        gpuStatus: "GPU状態",
-
-        // メモリ監視
-        memoryUsageTrend: "メモリ使用率トレンド",
-
-        // GPU詳細
-        gpuUsageTrend: "GPU使用率トレンド",
-        gpuMemoryUsed: "使用VRAM",
-        gpuMemoryTotal: "VRAM総量",
-        gpuTemperature: "GPU温度",
-        gpuUtilization: "GPU使用率",
-        gpuPowerDraw: "GPU消費電力",
-        gpuPowerLimit: "電力制限",
-
-        // ディスク SMART
-        smartTitle: "SMART属性",
-        smartAttr: "属性名",
-        smartValue: "現在値",
-        smartWorst: "最悪値",
-        smartThresh: "しきい値",
-        smartRaw: "生値",
-        smartNoData: "SMARTデータなし（root権限またはsmartmontoolsが必要）",
-        smartUnavailable: "非対応"
+        cpu: "CPU",
+        core: "コア (論理/物理)",
+        memory: "メモリ",
+        model: "モデル",
+        freq: "周波数",
+        gpu: "GPU",
+        network: "ネットワーク",
+        day: "日", hour: "時間", min: "分",
+        uptime: "稼働時間",
+        bootTime: "稼働時間",
+        sysLoad: "システム負荷",
+        procCount: "プロセス数",
+        memModel: "メモリ型番",
+        cpuUsage: "CPU 使用率",
+        perCore: "コア別使用率",
+        cpuFreq: "CPU 周波数",
+        memUsage: "メモリ使用率",
+        memDetail: "メモリ詳細",
+        total: "合計", used: "使用中", free: "空き",
+        disk: "ディスク",
+        noGpu: "利用可能な専用 GPU が検出されませんでした（またはドライバ未導入）",
+        usage: "使用率",
+        temp: "温度",
+        gpuMem: "VRAM",
+        memTotal: "VRAM 合計", memUsed: "VRAM 使用中",
+        power: "消費電力", powerLimit: "電力制限",
+        traffic: "リアルタイム通信量",
+        download: "ダウンロード", upload: "アップロード",
+        interfaces: "ネットワークインターフェース",
 };
