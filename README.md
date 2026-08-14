@@ -183,7 +183,7 @@ python main.py
 
 ### 🌍 多语言支持 (i18n)
 
-- 内置：**简体中文、English、日本語、Deutsch、Français、Русский、한국어**
+- 内置：**简体中文 (zh-CN)、English (en-US)、日本語 (ja-JP)、Deutsch (de-DE)、Français (fr-FR)、Русский (ru-RU)、한국어 (ko-KR)、Español (es-ES)、Bahasa Indonesia (id-ID)、ไทย (th-TH)**
 - 自动检测浏览器语言偏好
 - 所有 UI 元素（侧边栏、卡片标题、图表标签、状态文本）完全翻译
 - 语言文件位于 `frontend/locales/`，由 `frontend/translations.js` 聚合为多语言对象，方便扩展
