@@ -40,6 +40,7 @@ window.LANGUAGE_DATA['ja-JP'] = {
         swapSout: "スワップアウト",
         swapAuto: "システム管理",
         swapNone: "スワップ領域 / ページファイルが見つかりません",
+        nicTraffic: "NIC トラフィック",
         navProcess: "プロセス監視",
         processHint: "CPU 使用率順、上位 20 のみ（読み取り専用）",
         procName: "名前",

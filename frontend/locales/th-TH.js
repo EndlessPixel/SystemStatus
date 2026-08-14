@@ -40,6 +40,7 @@ window.LANGUAGE_DATA['th-TH'] = {
         swapSout: "สวอปออก",
         swapAuto: "ระบบจัดการ",
         swapNone: "ไม่พบพาร์ติชันสวอป / ไฟล์เพจ",
+        nicTraffic: "ทราฟฟิก NIC",
         navProcess: "กระบวนการ",
         processHint: "เรียงตามการใช้ CPU แสดง 20 อันดับแรก (อ่านอย่างเดียว)",
         procName: "ชื่อ",
