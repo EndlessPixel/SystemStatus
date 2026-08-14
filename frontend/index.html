@@ -1,147 +1,23 @@
 <!DOCTYPE html>
-<html lang="zh" data-theme="dark">
+<html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>系统监控面板</title>
+    <title data-i18n="title">系统监控面板</title>
+
+    <!-- Tailwind CSS v4（浏览器运行时编译） -->
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <!-- 引入本地 style.css（含 @import "tailwindcss" 与 Apple 风格设计令牌），由 browser runtime 编译 -->
     <link rel="stylesheet" href="/static/style.css">
-</head>
-<body>
-    <div id="app">
-        <!-- 侧边栏 -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-logo">
-                <span class="logo-dot"></span>
-                <span class="logo-text" data-i18n="appName">SystemStatus</span>
-            </div>
-            <nav class="sidebar-nav" id="sidebar-nav">
-                <a class="nav-item active" data-section="overview" href="#overview">
-                    <span class="nav-icon">▦</span>
-                    <span class="nav-label" data-i18n="navOverview">基础信息</span>
-                </a>
-                <a class="nav-item" data-section="cpu" href="#cpu">
-                    <span class="nav-icon">▣</span>
-                    <span class="nav-label" data-i18n="navCPU">CPU监控</span>
-                </a>
-                <a class="nav-item" data-section="memory" href="#memory">
-                    <span class="nav-icon">▤</span>
-                    <span class="nav-label" data-i18n="navMemory">内存监控</span>
-                </a>
-                <a class="nav-item" data-section="disk" href="#disk">
-                    <span class="nav-icon">▥</span>
-                    <span class="nav-label" data-i18n="navDisk">硬盘监控</span>
-                </a>
-                <a class="nav-item" data-section="gpu" href="#gpu">
-                    <span class="nav-icon">◈</span>
-                    <span class="nav-label" data-i18n="navGPU">GPU监控</span>
-                </a>
-                <a class="nav-item" data-section="network" href="#network">
-                    <span class="nav-icon">⧉</span>
-                    <span class="nav-label" data-i18n="navNetwork">网络监控</span>
-                </a>
-            </nav>
-            <div class="sidebar-footer">
-                <select id="theme-select" class="sidebar-select" title="主题">
-                    <option value="light" data-i18n="themeLight">浅色</option>
-                    <option value="dark" data-i18n="themeDark">深色</option>
-                    <option value="high-contrast" data-i18n="themeHighContrast">高对比度</option>
-                </select>
-                <select id="lang-select" class="sidebar-select" title="语言">
-                    <option value="zh">简体中文</option>
-                    <option value="en">English</option>
-                    <option value="ja">日本語</option>
-                    <option value="fr">Français</option>
-                    <option value="de">Deutsch</option>
-                    <option value="ru">Русский</option>
-                    <option value="ko">한국어</option>
-                </select>
-            </div>
-        </aside>
 
-        <!-- 主内容区 -->
-        <main class="main-content">
-            <header class="topbar">
-                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="toggle">☰</button>
-                <h1 class="topbar-title" data-i18n="title">系统监控面板</h1>
-                <div class="status-indicator" id="connection-status">
-                    <span class="status-dot" id="status-dot"></span>
-                    <span class="status-text" id="status-text" data-i18n="connecting">正在连接后端服务...</span>
-                </div>
-                <div class="topbar-actions">
-                    <button id="collapse-all" class="action-btn" data-i18n="collapseAll">折叠所有图表</button>
-                    <button id="expand-all" class="action-btn" data-i18n="expandAll">展开所有图表</button>
-                </div>
-            </header>
+    <!-- ECharts 本地库 -->
+    <script src="/static/echarts_lib/echarts.js"></script>
+    <!-- 轻提示库 -->
+    <link rel="stylesheet" href="/static/tip_lib/tip.css">
+    <script src="/static/tip_lib/tip.js"></script>
 
-            <div class="content-scroll">
-                <!-- 基础信息 -->
-                <section class="content-section active" id="section-overview" data-section="overview">
-                    <div class="section-head">
-                        <h2 data-i18n="navOverview">基础信息</h2>
-                    </div>
-                    <div class="status-bar" id="status-bar"></div>
-                    <div class="hardware-grid" id="hardware-overview"></div>
-                    <div class="charts-root" id="charts-overview"></div>
-                </section>
-
-                <!-- CPU 监控 -->
-                <section class="content-section" id="section-cpu" data-section="cpu">
-                    <div class="section-head">
-                        <h2 data-i18n="navCPU">CPU监控</h2>
-                    </div>
-                    <div class="charts-root" id="charts-cpu"></div>
-                </section>
-
-                <!-- 内存监控 -->
-                <section class="content-section" id="section-memory" data-section="memory">
-                    <div class="section-head">
-                        <h2 data-i18n="navMemory">内存监控</h2>
-                    </div>
-                    <div class="memory-info" id="memory-info"></div>
-                    <div class="charts-root" id="charts-memory"></div>
-                </section>
-
-                <!-- 硬盘监控 -->
-                <section class="content-section" id="section-disk" data-section="disk">
-                    <div class="section-head">
-                        <h2 data-i18n="navDisk">硬盘监控</h2>
-                    </div>
-                    <div class="charts-root" id="charts-disk"></div>
-                    <div class="smart-section" id="smart-section">
-                        <h3 data-i18n="smartTitle">SMART 属性</h3>
-                        <div id="smart-container"></div>
-                    </div>
-                </section>
-
-                <!-- GPU 监控 -->
-                <section class="content-section" id="section-gpu" data-section="gpu">
-                    <div class="section-head">
-                        <h2 data-i18n="navGPU">GPU监控</h2>
-                    </div>
-                    <div class="gpu-info" id="gpu-info"></div>
-                    <div class="charts-root" id="charts-gpu"></div>
-                </section>
-
-                <!-- 网络监控 -->
-                <section class="content-section" id="section-network" data-section="network">
-                    <div class="section-head">
-                        <h2 data-i18n="navNetwork">网络监控</h2>
-                    </div>
-                    <div class="charts-root" id="charts-network"></div>
-                    <div class="network-info" id="network-info"></div>
-                </section>
-            </div>
-
-            <footer class="footer">
-                <span data-i18n="footerProject">SystemStatus / EndlessPixel-SS</span>
-                <span class="footer-copy" data-i18n="footerCopyright">Copyright © 2024-2026 EndlessPixel Studio. All Rights Reserved.</span>
-            </footer>
-        </main>
-
-        <div class="sidebar-overlay" id="sidebar-overlay"></div>
-    </div>
-
-    <script src="/static/translations.js"></script>
+    <!-- 多语言（先加载各语言，再聚合） -->
     <script src="/static/locales/zh.js"></script>
     <script src="/static/locales/en.js"></script>
     <script src="/static/locales/ja.js"></script>
@@ -149,7 +25,67 @@
     <script src="/static/locales/de.js"></script>
     <script src="/static/locales/ru.js"></script>
     <script src="/static/locales/ko.js"></script>
-    <script src="/static/echarts_lib/echarts.js"></script>
+    <script src="/static/translations.js"></script>
+</head>
+
+<body class="min-h-screen">
+    <div class="flex min-h-screen">
+
+        <!-- ===== 侧边栏 ===== -->
+        <aside class="sidebar-bg w-64 shrink-0 flex flex-col p-5 sticky top-0 h-screen">
+            <div class="flex items-center gap-3 px-2 mb-8 mt-1">
+                <div class="w-9 h-9 rounded-xl flex items-center justify-center"
+                     style="background:var(--color-accent)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M3 12h4l3 8 4-16 3 8h4" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="text-[15px] font-semibold leading-tight" data-i18n="appName">SystemStatus</div>
+                    <div class="text-[11px] text-[var(--color-faint)]" data-i18n="appDesc">系统监控面板</div>
+                </div>
+            </div>
+
+            <nav id="sidebar-nav" class="flex flex-col gap-1"></nav>
+
+            <div class="mt-auto px-2 pt-6">
+                <div class="flex items-center gap-2 text-[12px] text-[var(--color-faint)]">
+                    <span id="status-dot" class="status-dot" style="background:var(--color-faint)"></span>
+                    <span id="status-text" data-i18n="connecting">连接中…</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== 主内容 ===== -->
+        <main class="flex-1 min-w-0 p-7 lg:p-9">
+            <!-- 顶部概览 -->
+            <header class="mb-7">
+                <h1 class="text-[26px] font-semibold tracking-tight" data-i18n="pageTitle">系统概览</h1>
+                <p id="subtitle" class="text-[13px] text-[var(--color-faint)] mt-1"></p>
+            </header>
+
+            <!-- 基础信息 -->
+            <section id="sec-basic" class="section active" data-section="basic"></section>
+
+            <!-- CPU 监控 -->
+            <section id="sec-cpu" class="section" data-section="cpu"></section>
+
+            <!-- 内存监控 -->
+            <section id="sec-memory" class="section" data-section="memory"></section>
+
+            <!-- 硬盘监控 -->
+            <section id="sec-disk" class="section" data-section="disk"></section>
+
+            <!-- GPU 监控 -->
+            <section id="sec-gpu" class="section" data-section="gpu"></section>
+
+            <!-- 网络监控 -->
+            <section id="sec-network" class="section" data-section="network"></section>
+        </main>
+    </div>
+
     <script src="/static/script.js"></script>
 </body>
+
 </html>
