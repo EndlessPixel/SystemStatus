@@ -29,6 +29,16 @@ def _default_config() -> Dict:
             "mountpoints": ["/boot/efi"],
             "fstypes": ["vfat", "squashfs", "tmpfs"],
         },
+        "web_ui": {
+            "page_title": {
+                "enable": False,
+                "lang": {},
+            },
+            "web_title": {
+                "enable": False,
+                "lang": {},
+            },
+        },
     }
 
 
@@ -73,3 +83,8 @@ def get_display_config() -> Dict:
 def get_disk_filter() -> Dict[str, List[str]]:
     """返回磁盘过滤配置：devices / mountpoints / fstypes 三个列表。"""
     return _CONFIG.get("disk_filter", _default_config()["disk_filter"])
+
+
+def get_web_ui_config() -> Dict:
+    """返回 WebUI 配置：page_title / web_title 两个子项，各自含 enable 与按语言覆盖的字典。"""
+    return _CONFIG.get("web_ui", _default_config()["web_ui"])
