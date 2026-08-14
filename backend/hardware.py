@@ -99,55 +99,117 @@ def get_memory_model() -> str:
 
 def get_gpu_info() -> Dict:
     """
-    获取 GPU 信息（Windows：Intel 核显 / NVIDIA 独显）
-    返回: {"model": "显卡名称", "available": bool}
+    获取 GPU 信息（NVIDIA/Intel/AMD 跨平台识别）
+    返回: {"model": "显卡名称", "available": bool, "brand": "nvidia|intel|amd|unknown"}
     """
-    gpu_info = {"model": "Unknown", "available": False}
-
-    # ===== 1. Windows 平台用 wmic 取 Intel 核显 =====
-    if platform.system() == "Windows":
-        try:
-            result = subprocess.run(
-                ['wmic', 'path', 'win32_VideoController', 'get', 'Name'],
-                capture_output=True,
-                text=True,
-                timeout=5
-            )
-            if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')[1:]
-                for line in lines:
-                    line = line.strip()
-                    if line and "Intel" in line:
-                        gpu_info = {"model": line, "available": True}
-                        break
-        except Exception:
-            pass
-
-    if gpu_info["available"]:
-        return gpu_info
-
-    # ===== 2. 尝试 NVIDIA 独显 =====
+    # ===== 1. NVIDIA 独显（NVML 优先）=====
     global NVML_AVAILABLE, NVML_HANDLE
     if NVML_AVAILABLE and NVML_HANDLE is not None:
         try:
             import py3nvml.py3nvml as nvml
             name = nvml.nvmlDeviceGetName(NVML_HANDLE).decode("utf-8")
-            gpu_info = {"model": name, "available": True}
+            return {"model": name, "available": True, "brand": "nvidia"}
         except Exception:
             pass
 
-    return gpu_info
+    # ===== 2. Windows：WMI 取显示适配器（含 Intel 核显 / AMD）=====
+    if platform.system() == "Windows":
+        try:
+            result = subprocess.run(
+                ['powershell', '-Command',
+                 'Get-CimInstance Win32_VideoController | Select-Object Name,AdapterCompatibility | '
+                 'ForEach-Object { "$($_.AdapterCompatibility)|$($_.Name)" }'],
+                capture_output=True, text=True, timeout=5, encoding='utf-8', errors='ignore'
+            )
+            if result.returncode == 0:
+                lines = [l for l in result.stdout.strip().split('\n') if l.strip()]
+                if lines:
+                    chosen = next((l for l in lines if 'intel' in l.lower() or 'amd' in l.lower()
+                                   or 'radeon' in l.lower()), lines[0])
+                    comp, name = chosen.split('|', 1) if '|' in chosen else ('', chosen)
+                    brand = 'intel' if 'intel' in comp.lower() else ('amd' if ('amd' in comp.lower() or 'radeon' in comp.lower()) else 'unknown')
+                    return {"model": name.strip(), "available": True, "brand": brand}
+        except Exception:
+            pass
+        return {"model": "Unknown", "available": False, "brand": "unknown"}
+
+    # ===== 3. Linux：lspci 取显示控制器（Intel 核显 / AMD）=====
+    try:
+        result = subprocess.run(
+            ['lspci', '-nn'],
+            capture_output=True, text=True, timeout=5, encoding='utf-8', errors='ignore'
+        )
+        if result.returncode == 0:
+            gpus = [l for l in result.stdout.strip().split('\n')
+                    if 'VGA' in l or '3D' in l or 'Display' in l]
+            if gpus:
+                chosen = next((l for l in gpus if 'intel' in l.lower() or 'amd' in l.lower()
+                               or 'radeon' in l.lower() or 'advanced micro' in l.lower()), gpus[0])
+                name = chosen.split(':', 1)[1].strip() if ':' in chosen else chosen.strip()
+                name = re.sub(r'\s*\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]\s*$', '', name)
+                brand = 'intel' if 'intel' in name.lower() else ('amd' if ('amd' in name.lower() or 'radeon' in name.lower()) else 'unknown')
+                return {"model": name, "available": True, "brand": brand}
+    except Exception:
+        pass
+
+    return {"model": "Unknown", "available": False, "brand": "unknown"}
+
+
+def get_intel_gpu_usage() -> object:
+    """
+    获取 Intel 显卡利用率（%）。
+    Linux：调用 intel_gpu_top -J（需 root 权限，且安装 intel-gpu-tools）；解析渲染引擎占用。
+    Windows：从 GPU Engine 性能计数器按 Intel 实例过滤总利用率。
+    无法获取时返回 None（绝不以 0 冒充真实占用）。
+    """
+    try:
+        if platform.system() == "Linux":
+            result = subprocess.run(
+                ['intel_gpu_top', '-J', '-s', '500'],
+                capture_output=True, text=True, timeout=4, encoding='utf-8', errors='ignore'
+            )
+            if result.returncode == 0:
+                import json as _json
+                data = _json.loads(result.stdout)
+                engines = data.get("engines", {})
+                # 渲染引擎（rcs/render）占用即近似 GPU 利用率
+                for key in ("render", "rcs", "Render/3D", "rcs0"):
+                    if key in engines:
+                        val = engines[key].get("busy")
+                        if isinstance(val, (int, float)):
+                            return round(float(val), 1)
+                # 无渲染引擎则取所有引擎最大值
+                vals = [e.get("busy") for e in engines.values() if isinstance(e, dict) and isinstance(e.get("busy"), (int, float))]
+                if vals:
+                    return round(max(vals), 1)
+        elif platform.system() == "Windows":
+            result = subprocess.run(
+                ['powershell', '-Command',
+                 '(Get-Counter "\\GPU Engine(*)% 3D Utilization").CounterSamples | '
+                 'Where-Object { $_.InstanceName -like "*intel*" } | Select-Object -ExpandProperty CookedValue'],
+                capture_output=True, text=True, timeout=3, encoding='utf-8', errors='ignore'
+            )
+            if result.returncode == 0:
+                vals = [float(x.strip()) for x in result.stdout.strip().split('\n')
+                        if x.strip().replace('.', '', 1).isdigit()]
+                if vals:
+                    return round(max(vals), 1)
+    except Exception:
+        pass
+    return None
 
 
 def get_gpu_details() -> Dict:
     """
-    获取 GPU 详细信息（基于 NVML，仅 NVIDIA 独显可用）
+    获取 GPU 详细信息（NVIDIA 用 NVML；Intel/AMD 仅提供型号，利用率由 monitor 采集填充）
     返回: {"available": bool, "model", "memory_total", "memory_used",
-           "temperature", "power_draw", "power_limit", "utilization"}
+           "temperature", "power_draw", "power_limit", "utilization", "brand"}
     """
+    info = get_gpu_info()
     details = {
-        "available": False,
-        "model": "Unknown",
+        "available": info.get("available", False),
+        "model": info.get("model", "Unknown"),
+        "brand": info.get("brand", "unknown"),
         "memory_total": None,
         "memory_used": None,
         "temperature": None,
@@ -157,6 +219,7 @@ def get_gpu_details() -> Dict:
     }
     global NVML_AVAILABLE, NVML_HANDLE
     if not (NVML_AVAILABLE and NVML_HANDLE is not None):
+        # 非 NVIDIA：Intel/AMD 仅型号可用，利用率/显存等由 monitor 采集或留空
         return details
     try:
         import py3nvml.py3nvml as nvml
