@@ -843,6 +843,7 @@
         document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
         const target = document.querySelector(`.section[data-section="${section}"]`);
         if (target) target.classList.add("active");
+        setCookie("section", section);
         // 下一帧布局完成后渲染该模块图表（容器此时已可见，尺寸正确）
         requestAnimationFrame(() => {
             activateCharts(section);
@@ -899,6 +900,38 @@
         }
     }
 
+    /* ============ 自定义背景 ============ */
+    const BG_CANDIDATES = ["/static/background.jpg", "/static/background.png", "/static/background.webp"];
+    function applyBackground() {
+        const on = getCookie("bg") === "on";
+        if (!on) {
+            document.body.style.backgroundImage = "";
+            document.body.classList.remove("has-custom-bg");
+            return;
+        }
+        // 探测静态目录下存在哪张背景图（jpg/png/webp）
+        let i = 0;
+        const tryNext = () => {
+            if (i >= BG_CANDIDATES.length) return; // 均无则保留默认背景
+            const url = BG_CANDIDATES[i++];
+            const img = new Image();
+            img.onload = () => {
+                document.body.style.backgroundImage = `url("${url}")`;
+                document.body.style.backgroundSize = "cover";
+                document.body.style.backgroundPosition = "center";
+                document.body.style.backgroundAttachment = "fixed";
+                document.body.classList.add("has-custom-bg");
+            };
+            img.onerror = tryNext;
+            img.src = url;
+        };
+        tryNext();
+    }
+    function setBg(on) {
+        setCookie("bg", on ? "on" : "off");
+        applyBackground();
+    }
+
     /* ============ 数据连接 ============ */
     let built = false;
     function onSnapshot(snap) {
@@ -930,7 +963,14 @@
         document.documentElement.lang = lang;
         applyI18n();
         buildNav();
+        // 恢复上次打开的页面（cookie）
+        const savedSection = getCookie("section");
+        if (savedSection && NAV.some((n) => n.section === savedSection)) {
+            const node = document.querySelector(`.nav-item[data-section="${savedSection}"]`);
+            if (node) switchSection(savedSection, node);
+        }
         initControls();
+        applyBackground();
         fetch("/api/cache").then((r) => r.json()).then(onSnapshot).catch(() => {});
         startWebSocket();
         window.addEventListener("resize", () => Object.values(charts).forEach((c) => c.resize()));
@@ -959,6 +999,12 @@
             else delete document.documentElement.dataset.theme;
             themeSel.value = savedTheme;
             themeSel.addEventListener("change", (e) => setTheme(e.target.value));
+        }
+        // 自定义背景开关
+        const bgToggle = $("#bg-toggle");
+        if (bgToggle) {
+            bgToggle.checked = getCookie("bg") === "on";
+            bgToggle.addEventListener("change", (e) => setBg(e.target.checked));
         }
     }
 
