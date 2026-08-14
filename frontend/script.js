@@ -274,6 +274,7 @@
         const sec = $("#sec-network");
         sec.innerHTML = "";
         const grid = el("div", "grid grid-cols-1 xl:grid-cols-2 gap-5");
+        // 整体流量
         const traffic = card("traffic");
         const head = el("div", "grid grid-cols-2 gap-4 mb-2");
         const down = el("div");
@@ -288,10 +289,22 @@
         traffic.appendChild(chart);
         grid.appendChild(traffic);
 
+        // 各网卡实时上传/下载
         const iface = card("interfaces");
-        refs.netList = el("div"); iface.appendChild(refs.netList);
+        refs.netList = el("div", "flex flex-col gap-1");
+        iface.appendChild(refs.netList);
         grid.appendChild(iface);
         sec.appendChild(grid);
+
+        // 选中网卡的上下行曲线（整行）
+        const nicCard = card("nicTraffic");
+        nicCard.className += " xl:col-span-2";
+        refs.nicSelected = el("div", "text-[12px] text-[var(--color-faint)] mb-1");
+        nicCard.appendChild(refs.nicSelected);
+        const nicChart = el("div"); nicChart.id = "net-nic-chart"; nicChart.style.cssText = "height:200px";
+        nicCard.appendChild(nicChart);
+        grid.appendChild(nicCard);
+        refs.netSelectedNic = null;
     }
 
     function buildProcess() {
@@ -658,13 +671,49 @@
         const downLast = down.length ? down[down.length - 1][1] : 0;
         $("#net-down").textContent = Number(downLast).toFixed(1);
         $("#net-up").textContent = Number(upLast).toFixed(1);
+
+        // 各网卡实时上传/下载
         const net = (snap.hardware_info || {}).network || [];
-        refs.netList.innerHTML = net.length
-            ? net.map((n) => `<div class="flex items-baseline justify-between py-1.5">
-                <span class="metric-label">${esc(n.name)}</span>
-                <span class="text-[13px] font-medium">${(n.addresses || []).join(", ") || "—"}</span></div>`).join("")
-            : `<div class="text-[var(--color-faint)] text-[14px]">—</div>`;
+        const perNic = rt.net_io_per_nic || {};
+        const nicOrder = net.map((n) => n.name);
+        // 默认选中第一张网卡
+        if (!refs.netSelectedNic && nicOrder.length) refs.netSelectedNic = nicOrder[0];
+
+        if (refs.netList.childElementCount !== net.length) {
+            refs.netList.innerHTML = "";
+            net.forEach((n) => {
+                const row = el("div", "flex items-center justify-between py-1.5 px-2 rounded-lg cursor-pointer");
+                row.style.transition = "background .15s";
+                row.innerHTML = `<span class="metric-label nic-name">${esc(n.name)}</span>
+                    <span class="text-[12px] font-mono nic-rate text-[var(--color-subtle)]"></span>`;
+                row.addEventListener("click", () => {
+                    refs.netSelectedNic = n.name;
+                    highlightNic();
+                    renderNicChart(snap);
+                });
+                refs.netList.appendChild(row);
+            });
+        }
+        net.forEach((n, i) => {
+            const row = refs.netList.children[i];
+            if (!row) return;
+            const s = (perNic[n.name] || {});
+            const dLast = (s.down || [])[0] ? s.down[s.down.length - 1][1] : 0;
+            const uLast = (s.up || [])[0] ? s.up[s.up.length - 1][1] : 0;
+            row.querySelector(".nic-rate").textContent = `↓ ${dLast.toFixed(1)}  ↑ ${uLast.toFixed(1)} KB/s`;
+        });
+        highlightNic();
+
         renderNetCharts(snap);
+        renderNicChart(snap);
+    }
+
+    function highlightNic() {
+        if (!refs.netList) return;
+        Array.from(refs.netList.children).forEach((row) => {
+            const active = row.querySelector(".nic-name").textContent === refs.netSelectedNic;
+            row.style.background = active ? "var(--color-accent-soft)" : "transparent";
+        });
     }
     function renderNetCharts(snap) {
         const rt = (snap || lastSnap || {}).real_time_data || {};
@@ -683,6 +732,27 @@
                 ],
             });
         }
+    }
+
+    function renderNicChart(snap) {
+        const rt = (snap || lastSnap || {}).real_time_data || {};
+        const perNic = rt.net_io_per_nic || {};
+        const nic = refs.netSelectedNic;
+        const ch = ensureChart("net-nic-chart");
+        if (!ch) return;
+        const series = (nic && perNic[nic]) || { up: [], down: [] };
+        if (refs.nicSelected) refs.nicSelected.textContent = `${esc(nic || "—")} · ${t("nicTraffic", "网卡流量")}`;
+        ch.setOption({
+            grid: { left: 44, right: 16, top: 30, bottom: 24 },
+            tooltip: { trigger: "axis" },
+            legend: { data: [t("download", "下载"), t("upload", "上传")], textStyle: { color: cssVar("--color-subtle") }, top: 0, right: 0 },
+            xAxis: { type: "time", axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: cssVar("--color-faint"), fontSize: 11 } },
+            yAxis: { type: "value", axisLabel: { color: cssVar("--color-faint"), fontSize: 11 }, splitLine: { lineStyle: { color: "rgba(128,128,128,.12)" } } },
+            series: [
+                { name: t("download", "下载"), type: "line", showSymbol: false, smooth: true, data: series.down || [], lineStyle: { width: 2, color: "rgb(52,199,89)" }, areaStyle: { color: "rgba(52,199,89,.12)" } },
+                { name: t("upload", "上传"), type: "line", showSymbol: false, smooth: true, data: series.up || [], lineStyle: { width: 2, color: "rgb(255,159,10)" }, areaStyle: { color: "rgba(255,159,10,.12)" } },
+            ],
+        });
     }
 
     let lastSnap = null;
