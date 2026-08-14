@@ -294,6 +294,68 @@
         sec.appendChild(grid);
     }
 
+    function buildProcess() {
+        const sec = $("#sec-process");
+        sec.innerHTML = "";
+        const c = card("navProcess");
+        const hint = el("div", "text-[12px] text-[var(--color-faint)] mb-3", t("processHint", "按 CPU 占用降序，仅显示前 20 个（只读）"));
+        c.appendChild(hint);
+        const wrap = el("div", "overflow-x-auto");
+        const table = el("table", "w-full text-[13px] border-collapse");
+        table.innerHTML = `<thead>
+            <tr class="text-[var(--color-faint)] text-left" style="border-bottom:1px solid var(--color-border)">
+                <th class="py-2 pr-3 font-medium">PID</th>
+                <th class="py-2 pr-3 font-medium">${t("procName", "进程名")}</th>
+                <th class="py-2 pr-3 font-medium text-right">CPU</th>
+                <th class="py-2 pr-3 font-medium text-right">MEM</th>
+                <th class="py-2 pr-3 font-medium text-right">DISK ↓↑</th>
+                <th class="py-2 pr-3 font-medium text-right">GPU</th>
+            </tr>
+        </thead>`;
+        refs.procBody = el("tbody");
+        table.appendChild(refs.procBody);
+        wrap.appendChild(table);
+        c.appendChild(wrap);
+        sec.appendChild(c);
+    }
+
+    function updateProcess(snap) {
+        const list = snap.real_time_data.processes || snap.processes || [];
+        if (!refs.procBody) return;
+        if (!list.length) {
+            refs.procBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-[var(--color-faint)]">—</td></tr>`;
+            return;
+        }
+        // 仅在数量变化时全量重建，避免每秒重排抖动
+        if (refs.procBody.childElementCount !== list.length) {
+            refs.procBody.innerHTML = "";
+            list.forEach(() => {
+                const tr = el("tr");
+                tr.style.borderBottom = "1px solid var(--color-border)";
+                tr.innerHTML = `<td class="py-1.5 pr-3 font-mono text-[12px] text-[var(--color-subtle)] proc-pid"></td>
+                    <td class="py-1.5 pr-3 proc-name" style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></td>
+                    <td class="py-1.5 pr-3 text-right proc-cpu font-medium"></td>
+                    <td class="py-1.5 pr-3 text-right proc-mem"></td>
+                    <td class="py-1.5 pr-3 text-right proc-disk text-[12px] text-[var(--color-subtle)]"></td>
+                    <td class="py-1.5 pr-3 text-right proc-gpu"></td>`;
+                refs.procBody.appendChild(tr);
+            });
+        }
+        list.forEach((p, i) => {
+            const tr = refs.procBody.children[i];
+            if (!tr) return;
+            tr.querySelector(".proc-pid").textContent = p.pid;
+            tr.querySelector(".proc-name").textContent = p.name;
+            tr.querySelector(".proc-name").title = p.name;
+            const cpu = tr.querySelector(".proc-cpu"); cpu.textContent = p.cpu + "%"; cpu.style.color = colorByPct(p.cpu);
+            tr.querySelector(".proc-mem").textContent = p.mem + "%";
+            tr.querySelector(".proc-disk").textContent = `${p.disk_read} / ${p.disk_write} KB/s`;
+            const gpu = tr.querySelector(".proc-gpu");
+            gpu.textContent = p.gpu ? p.gpu + " MB" : "—";
+            gpu.style.color = p.gpu ? "var(--color-orange)" : "var(--color-faint)";
+        });
+    }
+
     /* ============ 模块更新（每次快照） ============ */
     function updateBasic(snap) {
         const hw = snap.hardware_info || {};
@@ -626,13 +688,13 @@
     let lastSnap = null;
     function firstRender(snap) {
         lastSnap = snap;
-        buildBasic(); buildCpu(); buildMemory(); buildDisk(); buildGpu(); buildNetwork();
+        buildBasic(); buildCpu(); buildMemory(); buildDisk(); buildGpu(); buildNetwork(); buildProcess();
         updateAll(snap);
         // 基础信息模块默认可见（无图表）；其余模块的图表在「首次激活」时再 init
     }
     function updateAll(snap) {
         lastSnap = snap;
-        updateBasic(snap); updateCpu(snap); updateMemory(snap); updateDisk(snap); updateGpu(snap); updateNetwork(snap);
+        updateBasic(snap); updateCpu(snap); updateMemory(snap); updateDisk(snap); updateGpu(snap); updateNetwork(snap); updateProcess(snap);
     }
     // 某模块被激活（可见）时，渲染其图表（此时容器尺寸正确）
     function activateCharts(section) {
@@ -660,6 +722,7 @@
         { i18n: "navDisk",    section: "disk" },
         { i18n: "navGpu",     section: "gpu" },
         { i18n: "navNetwork", section: "network" },
+        { i18n: "navProcess", section: "process" },
     ];
     function buildNav() {
         const nav = $("#sidebar-nav");
