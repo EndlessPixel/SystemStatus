@@ -255,6 +255,7 @@
         refs.gpuModel = metricRow(g, "model", "gpu-model", "");
         refs.gpuUsage = metricRow(g, "usage", "gpu-usage", "%");
         refs.gpuTemp = metricRow(g, "temp", "gpu-temp", "°C");
+        refs.gpuFreq = metricRow(g, "freq", "gpu-freq", "MHz");
         // GPU 使用率历史图
         const gchart = el("div"); gchart.id = "gpu-chart"; gchart.style.cssText = "height:160px;margin-top:12px";
         g.appendChild(gchart);
@@ -266,6 +267,14 @@
         refs.gpuPowerLimit = metricRow(gm, "powerLimit", "gpu-powerlimit", "W");
         grid.appendChild(gm);
         sec.appendChild(grid);
+        // 左下角说明：很多信息无法获取的原因
+        refs.gpuHint = el("div", "mt-4 text-[13px] leading-relaxed text-[var(--color-faint)] rounded-xl "
+            + "bg-[var(--color-hover)] px-4 py-3");
+        refs.gpuHint.innerHTML = `💡 ${t("gpuHint", "为什么很多信息无法获取？部分硬件数据依赖底层命令或驱动：")}<br>`
+            + `<span class="text-[var(--color-subtle)]">• ${t("gpuHintIntel", "Intel 核显使用率/频率/功耗：需 root 权限并安装 intel-gpu-tools（intel_gpu_top），请用 sudo 运行本程序")}</span><br>`
+            + `<span class="text-[var(--color-subtle)]">• ${t("gpuHintNvidia", "NVIDIA 显存/温度/功耗：需安装 nvidia-ml-py（NVML）")}</span><br>`
+            + `<span class="text-[var(--color-subtle)]">• ${t("gpuHintReadme", "更多权限与依赖说明请对照 README「Linux 权限说明」章节")}</span>`;
+        sec.appendChild(refs.gpuHint);
         refs.gpuEmpty = el("div", "text-[var(--color-faint)] text-[14px]");
         refs.gpuEmpty.textContent = t("noGpu", "未检测到可用的独立显卡（或驱动未安装）");
     }
@@ -642,6 +651,15 @@
             refs.gpuUsage.textContent = last.length ? Number(last[last.length - 1][1]).toFixed(1) : "—";
         }
         refs.gpuTemp.textContent = det.temperature != null ? det.temperature : "—";
+        // 频率：优先硬件详情静态值，否则回退到实时 Intel 详情
+        const intelDet = (snap.real_time_data || {}).gpu_intel_details;
+        if (det.frequency != null) {
+            refs.gpuFreq.textContent = det.frequency;
+        } else if (intelDet && intelDet.frequency != null) {
+            refs.gpuFreq.textContent = intelDet.frequency;
+        } else {
+            refs.gpuFreq.textContent = "—";
+        }
         refs.gpuMemTotal.textContent = det.memory_total != null ? det.memory_total : "—";
         refs.gpuMemUsed.textContent = det.memory_used != null ? det.memory_used : "—";
         refs.gpuPower.textContent = det.power_draw != null ? det.power_draw : "—";
@@ -661,6 +679,7 @@
         refs.gpuModel = metricRow(g, "model", "gpu-model", "");
         refs.gpuUsage = metricRow(g, "usage", "gpu-usage", "%");
         refs.gpuTemp = metricRow(g, "temp", "gpu-temp", "°C");
+        refs.gpuFreq = metricRow(g, "freq", "gpu-freq", "MHz");
         const gchart = el("div"); gchart.id = "gpu-chart"; gchart.style.cssText = "height:160px;margin-top:12px";
         g.appendChild(gchart);
         grid.appendChild(g);
@@ -671,6 +690,7 @@
         refs.gpuPowerLimit = metricRow(gm, "powerLimit", "gpu-powerlimit", "W");
         grid.appendChild(gm);
         sec.appendChild(grid);
+        if (refs.gpuHint) sec.appendChild(refs.gpuHint);
     }
 
     function updateNetwork(snap) {
