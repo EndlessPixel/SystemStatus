@@ -140,7 +140,7 @@
     function buildCpu() {
         const sec = $("#sec-cpu");
         sec.innerHTML = "";
-        const grid = el("div", "grid grid-cols-1 xl:grid-cols-3 gap-5");
+        const grid = el("div", "grid grid-cols-1 xl:grid-cols-2 gap-5");
         // 整体占用 + 图表
         const big = card("cpuUsage");
         const head = el("div", "flex items-end gap-2 mb-2");
@@ -152,25 +152,27 @@
         const chart = el("div"); chart.id = "cpu-chart"; chart.style.cssText = "height:200px;margin-top:14px";
         big.appendChild(chart);
         grid.appendChild(big);
-        // 每核使用率
-        const core = card("perCore");
-        const cw = el("div", "grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2"); cw.id = "cpu-cores";
-        core.appendChild(cw); refs.cpuCores = cw;
-        grid.appendChild(core);
-        // 每核频率
-        const coreFreq = card("perCoreFreq");
-        const cfw = el("div", "grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2"); cfw.id = "cpu-core-freqs";
-        coreFreq.appendChild(cfw); refs.cpuCoreFreqs = cfw;
-        grid.appendChild(coreFreq);
         // 频率 + 图表
         const freq = card("cpuFreq");
         const fhead = el("div", "flex items-end gap-2 mb-2");
         const fv = el("span", "metric-value"); fv.id = "cpu-freq-val"; fv.textContent = "0";
         fhead.appendChild(fv); fhead.appendChild(el("span", "metric-unit", "MHz"));
         freq.appendChild(fhead);
-        const fchart = el("div"); fchart.id = "cpu-freq-chart"; fchart.style.cssText = "height:160px;margin-top:10px";
+        const fchart = el("div"); fchart.id = "cpu-freq-chart"; fchart.style.cssText = "height:200px;margin-top:10px";
         freq.appendChild(fchart);
         grid.appendChild(freq);
+        // 每核使用率（整行）
+        const core = card("perCore");
+        core.className += " xl:col-span-2";
+        const cw = el("div", "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-2"); cw.id = "cpu-cores";
+        core.appendChild(cw); refs.cpuCores = cw;
+        grid.appendChild(core);
+        // 每核频率（整行）
+        const coreFreq = card("perCoreFreq");
+        coreFreq.className += " xl:col-span-2";
+        const cfw = el("div", "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-2"); cfw.id = "cpu-core-freqs";
+        coreFreq.appendChild(cfw); refs.cpuCoreFreqs = cfw;
+        grid.appendChild(coreFreq);
         sec.appendChild(grid);
     }
 
