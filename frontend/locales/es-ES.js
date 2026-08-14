@@ -55,6 +55,7 @@ window.LANGUAGE_DATA['es-ES'] = {
         themeAuto: "Seguir sistema",
         themeLight: "Claro",
         themeDark: "Oscuro",
+        settingBg: "Fondo personalizado",
         read: "Lectura",
         write: "Escritura",
         ioWait: "Espera E/S",

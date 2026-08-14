@@ -55,6 +55,7 @@ window.LANGUAGE_DATA['ko-KR'] = {
         themeAuto: "시스템 따르기",
         themeLight: "라이트",
         themeDark: "다크",
+        settingBg: "사용자 배경",
         read: "읽기",
         write: "쓰기",
         ioWait: "대기",

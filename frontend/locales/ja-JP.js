@@ -55,6 +55,7 @@ window.LANGUAGE_DATA['ja-JP'] = {
         themeAuto: "システムに従う",
         themeLight: "ライト",
         themeDark: "ダーク",
+        settingBg: "カスタム背景",
         read: "読み込み",
         write: "書き込み",
         ioWait: "待機",

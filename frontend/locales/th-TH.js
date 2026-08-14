@@ -55,6 +55,7 @@ window.LANGUAGE_DATA['th-TH'] = {
         themeAuto: "ตามระบบ",
         themeLight: "สว่าง",
         themeDark: "มืด",
+        settingBg: "พื้นหลังกำหนดเอง",
         read: "อ่าน",
         write: "เขียน",
         ioWait: "รอ I/O",

@@ -56,6 +56,7 @@ window.LANGUAGE_DATA['de-DE'] = {
         themeAuto: "System folgen",
         themeLight: "Hell",
         themeDark: "Dunkel",
+        settingBg: "Eigener Hintergrund",
         read: "Lesen",
         write: "Schreiben",
         ioWait: "E/A-Warte",

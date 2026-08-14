@@ -56,6 +56,7 @@ window.LANGUAGE_DATA['en-US'] = {
         themeAuto: "Follow system",
         themeLight: "Light",
         themeDark: "Dark",
+        settingBg: "Custom Background",
         read: "Read",
         write: "Write",
         ioWait: "I/O Wait",
