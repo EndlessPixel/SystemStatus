@@ -8,7 +8,7 @@ import platform
 import json
 import os
 from typing import Dict, List
-from .hardware import get_hardware_info, NVML_AVAILABLE, NVML_HANDLE, shutdown_nvml, map_physical_disk
+from .hardware import get_hardware_info, NVML_AVAILABLE, NVML_HANDLE, shutdown_nvml, map_physical_disk, get_intel_gpu_usage, get_gpu_info
 from .app_config import get_display_config
 
 # 数据缓存
@@ -135,12 +135,21 @@ def collect_real_time_data():
 
         # GPU占用率
         gpu_usage = 0
-        if NVML_AVAILABLE and NVML_HANDLE is not None:
+        gpu_vendor = (DATA_CACHE.get("gpu_vendor") or "nvidia")
+        if gpu_vendor == "nvidia" and NVML_AVAILABLE and NVML_HANDLE is not None:
             try:
                 import py3nvml.py3nvml as nvml
                 gpu_usage = nvml.nvmlDeviceGetUtilizationRates(NVML_HANDLE).gpu
             except Exception:
                 shutdown_nvml()
+
+        if gpu_usage == 0:
+            try:
+                ig = get_intel_gpu_usage()
+                if ig is not None:
+                    gpu_usage = ig
+            except Exception:
+                pass
 
         if gpu_usage == 0 and platform.system() == "Windows":
             try:
@@ -342,6 +351,7 @@ def update_cache_file():
     """更新缓存文件"""
     try:
         hardware_info = get_hardware_info()
+        DATA_CACHE["gpu_vendor"] = (hardware_info.get("gpu") or {}).get("brand", "nvidia")
 
         cache_data = {
             "hardware_info": hardware_info,
