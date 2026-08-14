@@ -134,7 +134,10 @@ def collect_real_time_data():
         try:
             io_counters = psutil.disk_io_counters(perdisk=True) or {}
             cur = {}
+            is_linux = platform.system() == "Linux"
             for k, c in io_counters.items():
+                if is_linux and k.startswith("loop"):
+                    continue  # 跳过循环设备，避免与分区过滤口径不一致
                 pd = map_physical_disk(k)
                 rb, wb = c.read_bytes, c.write_bytes
                 bt = getattr(c, "busy_time", 0) or 0  # 仅 Linux 可用
