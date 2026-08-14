@@ -223,8 +223,9 @@
     function buildDisk() {
         const sec = $("#sec-disk");
         sec.innerHTML = "";
-        refs.diskGrid = el("div", "grid grid-cols-1 md:grid-cols-2 gap-5");
+        refs.diskGrid = el("div", "grid grid-cols-1 xl:grid-cols-2 gap-5");
         sec.appendChild(refs.diskGrid);
+        refs.diskCards = {};  // physical_disk -> {card, parts, fills, chartId}
     }
 
     function buildGpu() {
@@ -412,38 +413,111 @@
     }
 
     function updateDisk(snap) {
-        const disks = snap.disk_usage || (snap.hardware_info || {}).disks || [];
+        const hw = snap.hardware_info || {};
+        const disks = snap.disk_usage || hw.disks || [];
+        const physicalDisks = hw.physical_disks || [];
         if (!disks.length) {
             refs.diskGrid.innerHTML = `<div class="card"><div class="text-[var(--color-faint)] text-[14px]">—</div></div>`;
             return;
         }
-        // 仅在数量变化时重建卡片，避免进度条闪烁
-        if (refs.diskGrid.childElementCount !== disks.length) {
+        // 按物理磁盘聚合分区
+        const byDisk = {};
+        disks.forEach((d) => {
+            const pd = d.physical_disk || d.device;
+            (byDisk[pd] = byDisk[pd] || []).push(d);
+        });
+        const pdList = physicalDisks.length ? physicalDisks : Object.keys(byDisk);
+
+        // 仅在物理磁盘集合变化时重建卡片
+        const curKeys = Object.keys(refs.diskCards);
+        if (curKeys.length !== pdList.length || pdList.some((k) => !refs.diskCards[k])) {
             refs.diskGrid.innerHTML = "";
-            refs.diskFills = [];
-            disks.forEach((d) => {
+            refs.diskCards = {};
+            pdList.forEach((pd) => {
+                const parts = byDisk[pd] || [];
                 const c = el("div", "card");
-                const head = el("div", "flex items-baseline justify-between mb-1");
-                head.innerHTML = `<span class="font-medium text-[14px]">${esc(d.device)}</span>
-                    <span class="text-[12px] text-[var(--color-faint)]">${esc(d.fstype)} · ${esc(d.mountpoint)}</span>`;
-                const mid = el("div", "flex items-end gap-2 mb-1");
-                mid.innerHTML = `<span class="metric-value" style="font-size:22px">${esc(d.used)}</span>
-                    <span class="metric-unit">/ ${esc(d.total)} GB</span>
-                    <span class="ml-auto text-[13px] font-medium disk-pct">0%</span>`;
-                const track = el("div", "bar-track mt-2"); const fill = el("div", "bar-fill");
-                track.appendChild(fill);
-                c.appendChild(head); c.appendChild(mid); c.appendChild(track);
+                const head = el("div", "flex items-baseline justify-between mb-2");
+                const total = parts.reduce((s, p) => s + (p.total || 0), 0);
+                head.innerHTML = `<span class="font-medium text-[15px]">${esc(pd)}</span>
+                    <span class="text-[12px] text-[var(--color-faint)]">${t("diskTotal", "合计")} ${total.toFixed(1)} GB · ${parts.length} ${t("partitions", "分区")}</span>`;
+                c.appendChild(head);
+                // 分区列表
+                const plist = el("div", "flex flex-col gap-2 mb-2");
+                const fills = [];
+                parts.forEach((p) => {
+                    const row = el("div");
+                    row.innerHTML = `<div class="flex items-baseline justify-between text-[13px] mb-1">
+                        <span class="font-medium">${esc(p.device)}</span>
+                        <span class="text-[12px] text-[var(--color-faint)]">${esc(p.fstype)} · ${esc(p.mountpoint)}</span>
+                        <span class="text-[12px] text-[var(--color-subtle)]">${p.used}/${p.total} GB</span>
+                        <span class="disk-pct font-medium ml-2" style="min-width:42px;text-align:right">0%</span></div>`;
+                    const track = el("div", "bar-track"); const fill = el("div", "bar-fill"); track.appendChild(fill);
+                    row.appendChild(track);
+                    plist.appendChild(row);
+                    fills.push({ fill, pct: row.querySelector(".disk-pct"), data: p });
+                });
+                c.appendChild(plist);
+                // IO 图表（读写 + 等待）
+                const chart = el("div"); const chartId = "disk-io-" + pd.replace(/[^a-zA-Z0-9]/g, "_");
+                chart.id = chartId; chart.style.cssText = "height:180px;margin-top:8px";
+                c.appendChild(chart);
                 refs.diskGrid.appendChild(c);
-                refs.diskFills.push({ fill, pct: mid.querySelector(".disk-pct") });
+                refs.diskCards[pd] = { card: c, parts: plist, fills, chartId, total };
             });
         }
-        disks.forEach((d, i) => {
-            const pct = d.usage_percent ?? 0;
-            if (refs.diskFills[i]) {
-                setBar(refs.diskFills[i].fill, pct);
-                refs.diskFills[i].pct.textContent = pct + "%";
-                refs.diskFills[i].pct.style.color = colorByPct(pct);
+        // 增量更新分区使用率
+        pdList.forEach((pd) => {
+            const ref = refs.diskCards[pd];
+            if (!ref) return;
+            ref.fills.forEach((f) => {
+                const pct = f.data.usage_percent ?? 0;
+                setBar(f.fill, pct);
+                f.pct.textContent = pct + "%";
+                f.pct.style.color = colorByPct(pct);
+            });
+        });
+        renderDiskCharts(snap);
+    }
+
+    function renderDiskCharts(snap) {
+        const diskIo = (snap || lastSnap || {}).real_time_data || {};
+        const io = diskIo.disk_io || {};
+        Object.keys(refs.diskCards || {}).forEach((pd) => {
+            const ref = refs.diskCards[pd];
+            const series = io[pd];
+            const ch = ensureChart(ref.chartId);
+            if (!ch) return;  // 容器隐藏或零尺寸时跳过，待激活时渲染
+            if (!series) {
+                ch.clear(); return;
             }
+            const option = {
+                grid: { left: 48, right: 48, top: 30, bottom: 24 },
+                tooltip: { trigger: "axis" },
+                legend: {
+                    data: [t("read", "读取"), t("write", "写入"), t("ioWait", "等待")],
+                    textStyle: { color: "var(--color-subtle)", fontSize: 11 },
+                    top: 0
+                },
+                xAxis: { type: "time", axisLabel: { color: "var(--color-faint)", fontSize: 10 }, axisLine: { lineStyle: { color: "var(--color-border)" } } },
+                yAxis: [
+                    { type: "value", name: "KB/s", nameTextStyle: { color: "var(--color-faint)", fontSize: 10 },
+                      axisLabel: { color: "var(--color-faint)", fontSize: 10 }, splitLine: { lineStyle: { color: "var(--color-border)" } } },
+                    { type: "value", name: "%", min: 0, max: 100, position: "right",
+                      axisLabel: { color: "var(--color-faint)", fontSize: 10 }, splitLine: { show: false } }
+                ],
+                series: [
+                    { name: t("read", "读取"), type: "line", showSymbol: false, smooth: true, yAxisIndex: 0,
+                      lineStyle: { width: 1.5, color: "rgb(10,132,255)" }, itemStyle: { color: "rgb(10,132,255)" },
+                      areaStyle: { color: "rgba(10,132,255,0.12)" }, data: series.read || [] },
+                    { name: t("write", "写入"), type: "line", showSymbol: false, smooth: true, yAxisIndex: 0,
+                      lineStyle: { width: 1.5, color: "rgb(255,59,48)" }, itemStyle: { color: "rgb(255,59,48)" },
+                      areaStyle: { color: "rgba(255,59,48,0.12)" }, data: series.write || [] },
+                    { name: t("ioWait", "等待"), type: "line", showSymbol: false, smooth: true, yAxisIndex: 1,
+                      lineStyle: { width: 1.5, color: "rgb(255,149,0)", type: "dashed" }, itemStyle: { color: "rgb(255,149,0)" },
+                      data: series.busy || [] }
+                ]
+            };
+            ch.setOption(option);
         });
     }
 
@@ -548,6 +622,7 @@
             case "memory":  renderMemCharts(lastSnap); break;
             case "gpu":     renderGpuCharts(lastSnap); break;
             case "network": renderNetCharts(lastSnap); break;
+            case "disk":    renderDiskCharts(lastSnap); break;
         }
     }
 
