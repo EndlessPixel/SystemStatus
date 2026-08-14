@@ -41,6 +41,7 @@ window.LANGUAGE_DATA['de-DE'] = {
         swapSout: "Heraus",
         swapAuto: "Systemverwaltet",
         swapNone: "Keine Auslagerungspartition / Pagedatei gefunden",
+        nicTraffic: "NIC-Datenverkehr",
         navProcess: "Prozesse",
         processHint: "Nach CPU-Auslastung sortiert, nur Top 20 (nur lesen)",
         procName: "Name",

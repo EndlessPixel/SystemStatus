@@ -40,6 +40,7 @@ window.LANGUAGE_DATA['ru-RU'] = {
         swapSout: "Вывод",
         swapAuto: "Управляется системой",
         swapNone: "Раздел подкачки / файл подкачки не обнаружен",
+        nicTraffic: "Трафик NIC",
         navProcess: "Процессы",
         processHint: "По загрузке CPU, только топ-20 (только чтение)",
         procName: "Имя",

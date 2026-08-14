@@ -40,6 +40,7 @@ window.LANGUAGE_DATA['fr-FR'] = {
         swapSout: "Sortie",
         swapAuto: "Géré par le système",
         swapNone: "Aucune partition swap / fichier d'échange détecté",
+        nicTraffic: "Trafic NIC",
         navProcess: "Processus",
         processHint: "Triés par usage CPU, top 20 uniquement (lecture seule)",
         procName: "Nom",

@@ -41,6 +41,7 @@ window.LANGUAGE_DATA['en-US'] = {
         swapSout: "Swapped out",
         swapAuto: "System managed",
         swapNone: "No swap partition / page file detected",
+        nicTraffic: "NIC Traffic",
         navProcess: "Processes",
         processHint: "Sorted by CPU usage, top 20 only (read-only)",
         procName: "Name",

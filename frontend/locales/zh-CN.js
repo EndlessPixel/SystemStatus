@@ -43,6 +43,7 @@ window.LANGUAGE_DATA['zh-CN'] = {
         swapSout: "换出",
         swapAuto: "系统托管",
         swapNone: "未检测到交换分区 / 页面文件",
+        nicTraffic: "网卡流量",
         navProcess: "进程监测",
         processHint: "按 CPU 占用降序，仅显示前 20 个（只读）",
         procName: "进程名",

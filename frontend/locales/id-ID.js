@@ -40,6 +40,7 @@ window.LANGUAGE_DATA['id-ID'] = {
         swapSout: "Swap keluar",
         swapAuto: "Dikelola sistem",
         swapNone: "Tidak ada partisi swap / berkas paging yang terdeteksi",
+        nicTraffic: "Trafik NIC",
         navProcess: "Proses",
         processHint: "Diurutkan berdasarkan CPU, 20 teratas saja (baca saja)",
         procName: "Nama",
