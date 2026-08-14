@@ -634,7 +634,13 @@
         }
         if (!hasGpu) return;
         refs.gpuModel.textContent = esc(info.model || det.model);
-        refs.gpuUsage.textContent = det.utilization != null ? det.utilization : "—";
+        // 利用率：优先用硬件详情里的静态值，否则回退到实时采集（Intel 等无 NVML 显卡）
+        if (det.utilization != null) {
+            refs.gpuUsage.textContent = det.utilization;
+        } else {
+            const last = ((snap.real_time_data || {}).gpu_usage || []);
+            refs.gpuUsage.textContent = last.length ? Number(last[last.length - 1][1]).toFixed(1) : "—";
+        }
         refs.gpuTemp.textContent = det.temperature != null ? det.temperature : "—";
         refs.gpuMemTotal.textContent = det.memory_total != null ? det.memory_total : "—";
         refs.gpuMemUsed.textContent = det.memory_used != null ? det.memory_used : "—";
