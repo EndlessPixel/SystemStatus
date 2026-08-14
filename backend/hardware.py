@@ -394,6 +394,34 @@ def get_swap_info() -> Dict:
     return info
 
 
+def map_physical_disk(device: str) -> str:
+    """
+    将分区设备名映射到底层物理磁盘（用于把多个分区归为一个磁盘类）
+    - Linux:  /dev/sda1  -> sda ; /dev/nvme0n1p3 -> nvme0n1 ; /dev/vdb2 -> vdb
+    - Windows: 盘符如 C: 各自视为独立物理磁盘 -> "PHYSICALDRIVE0" 之类不易得，
+               直接以盘符首字母作为分组键（如 "C"）。对无盘符设备回退原名。
+    - macOS/其他：无法可靠解析时回退为设备名去分区后缀
+    """
+    if platform.system() == "Linux":
+        d = device.split('/')[-1]
+        # nvme* 形如 nvme0n1p3 -> nvme0n1；其他如 sda1 -> sda
+        import re
+        m = re.match(r'^(nvme\d+n\d+)(p\d+)?$', d)
+        if m:
+            return m.group(1)
+        return re.sub(r'\d+$', '', d) or d
+    if platform.system() == "Windows":
+        # device 形如 "C:\\"；以盘符首字母分组
+        letter = device.strip()[:1].upper()
+        if letter.isalpha():
+            return letter
+        return device
+    # 其它平台：去掉尾部数字分区号
+    import re
+    d = device.split('/')[-1]
+    return re.sub(r'\d+$', '', d) or device
+
+
 def get_hardware_info() -> Dict:
     """获取完整硬件信息"""
     # CPU
@@ -437,6 +465,7 @@ def get_hardware_info() -> Dict:
             usage = psutil.disk_usage(part.mountpoint)
             disks.append({
                 "device": part.device,
+                "physical_disk": map_physical_disk(part.device),
                 "mountpoint": part.mountpoint,
                 "fstype": part.fstype,
                 "total": round(usage.total / (1024**3), 2),
@@ -469,12 +498,21 @@ def get_hardware_info() -> Dict:
             "addresses": [addr.address for addr in addrs if addr.family == 2]
         })
 
+    physical_disks = []
+    seen = set()
+    for d in disks:
+        pd = d.get("physical_disk")
+        if pd and pd not in seen:
+            seen.add(pd)
+            physical_disks.append(pd)
+
     return {
         "cpu": cpu_info,
         "memory": mem_info,
         "mem_frequency": mem_freq,
         "swap": swap_info,
         "disks": disks,
+        "physical_disks": physical_disks,
         "disk_smart": disk_smart,
         "gpu": gpu_info,
         "gpu_details": gpu_details,
