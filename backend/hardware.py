@@ -5,6 +5,7 @@
 import platform
 import psutil
 import re
+import time
 from typing import Dict, List
 import subprocess
 from backend.app_config import get_disk_filter
@@ -161,31 +162,52 @@ def get_gpu_info() -> Dict:
 
 def get_intel_gpu_usage() -> object:
     """
-    获取 Intel 显卡利用率（%）。
-    Linux：调用 intel_gpu_top -J（需 root 权限，且安装 intel-gpu-tools）；解析渲染引擎占用。
+    通过 intel_gpu_top -J -s 1000 获取 Intel 显卡更多信息。
+    Linux：需 root 权限且安装 intel-gpu-tools；解析渲染引擎占用(利用率)、频率、功耗。
     Windows：从 GPU Engine 性能计数器按 Intel 实例过滤总利用率。
-    无法获取时返回 None（绝不以 0 冒充真实占用）。
+    返回 dict {"utilization","frequency","power_draw"} 或 None（无权限/未安装时绝不伪造 0）。
+    内部带 2 秒节流缓存：intel_gpu_top 启动较慢，避免每秒 fork 拖垮采集循环。
     """
+    global _INTEL_GPU_CACHE
+    now = time.time()
+    if now - _INTEL_GPU_CACHE.get("ts", 0) < 2:
+        return _INTEL_GPU_CACHE.get("data")
+    data = None
     try:
         if platform.system() == "Linux":
             result = subprocess.run(
-                ['intel_gpu_top', '-J', '-s', '500'],
-                capture_output=True, text=True, timeout=4, encoding='utf-8', errors='ignore'
+                ['intel_gpu_top', '-J', '-s', '1000'],
+                capture_output=True, text=True, timeout=8, encoding='utf-8', errors='ignore'
             )
-            if result.returncode == 0:
+            if result.returncode == 0 and result.stdout.strip():
                 import json as _json
-                data = _json.loads(result.stdout)
-                engines = data.get("engines", {})
-                # 渲染引擎（rcs/render）占用即近似 GPU 利用率
-                for key in ("render", "rcs", "Render/3D", "rcs0"):
-                    if key in engines:
-                        val = engines[key].get("busy")
-                        if isinstance(val, (int, float)):
-                            return round(float(val), 1)
-                # 无渲染引擎则取所有引擎最大值
-                vals = [e.get("busy") for e in engines.values() if isinstance(e, dict) and isinstance(e.get("busy"), (int, float))]
-                if vals:
-                    return round(max(vals), 1)
+                d = _json.loads(result.stdout)
+                engines = d.get("engines", {}) or {}
+                # 渲染引擎占用即近似 GPU 利用率
+                util = None
+                for key in ("render", "rcs", "rcs0", "Render/3D"):
+                    if isinstance(engines.get(key), dict) and isinstance(engines[key].get("busy"), (int, float)):
+                        util = round(float(engines[key]["busy"]), 1)
+                        break
+                if util is None:
+                    vals = [e.get("busy") for e in engines.values()
+                            if isinstance(e, dict) and isinstance(e.get("busy"), (int, float))]
+                    util = round(max(vals), 1) if vals else None
+                # 频率
+                freq = None
+                f = d.get("frequency") or {}
+                if isinstance(f, dict):
+                    freq = f.get("actual") or f.get("requested") or f.get("cur") or f.get("current")
+                # 功耗
+                power = None
+                p = d.get("power") or {}
+                if isinstance(p, dict):
+                    power = p.get("value")
+                data = {
+                    "utilization": util,
+                    "frequency": int(freq) if freq is not None else None,
+                    "power_draw": round(float(power), 1) if power is not None else None,
+                }
         elif platform.system() == "Windows":
             result = subprocess.run(
                 ['powershell', '-Command',
@@ -197,17 +219,21 @@ def get_intel_gpu_usage() -> object:
                 vals = [float(x.strip()) for x in result.stdout.strip().split('\n')
                         if x.strip().replace('.', '', 1).isdigit()]
                 if vals:
-                    return round(max(vals), 1)
+                    data = {"utilization": round(max(vals), 1), "frequency": None, "power_draw": None}
     except Exception:
-        pass
-    return None
+        data = None
+    _INTEL_GPU_CACHE = {"ts": now, "data": data}
+    return data
+
+
+_INTEL_GPU_CACHE = {"ts": 0, "data": None}
 
 
 def get_gpu_details() -> Dict:
     """
-    获取 GPU 详细信息（NVIDIA 用 NVML；Intel/AMD 仅提供型号，利用率由 monitor 采集填充）
+    获取 GPU 详细信息（NVIDIA 用 NVML；Intel/AMD 由 intel_gpu_top 补充利用率/频率/功耗）
     返回: {"available": bool, "model", "memory_total", "memory_used",
-           "temperature", "power_draw", "power_limit", "utilization", "brand"}
+           "temperature", "power_draw", "power_limit", "utilization", "brand", "frequency"}
     """
     info = get_gpu_info()
     details = {
@@ -219,11 +245,17 @@ def get_gpu_details() -> Dict:
         "temperature": None,
         "power_draw": None,
         "power_limit": None,
-        "utilization": None
+        "utilization": None,
+        "frequency": None
     }
     global NVML_AVAILABLE, NVML_HANDLE
     if not (NVML_AVAILABLE and NVML_HANDLE is not None):
-        # 非 NVIDIA：Intel/AMD 仅型号可用，利用率/显存等由 monitor 采集或留空
+        # 非 NVIDIA（Intel/AMD）：尝试 intel_gpu_top 补充利用率/频率/功耗
+        ig = get_intel_gpu_usage()
+        if isinstance(ig, dict):
+            details["utilization"] = ig.get("utilization")
+            details["frequency"] = ig.get("frequency")
+            details["power_draw"] = ig.get("power_draw")
         return details
     try:
         import py3nvml.py3nvml as nvml
