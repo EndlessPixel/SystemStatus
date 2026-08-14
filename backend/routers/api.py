@@ -7,7 +7,7 @@ import asyncio
 
 from .. import monitor
 from ..hardware import get_hardware_info, get_gpu_info
-from ..app_config import get_server_config, get_display_config
+from ..app_config import get_server_config, get_display_config, get_web_ui_config
 
 api_router = APIRouter(prefix="/api")
 
@@ -26,11 +26,13 @@ async def get_app_config():
     """返回前端所需的运行配置：监听地址端口与显示开关"""
     server_cfg = get_server_config()
     display_cfg = get_display_config()
+    web_ui_cfg = get_web_ui_config()
     return {
         "host": server_cfg.get("host", "0.0.0.0"),
         "port": int(server_cfg.get("port", 8001)),
         "show_network": bool(display_cfg.get("show_network", True)),
         "show_battery": bool(display_cfg.get("show_battery", True)),
+        "web_ui": web_ui_cfg,
     }
 
 
