@@ -35,6 +35,8 @@
     }
     let lang = detectLang();
     let T = LANGS[lang] || {};
+    // web_ui 标题自定义配置（来自 /api/config），默认无覆盖
+    let webUiCfg = { page_title: { enable: false, lang: {} }, web_title: { enable: false, lang: {} } };
     const t = (key, fallback) => (T[key] !== undefined ? T[key] : (fallback !== undefined ? fallback : key));
 
     /* CSS 变量实际计算值（供 ECharts canvas 使用，var() 在 canvas 中不生效） */
@@ -851,16 +853,32 @@
         });
     }
 
+    // WebUI 标题自定义：config.web_ui 启用且当前语言有配置时，用配置值覆盖 i18n 默认文本
+    function effectiveText(i18nKey, def) {
+        const sub = (webUiCfg || {})[i18nKey];
+        if (sub && sub.enable && sub.lang && sub.lang[lang]) {
+            return sub.lang[lang];
+        }
+        return t(i18nKey, def);
+    }
+
     function applyI18n() {
         document.querySelectorAll("[data-i18n]").forEach((e) => {
-            e.textContent = t(e.getAttribute("data-i18n"), e.getAttribute("data-i18n"));
+            const key = e.getAttribute("data-i18n");
+            // pageTitle（页面大标题）允许被 web_ui.web_title 覆盖
+            if (key === "pageTitle") {
+                e.textContent = effectiveText("web_title", "系统概览");
+            } else {
+                e.textContent = t(key, key);
+            }
         });
         // 侧边栏导航文字（无 data-i18n 属性，需单独刷新）
         document.querySelectorAll(".nav-item").forEach((n) => {
             const item = NAV.find((x) => x.section === n.dataset.section);
             if (item) n.querySelector("span:last-child").textContent = t(item.i18n, item.i18n);
         });
-        document.title = t("title", "系统监控面板");
+        // 浏览器标签页标题，可被 web_ui.page_title 覆盖
+        document.title = effectiveText("page_title", "系统监控面板");
     }
 
     /* ============ 语言切换 ============ */
@@ -961,7 +979,11 @@
 
     function boot() {
         document.documentElement.lang = lang;
-        applyI18n();
+        // 拉取 WebUI 配置（标题自定义等），拿到后再渲染文案
+        fetch("/api/config").then((r) => r.json()).then((cfg) => {
+            if (cfg && cfg.web_ui) webUiCfg = cfg.web_ui;
+            applyI18n();
+        }).catch(() => {});
         buildNav();
         // 恢复上次打开的页面（cookie）
         const savedSection = getCookie("section");
