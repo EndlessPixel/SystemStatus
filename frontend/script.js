@@ -201,6 +201,22 @@
         refs.memModel = metricRow(detail, "model", "mem-model", "");
         refs.memFreq = metricRow(detail, "freq", "mem-freq", "MHz");
         grid.appendChild(detail);
+
+        // 交换分区 / 页面文件（整行）
+        const swap = card("swap");
+        swap.className += " xl:col-span-2";
+        const shead = el("div", "flex items-end gap-2 mb-1");
+        refs.swapUsed = el("span", "metric-value"); refs.swapUsed.textContent = "0";
+        shead.appendChild(refs.swapUsed); shead.appendChild(el("span", "metric-unit", "/ 0 GB"));
+        swap.appendChild(shead);
+        const spct = el("div", "text-[13px] text-[var(--color-faint)] mb-1"); spct.id = "swap-pct"; spct.textContent = "0%";
+        swap.appendChild(spct);
+        const strack = el("div", "bar-track mt-2"); const sfill = el("div", "bar-fill"); strack.appendChild(sfill);
+        refs.swapFill = sfill; swap.appendChild(strack);
+        const sgrid = el("div", "grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-1 mt-3 text-[13px]");
+        sgrid.id = "swap-detail"; swap.appendChild(sgrid);
+        refs.swapDetail = sgrid;
+        grid.appendChild(swap);
         sec.appendChild(grid);
     }
 
@@ -356,6 +372,37 @@
         refs.memFree.textContent = (totalGb - usedGb).toFixed(1);
         refs.memModel.textContent = esc(mem.model);
         refs.memFreq.textContent = mem.mem_frequency != null ? mem.mem_frequency : "—";
+
+        // 交换分区 / 页面文件
+        const swap = (snap.hardware_info || {}).swap || {};
+        const swapTotal = swap.total || 0;
+        const swapUsed = swap.used || 0;
+        const swapPct = swap.percent || (swapTotal ? (swapUsed / swapTotal * 100) : 0);
+        if (swapTotal > 0) {
+            refs.swapUsed.textContent = swapUsed.toFixed(1);
+            refs.swapUsed.nextSibling.textContent = "/ " + swapTotal + " GB";
+            $("#swap-pct").textContent = Number(swapPct).toFixed(1) + "%";
+            setBar(refs.swapFill, swapPct);
+            let html = `<div><span class="text-[var(--color-subtle)]">${t("swapFree", "空闲")}:</span> <span class="font-medium">${(swap.free || 0).toFixed(1)} GB</span></div>`;
+            html += `<div><span class="text-[var(--color-subtle)]">${t("swapSin", "换入")}:</span> <span class="font-medium">${(swap.sin || 0).toFixed(2)} GB</span></div>`;
+            html += `<div><span class="text-[var(--color-subtle)]">${t("swapSout", "换出")}:</span> <span class="font-medium">${(swap.sout || 0).toFixed(2)} GB</span></div>`;
+            const pfs = swap.pagefiles || [];
+            if (pfs.length) {
+                pfs.forEach((pf, i) => {
+                    const size = pf.system_managed ? t("swapAuto", "系统托管") :
+                        `${pf.initial_size_mb}~${pf.maximum_size_mb} MB`;
+                    html += `<div class="col-span-2 sm:col-span-3"><span class="text-[var(--color-subtle)]">${esc(pf.name)}:</span> <span class="font-medium">${size}</span></div>`;
+                });
+            }
+            refs.swapDetail.innerHTML = html;
+        } else {
+            refs.swapUsed.textContent = "0";
+            refs.swapUsed.nextSibling.textContent = "/ 0 GB";
+            $("#swap-pct").textContent = "—";
+            setBar(refs.swapFill, 0);
+            refs.swapDetail.innerHTML = `<div class="col-span-2 sm:col-span-3 text-[var(--color-faint)]">${t("swapNone", "未检测到交换分区 / 页面文件")}</div>`;
+        }
+
         renderMemCharts(snap);
     }
     function renderMemCharts(snap) {
