@@ -337,6 +337,63 @@ def get_disk_smart() -> List[Dict]:
         pass
     return results
 
+def get_swap_info() -> Dict:
+    """
+    获取交换分区 / 页面文件信息（跨平台）
+    - Linux/Unix: psutil.swap_memory()（swap 分区/文件）
+    - Windows: psutil.swap_memory() 返回页面文件(pagefile)统计；
+               额外用 PowerShell 探测页面文件配置（是否启用、是否系统托管、初始/最大大小）
+    无法获取时返回 total=0 的结构，前端据此显示「无」
+    """
+    swap = psutil.swap_memory()
+    info = {
+        "total": round(swap.total / (1024**3), 2),
+        "used": round(swap.used / (1024**3), 2),
+        "free": round(swap.free / (1024**3), 2),
+        "percent": round(swap.percent, 1),
+        "sin": round(swap.sin / (1024**3), 2) if swap.sin else 0,
+        "sout": round(swap.sout / (1024**3), 2) if swap.sout else 0,
+        "pagefiles": []
+    }
+
+    # Windows 下补充页面文件配置详情
+    if platform.system() == "Windows":
+        try:
+            result = subprocess.run(
+                ['powershell', '-NoProfile', '-Command',
+                 '(Get-CimInstance Win32_PageFileSetting | ForEach-Object {'
+                 ' "$($_.Name)|$($_.InitialSize)|$($_.MaximumSize)|$($_.SystemManaged" }) -join "`n"'],
+                capture_output=True, text=True, timeout=5, encoding='utf-8', errors='ignore'
+            )
+            if result.returncode == 0:
+                for line in result.stdout.strip().split('\n'):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    parts = line.split('|')
+                    if len(parts) >= 4:
+                        name = parts[0].strip()
+                        try:
+                            init = int(parts[1])
+                        except ValueError:
+                            init = 0
+                        try:
+                            maximum = int(parts[2])
+                        except ValueError:
+                            maximum = 0
+                        system_managed = parts[3].strip().lower() in ("true", "1")
+                        info["pagefiles"].append({
+                            "name": name,
+                            "initial_size_mb": init,
+                            "maximum_size_mb": maximum,
+                            "system_managed": system_managed
+                        })
+        except Exception:
+            pass
+
+    return info
+
+
 def get_hardware_info() -> Dict:
     """获取完整硬件信息"""
     # CPU
@@ -396,6 +453,9 @@ def get_hardware_info() -> Dict:
     # 内存频率
     mem_freq = get_memory_frequency()
 
+    # 交换分区 / 页面文件
+    swap_info = get_swap_info()
+
     # 硬盘 SMART
     disk_smart = get_disk_smart()
 
@@ -413,6 +473,7 @@ def get_hardware_info() -> Dict:
         "cpu": cpu_info,
         "memory": mem_info,
         "mem_frequency": mem_freq,
+        "swap": swap_info,
         "disks": disks,
         "disk_smart": disk_smart,
         "gpu": gpu_info,
