@@ -145,7 +145,7 @@ disk_filter:
 python main.py
 ```
 
-服务启动在 **http://0.0.0.0:8001**，浏览器访问即可。
+服务启动后，浏览器访问 **http://localhost:8001** 即可（如需外部访问，将 `localhost` 替换为服务器实际 IP）。
 
 ---
 
