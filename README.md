@@ -158,8 +158,8 @@ python main.py
 - **内存监控**：容量、实时占用率（折线图）、已用/可用详情、内存型号与频率
 - **硬盘监控**：分区列表、已用/总容量（GB 显示）、占用百分比色条
 - **GPU 监控**：型号、使用率、温度、显存占用与功耗（兼容 **Intel 核显 + NVIDIA 独显**）
-  - Intel 核显使用率检测（wmic）
-  - NVIDIA 显卡使用率检测（NVML）
+  - Intel 核显使用率 / 频率 / 功耗检测（`intel_gpu_top -J`，**需 root + 安装 intel-gpu-tools**）
+  - NVIDIA 显卡使用率 / 显存 / 温度 / 功耗检测（NVML，需安装 `nvidia-ml-py`）
 - **网络监控**：实时上下行流量（折线图）、网络接口名称与 IP 地址
 
 ### 🔐 Linux 权限说明
@@ -171,10 +171,18 @@ python main.py
 | 内存型号 / 频率 | `dmidecode` / sysfs(EDAC/DMI) | ✅ 需要 |
 | 硬盘 SMART 属性 | `smartctl` | ✅ 需要 |
 | CPU 温度 | `sensors` / `coretemp` | ⚠️ 部分需要 |
+| **Intel 核显使用率 / 频率 / 功耗** | `intel_gpu_top`（intel-gpu-tools） | ✅ 需要 |
 | CPU / 内存占用率、网络流量 | `psutil` | ❌ 不需要 |
 
 > 💡 **建议用 `sudo` 运行以获取完整信息**：`sudo python3 main.py`
-> 若不想给全部 root，可配置 NOPASSWD 的 `sudo dmidecode` / `sudo smartctl`（程序已自动尝试 `sudo -n`）。
+> 若不想给全部 root，可配置 NOPASSWD 的 `sudo dmidecode` / `sudo smartctl` / `sudo intel_gpu_top`（程序已自动尝试 `sudo -n`）。
+
+**获取程序安装（Ubuntu/Debian）**：
+```bash
+sudo apt install intel-gpu-tools   # 提供 intel_gpu_top，用于 Intel 核显监控
+sudo apt install dmidecode smartmontools lm-sensors   # 内存型号、硬盘 SMART、CPU 温度
+pip install nvidia-ml-py           # NVIDIA NVML 支持（独显）
+```
 
 ### ⚡ 性能优化
 
