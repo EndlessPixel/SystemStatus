@@ -322,6 +322,7 @@
                 <th class="py-2 pr-3 font-medium text-right">CPU</th>
                 <th class="py-2 pr-3 font-medium text-right">MEM</th>
                 <th class="py-2 pr-3 font-medium text-right">DISK ↓↑</th>
+                <th class="py-2 pr-3 font-medium text-right">${t("procNet", "网络 ↓↑")}</th>
                 <th class="py-2 pr-3 font-medium text-right">GPU</th>
             </tr>
         </thead>`;
@@ -336,7 +337,7 @@
         const list = snap.real_time_data.processes || snap.processes || [];
         if (!refs.procBody) return;
         if (!list.length) {
-            refs.procBody.innerHTML = `<tr><td colspan="6" class="py-4 text-center text-[var(--color-faint)]">—</td></tr>`;
+            refs.procBody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-[var(--color-faint)]">—</td></tr>`;
             return;
         }
         // 仅在数量变化时全量重建，避免每秒重排抖动
@@ -350,6 +351,7 @@
                     <td class="py-1.5 pr-3 text-right proc-cpu font-medium"></td>
                     <td class="py-1.5 pr-3 text-right proc-mem"></td>
                     <td class="py-1.5 pr-3 text-right proc-disk text-[12px] text-[var(--color-subtle)]"></td>
+                    <td class="py-1.5 pr-3 text-right proc-net text-[12px] text-[var(--color-subtle)]"></td>
                     <td class="py-1.5 pr-3 text-right proc-gpu"></td>`;
                 refs.procBody.appendChild(tr);
             });
@@ -363,6 +365,7 @@
             const cpu = tr.querySelector(".proc-cpu"); cpu.textContent = p.cpu + "%"; cpu.style.color = colorByPct(p.cpu);
             tr.querySelector(".proc-mem").textContent = p.mem + "%";
             tr.querySelector(".proc-disk").textContent = `${p.disk_read} / ${p.disk_write} KB/s`;
+            tr.querySelector(".proc-net").textContent = `${p.net_down} / ${p.net_up} KB/s`;
             const gpu = tr.querySelector(".proc-gpu");
             gpu.textContent = p.gpu ? p.gpu + " MB" : "—";
             gpu.style.color = p.gpu ? "var(--color-orange)" : "var(--color-faint)";
