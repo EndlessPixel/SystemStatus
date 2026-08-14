@@ -2449,6 +2449,28 @@ function switchSection(section) {
         s.classList.toggle('active', s.dataset.section === section);
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // 目标分区刚从 display:none 变为显示，其内部图表此前在隐藏态初始化（宽高为0），
+    // 需在显示后 resize，否则图表宽度塌缩为 0/极小。
+    setTimeout(() => resizeChartsInSection(section), 80);
+}
+
+// 对指定分区内的图表实例执行 resize
+function resizeChartsInSection(section) {
+    const instanceMap = {
+        'usage-chart': chart,
+        'system-chart': systemChart,
+        'net-chart': netChart,
+        'cpu-freq-container': freqChart,
+        'memory-chart': memoryChart,
+        'gpu-chart': gpuChart
+    };
+    CHART_PANELS.forEach(p => {
+        if (p.section !== section) return;
+        const inst = instanceMap[p.id];
+        if (inst) {
+            setTimeout(() => inst.resize(), 50);
+        }
+    });
 }
 
 function toggleChart(chartId, btn) {
