@@ -152,11 +152,16 @@
         const chart = el("div"); chart.id = "cpu-chart"; chart.style.cssText = "height:200px;margin-top:14px";
         big.appendChild(chart);
         grid.appendChild(big);
-        // 每核
+        // 每核使用率
         const core = card("perCore");
         const cw = el("div", "grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2"); cw.id = "cpu-cores";
         core.appendChild(cw); refs.cpuCores = cw;
         grid.appendChild(core);
+        // 每核频率
+        const coreFreq = card("perCoreFreq");
+        const cfw = el("div", "grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-2"); cfw.id = "cpu-core-freqs";
+        coreFreq.appendChild(cfw); refs.cpuCoreFreqs = cfw;
+        grid.appendChild(coreFreq);
         // 频率 + 图表
         const freq = card("cpuFreq");
         const fhead = el("div", "flex items-end gap-2 mb-2");
@@ -295,6 +300,28 @@
         cores.forEach((u, i) => {
             if (refs.coreFills[i]) { setBar(refs.coreFills[i].fill, u); refs.coreFills[i].val.textContent = Math.round(u) + "%"; }
         });
+
+        // 每核频率
+        const coreFreqs = rt.cpu_core_freq || [];
+        const n = Math.max(cores.length, coreFreqs.length);
+        if (n !== refs.cpuCoreFreqs.childElementCount) {
+            refs.cpuCoreFreqs.innerHTML = "";
+            refs.coreFreqVals = [];
+            for (let i = 0; i < n; i++) {
+                const row = el("div");
+                row.innerHTML = `<div class="flex justify-between text-[12px] mb-1">
+                    <span class="text-[var(--color-subtle)]">#${i}</span>
+                    <span class="font-medium core-freq-val">—</span></div>`;
+                refs.cpuCoreFreqs.appendChild(row);
+                refs.coreFreqVals.push(row.querySelector(".core-freq-val"));
+            }
+        }
+        for (let i = 0; i < n; i++) {
+            if (refs.coreFreqVals[i]) {
+                const v = coreFreqs[i];
+                refs.coreFreqVals[i].textContent = v != null ? Math.round(v) + " MHz" : "—";
+            }
+        }
 
         const freq = rt.cpu_freq || [];
         const fLast = freq.length ? freq[freq.length - 1][1] : 0;
