@@ -146,8 +146,11 @@ def get_gpu_info() -> Dict:
             if gpus:
                 chosen = next((l for l in gpus if 'intel' in l.lower() or 'amd' in l.lower()
                                or 'radeon' in l.lower() or 'advanced micro' in l.lower()), gpus[0])
-                name = chosen.split(':', 1)[1].strip() if ':' in chosen else chosen.strip()
+                # 格式：00:02.0 VGA compatible controller [0300]: Intel Corporation ... [8086:46a3] (rev 0c)
+                # 真实型号在第一个 "]: " 之后；再去掉结尾的 [vendor:device] 与 (rev)
+                name = chosen.split(']:', 1)[1].strip() if ']:' in chosen else chosen.strip()
                 name = re.sub(r'\s*\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]\s*$', '', name)
+                name = re.sub(r'\s*\(rev[^)]*\)\s*$', '', name).strip()
                 brand = 'intel' if 'intel' in name.lower() else ('amd' if ('amd' in name.lower() or 'radeon' in name.lower()) else 'unknown')
                 return {"model": name, "available": True, "brand": brand}
     except Exception:
