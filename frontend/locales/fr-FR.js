@@ -44,6 +44,7 @@ window.LANGUAGE_DATA['fr-FR'] = {
         navProcess: "Processus",
         processHint: "Triés par usage CPU, top 20 uniquement (lecture seule)",
         procName: "Nom",
+        procNet: "Réseau ↓↑",
         settingLang: "Langue",
         settingTheme: "Thème",
         themeAuto: "Selon le système",

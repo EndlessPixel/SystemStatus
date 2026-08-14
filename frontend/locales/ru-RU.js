@@ -44,6 +44,7 @@ window.LANGUAGE_DATA['ru-RU'] = {
         navProcess: "Процессы",
         processHint: "По загрузке CPU, только топ-20 (только чтение)",
         procName: "Имя",
+        procNet: "Сеть ↓↑",
         settingLang: "Язык",
         settingTheme: "Тема",
         themeAuto: "Как в системе",

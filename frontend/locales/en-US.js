@@ -45,6 +45,7 @@ window.LANGUAGE_DATA['en-US'] = {
         navProcess: "Processes",
         processHint: "Sorted by CPU usage, top 20 only (read-only)",
         procName: "Name",
+        procNet: "NET ↓↑",
         settingLang: "Language",
         settingTheme: "Theme",
         themeAuto: "Follow system",

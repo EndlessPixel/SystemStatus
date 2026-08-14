@@ -44,6 +44,7 @@ window.LANGUAGE_DATA['ko-KR'] = {
         navProcess: "프로세스 모니터",
         processHint: "CPU 사용률 순, 상위 20개만 (읽기 전용)",
         procName: "이름",
+        procNet: "네트워크 ↓↑",
         settingLang: "언어",
         settingTheme: "테마",
         themeAuto: "시스템 따르기",

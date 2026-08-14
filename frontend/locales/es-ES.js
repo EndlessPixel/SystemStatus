@@ -44,6 +44,7 @@ window.LANGUAGE_DATA['es-ES'] = {
         navProcess: "Procesos",
         processHint: "Ordenado por uso de CPU, solo los 20 primeros (solo lectura)",
         procName: "Nombre",
+        procNet: "RED ↓↑",
         settingLang: "Idioma",
         settingTheme: "Tema",
         themeAuto: "Seguir sistema",
