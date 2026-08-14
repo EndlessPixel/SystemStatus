@@ -4,6 +4,7 @@
 """
 import platform
 import psutil
+import re
 from typing import Dict, List
 import subprocess
 from backend.app_config import get_disk_filter
