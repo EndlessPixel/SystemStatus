@@ -13,8 +13,13 @@
     const LANGS = window.LANGUAGES || {};
 
     function detectLang() {
-        const nav = (navigator.language || "zh").slice(0, 2).toLowerCase();
-        return LANGS[nav] ? nav : "zh";
+        const nav = (navigator.language || "zh-CN").toLowerCase();
+        if (LANGS[nav]) return nav;                 // 完整匹配，如 zh-CN / en-US
+        const short = nav.split("-")[0];            // 短码回退，如 zh / en
+        if (LANGS[short]) return short;
+        // 在所有语言中寻找相同短码的第一个匹配
+        const prefix = Object.keys(LANGS).find((k) => k.split("-")[0] === short);
+        return prefix || "zh-CN";
     }
     const lang = detectLang();
     const T = LANGS[lang] || {};
