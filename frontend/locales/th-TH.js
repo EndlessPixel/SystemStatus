@@ -44,6 +44,7 @@ window.LANGUAGE_DATA['th-TH'] = {
         navProcess: "กระบวนการ",
         processHint: "เรียงตามการใช้ CPU แสดง 20 อันดับแรก (อ่านอย่างเดียว)",
         procName: "ชื่อ",
+        procNet: "เน็ต ↓↑",
         settingLang: "ภาษา",
         settingTheme: "ธีม",
         themeAuto: "ตามระบบ",

@@ -44,6 +44,7 @@ window.LANGUAGE_DATA['id-ID'] = {
         navProcess: "Proses",
         processHint: "Diurutkan berdasarkan CPU, 20 teratas saja (baca saja)",
         procName: "Nama",
+        procNet: "NET ↓↑",
         settingLang: "Bahasa",
         settingTheme: "Tema",
         themeAuto: "Ikuti sistem",

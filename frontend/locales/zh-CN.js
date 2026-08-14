@@ -47,6 +47,7 @@ window.LANGUAGE_DATA['zh-CN'] = {
         navProcess: "进程监测",
         processHint: "按 CPU 占用降序，仅显示前 20 个（只读）",
         procName: "进程名",
+        procNet: "网络 ↓↑",
         settingLang: "语言",
         settingTheme: "主题",
         themeAuto: "跟随系统",
