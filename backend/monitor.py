@@ -31,6 +31,8 @@ DATA_CACHE = {
 
 # 进程磁盘 IO 速率计算缓存：{pid: (read_bytes, write_bytes, ts)}
 _PROC_IO_LAST = {}
+# 进程网络速率计算缓存：{pid: (rx_bytes, tx_bytes, ts)}（仅 Linux 可用）
+_PROC_NET_LAST = {}
 
 
 def get_gpu_process_memory() -> Dict[int, float]:
@@ -264,12 +266,41 @@ def collect_real_time_data():
                     "mem": round(mem, 1),
                     "disk_read": round(disk_read, 1),
                     "disk_write": round(disk_write, 1),
+                    "net_up": 0.0,
+                    "net_down": 0.0,
                     "gpu": gpu_mem.get(pid, 0),  # MB；0 表示未用 GPU
                 })
             for pid in list(_PROC_IO_LAST.keys()):
                 if pid not in io_snapshot:
                     del _PROC_IO_LAST[pid]
             _PROC_IO_LAST.update(io_snapshot)
+            # 进程网络速率（Linux：/proc/<pid>/net/dev 累计收发；Windows 无简易 API，留 0）
+            net_snapshot = {}
+            if platform.system() == "Linux":
+                for p in proc_list:
+                    pid = p["pid"]
+                    try:
+                        rx = tx = 0
+                        with open(f"/proc/{pid}/net/dev", "r", errors="ignore") as f:
+                            for line in f.readlines()[2:]:
+                                parts = line.split(":")
+                                if len(parts) != 2:
+                                    continue
+                                cols = parts[1].split()
+                                rx += int(cols[0]); tx += int(cols[8])
+                        last = _PROC_NET_LAST.get(pid)
+                        if last:
+                            dt = timestamp - last[2]
+                            if dt > 0.1:
+                                p["net_down"] = round(max(0.0, (rx - last[0]) / 1024 / dt), 1)
+                                p["net_up"] = round(max(0.0, (tx - last[1]) / 1024 / dt), 1)
+                        net_snapshot[pid] = (rx, tx, timestamp)
+                    except (OSError, ValueError, IndexError):
+                        net_snapshot[pid] = _PROC_NET_LAST.get(pid, (0, 0, timestamp))
+                for pid in list(_PROC_NET_LAST.keys()):
+                    if pid not in net_snapshot:
+                        del _PROC_NET_LAST[pid]
+                _PROC_NET_LAST.update(net_snapshot)
             proc_list.sort(key=lambda x: x["cpu"], reverse=True)
             DATA_CACHE["processes"] = proc_list[:20]
         except Exception:
