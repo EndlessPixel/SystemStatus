@@ -1,7 +1,11 @@
-@import "tailwindcss";
+/* SystemStatus 前端样式
+ * 注意：本文件通过 <link> 由浏览器原生加载，因此必须是「纯原生 CSS」，
+ * 不能包含 Tailwind 指令（@import "tailwindcss" / @theme），否则浏览器无法解析会整表丢弃。
+ * 设计令牌直接声明在 :root；页面内的 Tailwind 工具类由 @tailwindcss/browser 运行时注入。
+ */
 
 /* ===== Apple 风格设计令牌 ===== */
-@theme {
+:root {
     --color-ink: #1d1d1f;          /* Apple 主文字色 */
     --color-subtle: #6e6e73;       /* 次要文字 */
     --color-faint: #86868b;        /* 弱化文字 */
@@ -15,8 +19,6 @@
     --color-orange: #ff9f0a;
     --color-red: #ff3b30;
     --radius-card: 18px;
-    --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
-        "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 
 /* ===== 基础 ===== */
@@ -25,7 +27,8 @@ body {
     margin: 0;
     background: var(--color-canvas);
     color: var(--color-ink);
-    font-family: var(--font-sans);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
+        "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
 }
@@ -77,8 +80,8 @@ body {
 .metric-label { font-size: 13px; color: var(--color-subtle); }
 
 /* 进度条（无边框，纯色填充区分） */
-.bar-track { background: rgba(0,0,0,.06); border-radius: 9999px; height: 8px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 9999px; transition: width .6s cubic-bezier(.22,1,.36,1); }
+.bar-track { background: rgba(0,0,0,.06); border-radius: 9999px; height: 8px; overflow: hidden; width: 100%; }
+.bar-fill { height: 100%; border-radius: 9999px; transition: width .6s cubic-bezier(.22,1,.36,1), background-color .4s ease; width: 0; }
 
 /* 状态点 */
 .status-dot { width: 7px; height: 7px; border-radius: 9999px; display: inline-block; }
