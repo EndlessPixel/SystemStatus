@@ -1,6 +1,6 @@
 // 语言翻译 - SystemStatus
 window.LANGUAGE_DATA = window.LANGUAGE_DATA || {};
-window.LANGUAGE_DATA['ru'] = {
+window.LANGUAGE_DATA['ru-RU'] = {
         // 页面标题
         title: "Панель мониторинга системы",
         appName: "SystemStatus",

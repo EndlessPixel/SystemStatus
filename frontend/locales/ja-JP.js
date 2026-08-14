@@ -1,6 +1,6 @@
 // 语言翻译 - SystemStatus
 window.LANGUAGE_DATA = window.LANGUAGE_DATA || {};
-window.LANGUAGE_DATA['ja'] = {
+window.LANGUAGE_DATA['ja-JP'] = {
         // 页面标题
         title: "システム監視パネル",
         appName: "SystemStatus",
