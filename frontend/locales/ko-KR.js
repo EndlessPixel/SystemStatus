@@ -30,6 +30,7 @@ window.LANGUAGE_DATA['ko-KR'] = {
         memModel: "메모리 모델",
         cpuUsage: "CPU 사용률",
         perCore: "코어별 사용률",
+        perCoreFreq: "코어별 주파수",
         cpuFreq: "CPU 주파수",
         memUsage: "메모리 사용률",
         memDetail: "메모리 상세",

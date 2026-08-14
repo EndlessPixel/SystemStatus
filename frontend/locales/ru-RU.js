@@ -30,6 +30,7 @@ window.LANGUAGE_DATA['ru-RU'] = {
         memModel: "Модель памяти",
         cpuUsage: "Загрузка ЦП",
         perCore: "По ядрам",
+        perCoreFreq: "Частота по ядрам",
         cpuFreq: "Частота ЦП",
         memUsage: "Загрузка памяти",
         memDetail: "Подробно",

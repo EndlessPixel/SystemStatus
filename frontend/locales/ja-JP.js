@@ -30,6 +30,7 @@ window.LANGUAGE_DATA['ja-JP'] = {
         memModel: "メモリ型番",
         cpuUsage: "CPU 使用率",
         perCore: "コア別使用率",
+        perCoreFreq: "コア別周波数",
         cpuFreq: "CPU 周波数",
         memUsage: "メモリ使用率",
         memDetail: "メモリ詳細",

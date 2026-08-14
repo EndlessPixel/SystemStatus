@@ -31,6 +31,7 @@ window.LANGUAGE_DATA['de-DE'] = {
         memModel: "Speichermodell",
         cpuUsage: "CPU-Auslastung",
         perCore: "Pro Kern",
+        perCoreFreq: "Takt pro Kern",
         cpuFreq: "CPU-Takt",
         memUsage: "Speicherauslastung",
         memDetail: "Speicherdetails",
