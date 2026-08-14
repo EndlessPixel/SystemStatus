@@ -26,7 +26,40 @@ DATA_CACHE = {
     "boot_time": 0,
     "battery_info": {},
     "cpu_temperature": [],
+    "processes": [],  # 前 20 进程（按 CPU 降序）：[{pid,name,cpu,mem,disk_read,disk_write,gpu}]
 }
+
+# 进程磁盘 IO 速率计算缓存：{pid: (read_bytes, write_bytes, ts)}
+_PROC_IO_LAST = {}
+
+
+def get_gpu_process_memory() -> Dict[int, float]:
+    """
+    获取正在使用 GPU 的进程及其显存占用（MB）。
+    per-process 的 GPU 利用率无法跨平台直接获取（psutil/nvml 均只给显存），
+    故此处返回 {pid: 已用显存MB} 作为「GPU 占用」近似。无 GPU / 无进程时返回空。
+    """
+    if not (NVML_AVAILABLE and NVML_HANDLE):
+        return {}
+    try:
+        import py3nvml.py3nvml as nvml
+        procs = []
+        try:
+            procs += nvml.nvmlDeviceGetComputeRunningProcesses(NVML_HANDLE)
+        except Exception:
+            pass
+        try:
+            procs += nvml.nvmlDeviceGetGraphicsRunningProcesses(NVML_HANDLE)
+        except Exception:
+            pass
+        result = {}
+        for p in procs:
+            pid = int(p.pid)
+            mem_mb = round(p.usedGpuMemory / 1024, 1) if getattr(p, "usedGpuMemory", 0) else 0
+            result[pid] = max(result.get(pid, 0), mem_mb)
+        return result
+    except Exception:
+        return {}
 
 # 磁盘 IO 历史（按物理磁盘聚合）：{physical_disk: {"read":[], "write":[], "busy":[]}}
 DISK_IO_HISTORY = {}
@@ -172,6 +205,51 @@ def collect_real_time_data():
         process_count = len(psutil.pids())
         DATA_CACHE["process_count"].append((timestamp, process_count))
 
+        # 进程监测（只读，前 20 按 CPU 降序）
+        try:
+            gpu_mem = get_gpu_process_memory()
+            proc_list = []
+            io_snapshot = {}
+            for p in psutil.process_iter(['pid', 'name']):
+                try:
+                    pid = p.info['pid']
+                    name = p.info['name'] or "—"
+                    cpu = p.cpu_percent(interval=None)  # 需上轮基线，首轮为 0
+                    mem = p.memory_percent()
+                    try:
+                        io = p.io_counters()
+                        rb, wb = io.read_bytes, io.write_bytes
+                    except Exception:
+                        rb, wb = 0, 0
+                except (psutil.NoSuchProcess, psutil.AccessDenied, ValueError):
+                    continue
+                # 磁盘速率（KB/s）
+                disk_read = disk_write = 0.0
+                last = _PROC_IO_LAST.get(pid)
+                if last:
+                    dt = timestamp - last[2]
+                    if dt > 0.1:
+                        disk_read = max(0.0, (rb - last[0]) / 1024 / dt)
+                        disk_write = max(0.0, (wb - last[1]) / 1024 / dt)
+                io_snapshot[pid] = (rb, wb, timestamp)
+                proc_list.append({
+                    "pid": pid,
+                    "name": name[:60],
+                    "cpu": round(cpu, 1),
+                    "mem": round(mem, 1),
+                    "disk_read": round(disk_read, 1),
+                    "disk_write": round(disk_write, 1),
+                    "gpu": gpu_mem.get(pid, 0),  # MB；0 表示未用 GPU
+                })
+            for pid in list(_PROC_IO_LAST.keys()):
+                if pid not in io_snapshot:
+                    del _PROC_IO_LAST[pid]
+            _PROC_IO_LAST.update(io_snapshot)
+            proc_list.sort(key=lambda x: x["cpu"], reverse=True)
+            DATA_CACHE["processes"] = proc_list[:20]
+        except Exception:
+            pass
+
         # 电池状态（show_battery 为 false 时跳过采集）
         if get_display_config().get("show_battery", True):
             if hasattr(psutil, 'sensors_battery'):
@@ -297,6 +375,7 @@ def get_real_time_data() -> Dict:
         "boot_time": DATA_CACHE["boot_time"],
         "battery_info": DATA_CACHE["battery_info"],
         "disk_io": format_disk_io(DISK_IO_HISTORY),
+        "processes": DATA_CACHE["processes"],
         "timestamp": time.time()
     }
 
