@@ -75,7 +75,11 @@
     function ensureChart(domId) {
         const dom = document.getElementById(domId);
         if (!dom) return null;
-        if (!charts[domId]) charts[domId] = echarts.init(dom);
+        if (charts[domId]) return charts[domId];
+        // 容器不可见（display:none）时 clientWidth/Height 为 0，
+        // 此时不初始化，交由「模块激活」时再 init，避免零尺寸实例。
+        if (!dom.clientWidth || !dom.clientHeight) return null;
+        charts[domId] = echarts.init(dom);
         return charts[domId];
     }
     function lineOption(series, color, unit) {
@@ -295,6 +299,12 @@
         const freq = rt.cpu_freq || [];
         const fLast = freq.length ? freq[freq.length - 1][1] : 0;
         $("#cpu-freq-val").textContent = Math.round(fLast);
+        renderCpuCharts(snap);
+    }
+    function renderCpuCharts(snap) {
+        const rt = (snap || lastSnap || {}).real_time_data || {};
+        const usage = rt.cpu_usage || [];
+        const freq = rt.cpu_freq || [];
         const ch = ensureChart("cpu-chart");
         if (ch) ch.setOption(lineOption(usage, "rgb(0,113,227)", "%"));
         const fh = ensureChart("cpu-freq-chart");
@@ -317,6 +327,10 @@
         refs.memFree.textContent = (totalGb - usedGb).toFixed(1);
         refs.memModel.textContent = esc(mem.model);
         refs.memFreq.textContent = mem.mem_frequency != null ? mem.mem_frequency : "—";
+        renderMemCharts(snap);
+    }
+    function renderMemCharts(snap) {
+        const usage = ((snap || lastSnap || {}).real_time_data || {}).mem_usage || [];
         const ch = ensureChart("mem-chart");
         if (ch) ch.setOption(lineOption(usage, "rgb(255,159,10)", "%"));
     }
@@ -379,8 +393,12 @@
         refs.gpuMemUsed.textContent = det.memory_used != null ? det.memory_used : "—";
         refs.gpuPower.textContent = det.power_draw != null ? det.power_draw : "—";
         refs.gpuPowerLimit.textContent = det.power_limit != null ? det.power_limit : "—";
+        renderGpuCharts(snap);
+    }
+    function renderGpuCharts(snap) {
+        const usage = ((snap || lastSnap || {}).real_time_data || {}).gpu_usage || [];
         const ch = ensureChart("gpu-chart");
-        if (ch) ch.setOption(lineOption(snap.real_time_data?.gpu_usage || [], "rgb(175,82,222)", "%"));
+        if (ch) ch.setOption(lineOption(usage, "rgb(175,82,222)", "%"));
     }
     function buildGpuContent() {
         const sec = $("#sec-gpu");
@@ -415,6 +433,11 @@
                 <span class="metric-label">${esc(n.name)}</span>
                 <span class="text-[13px] font-medium">${(n.addresses || []).join(", ") || "—"}</span></div>`).join("")
             : `<div class="text-[var(--color-faint)] text-[14px]">—</div>`;
+        renderNetCharts(snap);
+    }
+    function renderNetCharts(snap) {
+        const rt = (snap || lastSnap || {}).real_time_data || {};
+        const up = rt.net_upload_speed || [], down = rt.net_download_speed || [];
         const ch = ensureChart("net-chart");
         if (ch) {
             ch.setOption({
@@ -431,14 +454,25 @@
         }
     }
 
+    let lastSnap = null;
     function firstRender(snap) {
+        lastSnap = snap;
         buildBasic(); buildCpu(); buildMemory(); buildDisk(); buildGpu(); buildNetwork();
         updateAll(snap);
-        // 首帧后 resize，确保图表容器尺寸正确
-        setTimeout(() => Object.values(charts).forEach((c) => c.resize()), 60);
+        // 基础信息模块默认可见（无图表）；其余模块的图表在「首次激活」时再 init
     }
     function updateAll(snap) {
+        lastSnap = snap;
         updateBasic(snap); updateCpu(snap); updateMemory(snap); updateDisk(snap); updateGpu(snap); updateNetwork(snap);
+    }
+    // 某模块被激活（可见）时，渲染其图表（此时容器尺寸正确）
+    function activateCharts(section) {
+        switch (section) {
+            case "cpu":     renderCpuCharts(lastSnap); break;
+            case "memory":  renderMemCharts(lastSnap); break;
+            case "gpu":     renderGpuCharts(lastSnap); break;
+            case "network": renderNetCharts(lastSnap); break;
+        }
     }
 
     /* ============ 连接状态 ============ */
@@ -473,7 +507,11 @@
         document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
         const target = document.querySelector(`.section[data-section="${section}"]`);
         if (target) target.classList.add("active");
-        setTimeout(() => Object.values(charts).forEach((c) => c.resize()), 50);
+        // 下一帧布局完成后渲染该模块图表（容器此时已可见，尺寸正确）
+        requestAnimationFrame(() => {
+            activateCharts(section);
+            Object.values(charts).forEach((c) => c.resize());
+        });
     }
 
     function applyI18n() {
