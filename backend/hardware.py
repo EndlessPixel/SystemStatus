@@ -199,40 +199,72 @@ def get_gpu_details() -> Dict:
 def get_memory_frequency() -> object:
     """
     获取内存频率（MHz），无法获取时返回 None
-    跨平台：Linux 读取 dmidecode / sysfs，Windows 读取 wmic
+    跨平台：Linux 读取 dmidecode / EDAC sysfs / dmi sysfs，Windows 读取 wmic
+    注意：dmidecode 与 sysfs(DMI/EDAC) 在多数 Linux 发行版下需要 root 权限；
+          若以普通用户运行读不到，请用 sudo 运行本程序（推荐部署方式）。
     """
+    # 合理内存频率范围（DDR3 800 ~ DDR5 8800 MHz 左右），用于过滤噪声
+    MIN_MHZ, MAX_MHZ = 400, 12000
+
+    def _extract_mhz(text: str) -> object:
+        for line in text.splitlines():
+            low = line.lower()
+            # 仅匹配内存相关行，避免 PCI 设备的 clock 等噪声
+            if "speed" in low and ("configured" in low or "current" in low or low.strip().startswith("speed")):
+                num = ''.join(c for c in line if c.isdigit())
+                if num:
+                    v = int(num)
+                    if MIN_MHZ <= v <= MAX_MHZ:
+                        return v
+            elif "speed" in low:  # 退一步：任何 Speed 行，仍做范围校验
+                num = ''.join(c for c in line if c.isdigit())
+                if num:
+                    v = int(num)
+                    if MIN_MHZ <= v <= MAX_MHZ:
+                        return v
+        return None
+
     try:
         if platform.system() == "Linux":
-            # 优先尝试 dmidecode（需 root）
+            # 1) dmidecode（需 root；普通用户无输出会静默失败）
+            for cmd in ("dmidecode -t memory", "sudo -n dmidecode -t memory"):
+                try:
+                    out = subprocess.check_output(
+                        f"timeout 5 {cmd} 2>/dev/null | grep -iE 'Speed' | grep -iv 'Unknown'",
+                        shell=True, text=True, stderr=subprocess.DEVNULL
+                    )
+                    val = _extract_mhz(out)
+                    if val:
+                        return val
+                except Exception:
+                    pass
+
+            # 2) sysfs：EDAC 多索引扫描（服务器常见，通常需 root）
             try:
-                out = subprocess.check_output(
-                    "dmidecode -t memory 2>/dev/null | grep -i 'Speed' | "
-                    "grep -iv 'Unknown' | head -1",
-                    shell=True, text=True, stderr=subprocess.DEVNULL
-                ).strip()
-                if out:
-                    # 形如 "Speed: 3200 MT/s" 或 "Speed: 3200 MHz"
-                    parts = out.split(":")
-                    if len(parts) > 1:
-                        num = ''.join(c for c in parts[1] if c.isdigit())
+                import glob
+                for path in glob.glob("/sys/devices/system/edac/mc/mc*/dimm*/speed"):
+                    with open(path, "r") as f:
+                        num = ''.join(c for c in f.read().strip() if c.isdigit())
                         if num:
-                            return int(num)
+                            v = int(num)
+                            if MIN_MHZ <= v <= MAX_MHZ:
+                                return v
             except Exception:
                 pass
-            # 回退：sysfs 中读取（部分机型可用）
+
+            # 3) sysfs：dmi 内存速度（通常需 root）
+            path = "/sys/class/dmi/id/memory/speed"
             try:
-                for path in (
-                    "/sys/devices/system/edac/mc/mc0/dimm0/speed",
-                    "/sys/class/dmi/id/memory/speed",
-                ):
-                    if os.path.exists(path):
-                        with open(path, "r") as f:
-                            v = f.read().strip()
-                            num = ''.join(c for c in v if c.isdigit())
-                            if num:
-                                return int(num)
+                if os.path.exists(path):
+                    with open(path, "r") as f:
+                        num = ''.join(c for c in f.read().strip() if c.isdigit())
+                        if num:
+                            v = int(num)
+                            if MIN_MHZ <= v <= MAX_MHZ:
+                                return v
             except Exception:
                 pass
+
         elif platform.system() == "Windows":
             out = subprocess.check_output(
                 'wmic memorychip get speed',
