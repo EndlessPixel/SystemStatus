@@ -11,19 +11,36 @@
 
     /* ============ 多语言 ============ */
     const LANGS = window.LANGUAGES || {};
+    const LANG_ORDER = window.LANGUAGE_ORDER || Object.keys(LANGS);
+
+    /* cookie 工具 */
+    function getCookie(name) {
+        const m = document.cookie.match(new RegExp("(?:^|;\\s*)" + name + "=([^;]+)"));
+        return m ? decodeURIComponent(m[1]) : null;
+    }
+    function setCookie(name, value, days = 365) {
+        const exp = new Date(Date.now() + days * 864e5).toUTCString();
+        document.cookie = `${name}=${encodeURIComponent(value)};path=/;expires=${exp};SameSite=Lax`;
+    }
 
     function detectLang() {
+        const saved = getCookie("lang");
+        if (saved && LANGS[saved]) return saved;     // cookie 优先
         const nav = (navigator.language || "zh-CN").toLowerCase();
         if (LANGS[nav]) return nav;                 // 完整匹配，如 zh-CN / en-US
         const short = nav.split("-")[0];            // 短码回退，如 zh / en
         if (LANGS[short]) return short;
-        // 在所有语言中寻找相同短码的第一个匹配
         const prefix = Object.keys(LANGS).find((k) => k.split("-")[0] === short);
         return prefix || "zh-CN";
     }
-    const lang = detectLang();
-    const T = LANGS[lang] || {};
+    let lang = detectLang();
+    let T = LANGS[lang] || {};
     const t = (key, fallback) => (T[key] !== undefined ? T[key] : (fallback !== undefined ? fallback : key));
+
+    /* CSS 变量实际计算值（供 ECharts canvas 使用，var() 在 canvas 中不生效） */
+    function cssVar(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || "#888";
+    }
 
     /* ============ 工具函数 ============ */
     const $ = (sel, root = document) => root.querySelector(sel);
@@ -47,7 +64,9 @@
 
     function card(titleI18n) {
         const c = el("div", "card");
-        c.appendChild(el("div", "card-title", t(titleI18n, titleI18n)));
+        const title = el("div", "card-title", t(titleI18n, titleI18n));
+        if (titleI18n) title.setAttribute("data-i18n", titleI18n);
+        c.appendChild(title);
         return c;
     }
     function metricRow(parent, labelI18n, valueId, unit) {
@@ -88,9 +107,9 @@
             grid: { left: 44, right: 16, top: 18, bottom: 24 },
             tooltip: { trigger: "axis" },
             xAxis: { type: "time", axisLine: { show: false }, axisTick: { show: false },
-                axisLabel: { color: "var(--color-faint)", fontSize: 11 } },
+                axisLabel: { color: cssVar("--color-faint"), fontSize: 11 } },
             yAxis: { type: "value", max: (v) => Math.max(100, Math.ceil(v.max / 100) * 100),
-                axisLabel: { color: "var(--color-faint)", fontSize: 11, formatter: "{value}" + (unit || "") },
+                axisLabel: { color: cssVar("--color-faint"), fontSize: 11, formatter: "{value}" + (unit || "") },
                 splitLine: { lineStyle: { color: "rgba(128,128,128,.12)" } } },
             series: [{
                 type: "line", showSymbol: false, smooth: true, data: series,
@@ -495,15 +514,15 @@
                 tooltip: { trigger: "axis" },
                 legend: {
                     data: [t("read", "读取"), t("write", "写入"), t("ioWait", "等待")],
-                    textStyle: { color: "var(--color-subtle)", fontSize: 11 },
+                    textStyle: { color: cssVar("--color-subtle"), fontSize: 11 },
                     top: 0
                 },
-                xAxis: { type: "time", axisLabel: { color: "var(--color-faint)", fontSize: 10 }, axisLine: { lineStyle: { color: "var(--color-border)" } } },
+                xAxis: { type: "time", axisLabel: { color: cssVar("--color-faint"), fontSize: 10 }, axisLine: { lineStyle: { color: cssVar("--color-border") } } },
                 yAxis: [
-                    { type: "value", name: "KB/s", nameTextStyle: { color: "var(--color-faint)", fontSize: 10 },
-                      axisLabel: { color: "var(--color-faint)", fontSize: 10 }, splitLine: { lineStyle: { color: "var(--color-border)" } } },
+                    { type: "value", name: "KB/s", nameTextStyle: { color: cssVar("--color-faint"), fontSize: 10 },
+                      axisLabel: { color: cssVar("--color-faint"), fontSize: 10 }, splitLine: { lineStyle: { color: cssVar("--color-border") } } },
                     { type: "value", name: "%", min: 0, max: 100, position: "right",
-                      axisLabel: { color: "var(--color-faint)", fontSize: 10 }, splitLine: { show: false } }
+                      axisLabel: { color: cssVar("--color-faint"), fontSize: 10 }, splitLine: { show: false } }
                 ],
                 series: [
                     { name: t("read", "读取"), type: "line", showSymbol: false, smooth: true, yAxisIndex: 0,
@@ -593,9 +612,9 @@
             ch.setOption({
                 grid: { left: 44, right: 16, top: 30, bottom: 24 },
                 tooltip: { trigger: "axis" },
-                legend: { data: [t("download", "下载"), t("upload", "上传")], textStyle: { color: "var(--color-subtle)" }, top: 0, right: 0 },
-                xAxis: { type: "time", axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: "var(--color-faint)", fontSize: 11 } },
-                yAxis: { type: "value", axisLabel: { color: "var(--color-faint)", fontSize: 11 }, splitLine: { lineStyle: { color: "rgba(128,128,128,.12)" } } },
+                legend: { data: [t("download", "下载"), t("upload", "上传")], textStyle: { color: cssVar("--color-subtle") }, top: 0, right: 0 },
+                xAxis: { type: "time", axisLine: { show: false }, axisTick: { show: false }, axisLabel: { color: cssVar("--color-faint"), fontSize: 11 } },
+                yAxis: { type: "value", axisLabel: { color: cssVar("--color-faint"), fontSize: 11 }, splitLine: { lineStyle: { color: "rgba(128,128,128,.12)" } } },
                 series: [
                     { name: t("download", "下载"), type: "line", showSymbol: false, smooth: true, data: down, lineStyle: { width: 2, color: "rgb(52,199,89)" }, areaStyle: { color: "rgba(52,199,89,.12)" } },
                     { name: t("upload", "上传"), type: "line", showSymbol: false, smooth: true, data: up, lineStyle: { width: 2, color: "rgb(255,159,10)" }, areaStyle: { color: "rgba(255,159,10,.12)" } },
@@ -644,9 +663,13 @@
     ];
     function buildNav() {
         const nav = $("#sidebar-nav");
+        const activeSection = (nav.querySelector(".nav-item.active") || {}).dataset &&
+            nav.querySelector(".nav-item.active").dataset.section;
         nav.innerHTML = "";
-        NAV.forEach((item, idx) => {
-            const a = el("div", "nav-item" + (idx === 0 ? " active" : ""));
+        NAV.forEach((item) => {
+            const a = el("div", "nav-item");
+            if (item.section === activeSection) a.classList.add("active");
+            a.dataset.section = item.section;
             a.innerHTML = `<span class="dot"></span><span>${t(item.i18n, item.i18n)}</span>`;
             a.addEventListener("click", () => switchSection(item.section, a));
             nav.appendChild(a);
@@ -669,7 +692,49 @@
         document.querySelectorAll("[data-i18n]").forEach((e) => {
             e.textContent = t(e.getAttribute("data-i18n"), e.getAttribute("data-i18n"));
         });
+        // 侧边栏导航文字（无 data-i18n 属性，需单独刷新）
+        document.querySelectorAll(".nav-item").forEach((n) => {
+            const item = NAV.find((x) => x.section === n.dataset.section);
+            if (item) n.querySelector("span:last-child").textContent = t(item.i18n, item.i18n);
+        });
         document.title = t("title", "系统监控面板");
+    }
+
+    /* ============ 语言切换 ============ */
+    function setLang(next) {
+        if (!LANGS[next]) return;
+        lang = next;
+        T = LANGS[lang] || {};
+        setCookie("lang", lang);
+        document.documentElement.lang = lang;
+        applyI18n();
+        const sel = $("#lang-select"); if (sel) sel.value = lang;
+        // 图表内部文本（legend / 轴名）依赖 t()，需重渲染可见图表
+        const activeSection = document.querySelector(".section.active");
+        const sec = activeSection ? activeSection.dataset.section : "basic";
+        if (lastSnap) {
+            requestAnimationFrame(() => {
+                activateCharts(sec);
+                Object.values(charts).forEach((c) => c && c.resize());
+            });
+        }
+    }
+
+    /* ============ 主题切换 ============ */
+    function setTheme(mode) {
+        if (mode === "light" || mode === "dark") document.documentElement.dataset.theme = mode;
+        else delete document.documentElement.dataset.theme;
+        setCookie("theme", mode);
+        const sel = $("#theme-select"); if (sel) sel.value = mode;
+        // ECharts 在 canvas 渲染，需重渲染以套用新 CSS 变量色
+        if (lastSnap) {
+            requestAnimationFrame(() => {
+                const activeSection = document.querySelector(".section.active");
+                const sec = activeSection ? activeSection.dataset.section : "basic";
+                activateCharts(sec);
+                Object.values(charts).forEach((c) => c && c.resize());
+            });
+        }
     }
 
     /* ============ 数据连接 ============ */
@@ -700,11 +765,39 @@
     }
 
     function boot() {
+        document.documentElement.lang = lang;
         applyI18n();
         buildNav();
+        initControls();
         fetch("/api/cache").then((r) => r.json()).then(onSnapshot).catch(() => {});
         startWebSocket();
         window.addEventListener("resize", () => Object.values(charts).forEach((c) => c.resize()));
+    }
+
+    /* ============ 语言 / 主题控件 ============ */
+    function initControls() {
+        // 语言下拉
+        const langSel = $("#lang-select");
+        if (langSel) {
+            langSel.innerHTML = "";
+            LANG_ORDER.forEach((code) => {
+                const cfg = (window.LANGUAGE_CONFIG || {})[code] || {};
+                const opt = el("option", null, cfg.nativeName || cfg.name || code);
+                opt.value = code;
+                langSel.appendChild(opt);
+            });
+            langSel.value = lang;
+            langSel.addEventListener("change", (e) => setLang(e.target.value));
+        }
+        // 主题下拉
+        const themeSel = $("#theme-select");
+        if (themeSel) {
+            const savedTheme = getCookie("theme") || "auto";
+            if (savedTheme === "light" || savedTheme === "dark") document.documentElement.dataset.theme = savedTheme;
+            else delete document.documentElement.dataset.theme;
+            themeSel.value = savedTheme;
+            themeSel.addEventListener("change", (e) => setTheme(e.target.value));
+        }
     }
 
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
