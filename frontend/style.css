@@ -26,12 +26,19 @@ html { scroll-behavior: smooth; }
 body {
     margin: 0;
     background: var(--color-canvas);
+    background-repeat: no-repeat;
     color: var(--color-ink);
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue",
         "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
+    transition: background-color .2s ease, color .2s ease;
 }
+/* 开启自定义背景后，给侧边栏与主内容加半透明遮罩以保证文字可读性 */
+body.has-custom-bg .sidebar-bg { background: color-mix(in srgb, var(--color-sidebar) 82%, transparent); }
+body.has-custom-bg .surface-1,
+body.has-custom-bg .surface-2 { background: color-mix(in srgb, var(--color-surface) 88%, transparent); }
+body.has-custom-bg main { background: color-mix(in srgb, var(--color-canvas) 78%, transparent); }
 
 /* 不依赖边框的层级区分：用底色深浅 + 柔和阴影 */
 .surface-1 { background: var(--color-surface); }
