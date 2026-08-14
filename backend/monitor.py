@@ -312,6 +312,10 @@ def collect_real_time_data():
                     if pid not in net_snapshot:
                         del _PROC_NET_LAST[pid]
                 _PROC_NET_LAST.update(net_snapshot)
+            # 过滤系统伪进程：它们不是真实占用，且 CPU 会被累加至多核之和（如 System Idle Process 达 1000%+）
+            sys_names = {"system idle process", "system", "registry", "memory compression", "kernel_task"}
+            proc_list = [p for p in proc_list
+                         if not (p["pid"] == 0 or p["name"].strip().lower() in sys_names)]
             proc_list.sort(key=lambda x: x["cpu"], reverse=True)
             DATA_CACHE["processes"] = proc_list[:20]
         except Exception:
