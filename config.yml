@@ -24,3 +24,40 @@ disk_filter:
     - vfat
     - squashfs
     - tmpfs
+
+# WebUI 配置
+web_ui: 
+  # 自定义浏览器页面的标题
+  page_title: 
+    # 启用
+    enable: false
+    # 不同语言的配置
+    # 未配置的项目将使用语言文件中的默认值，默认为“系统监控面板“
+    lang: 
+      zh-CN: 
+      de-DE:
+      en-US:
+      es-ES:
+      fr-FR:
+      id-ID:
+      ja-JP:
+      ko-KR:
+      ru-RU:
+      th-TH:
+  # 自定义网页页面的标题
+  web_title:
+    # 启用
+    enable: false
+    # 不同语言的配置
+    # 未配置的项目将使用语言文件中的默认值，默认为“SystemStatus“
+    lang: 
+      zh-CN: 
+      de-DE:
+      en-US:
+      es-ES:
+      fr-FR:
+      id-ID:
+      ja-JP:
+      ko-KR:
+      ru-RU:
+      th-TH:
