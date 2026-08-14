@@ -58,6 +58,7 @@ window.LANGUAGE_DATA['zh-CN'] = {
         themeAuto: "跟随系统",
         themeLight: "浅色",
         themeDark: "深色",
+        settingBg: "自定义背景",
         read: "读取",
         write: "写入",
         ioWait: "等待",

@@ -55,6 +55,7 @@ window.LANGUAGE_DATA['id-ID'] = {
         themeAuto: "Ikuti sistem",
         themeLight: "Terang",
         themeDark: "Gelap",
+        settingBg: "Latar Kustom",
         read: "Baca",
         write: "Tulis",
         ioWait: "Tunggu I/O",

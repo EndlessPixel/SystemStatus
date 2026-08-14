@@ -55,6 +55,7 @@ window.LANGUAGE_DATA['ru-RU'] = {
         themeAuto: "Как в системе",
         themeLight: "Светлая",
         themeDark: "Тёмная",
+        settingBg: "Свой фон",
         read: "Чтение",
         write: "Запись",
         ioWait: "Ожидание",

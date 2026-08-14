@@ -55,6 +55,7 @@ window.LANGUAGE_DATA['fr-FR'] = {
         themeAuto: "Selon le système",
         themeLight: "Clair",
         themeDark: "Sombre",
+        settingBg: "Arrière-plan perso",
         read: "Lecture",
         write: "Écriture",
         ioWait: "Attente E/S",
