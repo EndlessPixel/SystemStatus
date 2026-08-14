@@ -1,7 +1,7 @@
 // 语言翻译 - SystemStatus
 // Deutsch (German) 翻译文件
 window.LANGUAGE_DATA = window.LANGUAGE_DATA || {};
-window.LANGUAGE_DATA['de'] = {
+window.LANGUAGE_DATA['de-DE'] = {
         // 页面标题
         title: "System-Monitor",
         appName: "SystemStatus",

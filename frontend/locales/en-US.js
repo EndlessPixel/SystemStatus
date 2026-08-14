@@ -1,7 +1,7 @@
 // 语言翻译 - SystemStatus
 // 此文件由 translations.js 自动聚合，请勿手动修改外层结构
 window.LANGUAGE_DATA = window.LANGUAGE_DATA || {};
-window.LANGUAGE_DATA['en'] = {
+window.LANGUAGE_DATA['en-US'] = {
         // 页面标题
         title: "System Monitor",
         appName: "SystemStatus",

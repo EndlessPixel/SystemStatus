@@ -1,7 +1,7 @@
 // 语言翻译 - SystemStatus
 // 此文件由 translations.js 自动聚合，请勿手动修改外层结构
 window.LANGUAGE_DATA = window.LANGUAGE_DATA || {};
-window.LANGUAGE_DATA['zh'] = {
+window.LANGUAGE_DATA['zh-CN'] = {
         // 页面标题
         title: "系统监控面板",
         appName: "SystemStatus",
