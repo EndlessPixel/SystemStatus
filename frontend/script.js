@@ -901,7 +901,7 @@
     }
 
     /* ============ 自定义背景 ============ */
-    const BG_CANDIDATES = ["/static/background.jpg", "/static/background.png", "/static/background.webp"];
+    const BG_CANDIDATES = ["/public/background.jpg", "/public/background.png", "/public/background.webp"];
     function applyBackground() {
         const on = getCookie("bg") === "on";
         if (!on) {
