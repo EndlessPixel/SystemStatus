@@ -632,8 +632,10 @@ body {
 /* CPU核心样式 */
 .cpu-cores-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
     gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .core-box {
@@ -805,7 +807,9 @@ body {
 #net-chart,
 #system-chart,
 #usage-chart,
-#cpu-freq-container {
+#cpu-freq-container,
+#memory-chart,
+#gpu-chart {
     height: 400px;
 }
 
@@ -1265,13 +1269,6 @@ body {
 .panel-title {
     margin-bottom: 25px;
     /* 增加面板标题间距 */
-}
-
-/* CPU核心容器增加间距 */
-.cpu-cores-container {
-    gap: 15px;
-    /* 增加核心卡片间距 */
-    margin-top: 20px;
 }
 
 /* 硬盘信息优化 */
