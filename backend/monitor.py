@@ -8,7 +8,7 @@ import platform
 import json
 import os
 from typing import Dict, List
-from .hardware import get_hardware_info, NVML_AVAILABLE, NVML_HANDLE, shutdown_nvml
+from .hardware import get_hardware_info, NVML_AVAILABLE, NVML_HANDLE, shutdown_nvml, map_physical_disk
 from .app_config import get_display_config
 
 # 数据缓存
@@ -27,6 +27,10 @@ DATA_CACHE = {
     "battery_info": {},
     "cpu_temperature": [],
 }
+
+# 磁盘 IO 历史（按物理磁盘聚合）：{physical_disk: {"read":[], "write":[], "busy":[]}}
+DISK_IO_HISTORY = {}
+_DISK_IO_LAST = {}  # {physical_disk: (read_bytes, write_bytes, busy_time_ms, ts)}
 
 CACHE_DURATION = 120  # 2分钟缓存
 CACHE_FILE = "tmp.json"
@@ -125,6 +129,36 @@ def collect_real_time_data():
         upload_speed, download_speed = calculate_net_speed()
         DATA_CACHE["net_upload_speed"].append((timestamp, upload_speed))
         DATA_CACHE["net_download_speed"].append((timestamp, download_speed))
+
+        # 磁盘 IO（按物理磁盘聚合：读写速率 KB/s + 忙碌/等待占比 %）
+        try:
+            io_counters = psutil.disk_io_counters(perdisk=True) or {}
+            cur = {}
+            for k, c in io_counters.items():
+                pd = map_physical_disk(k)
+                rb, wb = c.read_bytes, c.write_bytes
+                bt = getattr(c, "busy_time", 0) or 0  # 仅 Linux 可用
+                if pd in cur:
+                    cur[pd][0] += rb; cur[pd][1] += wb; cur[pd][2] += bt
+                else:
+                    cur[pd] = [rb, wb, bt]
+            for pd, (rb, wb, bt) in cur.items():
+                last = _DISK_IO_LAST.get(pd)
+                if last:
+                    dt = timestamp - last[3]
+                    if dt > 0.1:
+                        read_kbs = (rb - last[0]) / 1024 / dt
+                        write_kbs = (wb - last[1]) / 1024 / dt
+                        busy_pct = ((bt - last[2]) / 1000 / dt * 100) if (bt - last[2]) > 0 else 0
+                        hist = DISK_IO_HISTORY.setdefault(pd, {"read": [], "write": [], "busy": []})
+                        hist["read"].append((timestamp, round(read_kbs, 1)))
+                        hist["write"].append((timestamp, round(write_kbs, 1)))
+                        hist["busy"].append((timestamp, round(min(busy_pct, 100), 1)))
+                        for kk in hist:
+                            hist[kk] = [x for x in hist[kk] if timestamp - x[0] <= CACHE_DURATION]
+                _DISK_IO_LAST[pd] = (rb, wb, bt, timestamp)
+        except Exception:
+            pass
 
         # 系统负载
         if hasattr(psutil, 'getloadavg'):
@@ -235,6 +269,16 @@ def get_real_time_data() -> Dict:
         # 转换为毫秒级时间戳（ECharts需要）
         return [[int(round(t * 1000)), val] for t, val in data]
 
+    def format_disk_io(hist: Dict) -> Dict:
+        out = {}
+        for pd, series in hist.items():
+            out[pd] = {
+                "read": format_data(series.get("read", [])),
+                "write": format_data(series.get("write", [])),
+                "busy": format_data(series.get("busy", [])),
+            }
+        return out
+
     return {
         "cpu_usage": format_data(DATA_CACHE["cpu_usage"]),
         "mem_usage": format_data(DATA_CACHE["mem_usage"]),
@@ -249,6 +293,7 @@ def get_real_time_data() -> Dict:
         "cpu_freq": format_data(DATA_CACHE["cpu_freq"]),
         "boot_time": DATA_CACHE["boot_time"],
         "battery_info": DATA_CACHE["battery_info"],
+        "disk_io": format_disk_io(DISK_IO_HISTORY),
         "timestamp": time.time()
     }
 
