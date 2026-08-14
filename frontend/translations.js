@@ -11,32 +11,44 @@ window.LANGUAGES = window.LANGUAGE_DATA;
 // 语言选择配置（下拉菜单展示）
 // 新增语言时请同时在 frontend/locales/ 下添加对应 <code>.js 文件
 window.LANGUAGE_CONFIG = {
-    'zh': {
+    'zh-CN': {
         name: 'Chinese',
         nativeName: '简体中文'
     },
-    'en': {
+    'en-US': {
         name: 'English',
         nativeName: 'English'
     },
-    'ja': {
+    'ja-JP': {
         name: 'Japanese',
         nativeName: '日本語'
     },
-    'fr': {
+    'fr-FR': {
         name: 'French',
         nativeName: 'Français'
     },
-    'de': {
+    'de-DE': {
         name: 'German',
         nativeName: 'Deutsch'
     },
-    'ru': {
+    'ru-RU': {
         name: 'Russian',
         nativeName: 'Русский'
     },
-    'ko': {
+    'ko-KR': {
         name: 'Korean',
         nativeName: '한국어'
+    },
+    'es-ES': {
+        name: 'Spanish',
+        nativeName: 'Español'
+    },
+    'id-ID': {
+        name: 'Indonesian',
+        nativeName: 'Bahasa Indonesia'
+    },
+    'th-TH': {
+        name: 'Thai',
+        nativeName: 'ไทย'
     }
 };
