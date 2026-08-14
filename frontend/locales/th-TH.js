@@ -30,6 +30,7 @@ window.LANGUAGE_DATA['th-TH'] = {
         memModel: "รุ่นหน่วยความจำ",
         cpuUsage: "การใช้งาน CPU",
         perCore: "การใช้งานต่อคอร์",
+        perCoreFreq: "ความถี่ต่อคอร์",
         cpuFreq: "ความถี่ CPU",
         memUsage: "การใช้งานหน่วยความจำ",
         memDetail: "รายละเอียดหน่วยความจำ",

@@ -30,6 +30,7 @@ window.LANGUAGE_DATA['id-ID'] = {
         memModel: "Model Memori",
         cpuUsage: "Penggunaan CPU",
         perCore: "Penggunaan per Inti",
+        perCoreFreq: "Frekuensi per Inti",
         cpuFreq: "Frekuensi CPU",
         memUsage: "Penggunaan Memori",
         memDetail: "Detail Memori",

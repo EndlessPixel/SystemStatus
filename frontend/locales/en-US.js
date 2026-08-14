@@ -31,6 +31,7 @@ window.LANGUAGE_DATA['en-US'] = {
         memModel: "Memory Model",
         cpuUsage: "CPU Usage",
         perCore: "Per-Core Usage",
+        perCoreFreq: "Per-Core Frequency",
         cpuFreq: "CPU Frequency",
         memUsage: "Memory Usage",
         memDetail: "Memory Detail",
