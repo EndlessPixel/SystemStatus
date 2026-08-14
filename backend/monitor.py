@@ -146,8 +146,10 @@ def collect_real_time_data():
         if gpu_usage == 0:
             try:
                 ig = get_intel_gpu_usage()
-                if ig is not None:
-                    gpu_usage = ig
+                if isinstance(ig, dict):
+                    if ig.get("utilization") is not None:
+                        gpu_usage = ig["utilization"]
+                    DATA_CACHE["gpu_intel_details"] = ig
             except Exception:
                 pass
 
@@ -359,6 +361,7 @@ def update_cache_file():
                 "cpu_usage": DATA_CACHE["cpu_usage"],
                 "mem_usage": DATA_CACHE["mem_usage"],
                 "gpu_usage": DATA_CACHE["gpu_usage"],
+                "gpu_intel_details": DATA_CACHE.get("gpu_intel_details"),
                 "net_upload_speed": DATA_CACHE["net_upload_speed"],
                 "net_download_speed": DATA_CACHE["net_download_speed"],
                 "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
