@@ -6,6 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="title">系统监控面板</title>
 
+    <!-- 早期应用主题 cookie，避免首屏闪烁 -->
+    <script>
+        (function () {
+            try {
+                const m = document.cookie.match(/(?:^|;\s*)theme=([^;]+)/);
+                const theme = m ? m[1] : "auto";
+                if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+            } catch (e) {}
+        })();
+    </script>
+
     <!-- Tailwind CSS v4（浏览器运行时编译） -->
     <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
     <!-- 引入本地 style.css（含 @import "tailwindcss" 与 Apple 风格设计令牌），由 browser runtime 编译 -->
@@ -52,7 +63,22 @@
 
             <nav id="sidebar-nav" class="flex flex-col gap-1"></nav>
 
-            <div class="mt-auto px-2 pt-6">
+            <div class="mt-auto px-2 pt-6 space-y-3">
+                <!-- 语言 / 主题切换 -->
+                <div class="flex flex-col gap-2">
+                    <label class="text-[11px] text-[var(--color-faint)] flex items-center gap-1.5" data-i18n="settingLang">语言</label>
+                    <select id="lang-select"
+                            class="w-full text-[13px] rounded-lg px-2 py-1.5 cursor-pointer outline-none"
+                            style="background:var(--color-surface);color:var(--color-ink);border:1px solid var(--color-sidebar)"></select>
+                    <label class="text-[11px] text-[var(--color-faint)] flex items-center gap-1.5" data-i18n="settingTheme">主题</label>
+                    <select id="theme-select"
+                            class="w-full text-[13px] rounded-lg px-2 py-1.5 cursor-pointer outline-none"
+                            style="background:var(--color-surface);color:var(--color-ink);border:1px solid var(--color-sidebar)">
+                        <option value="auto" data-i18n="themeAuto">跟随系统</option>
+                        <option value="light" data-i18n="themeLight">浅色</option>
+                        <option value="dark" data-i18n="themeDark">深色</option>
+                    </select>
+                </div>
                 <div class="flex items-center gap-2 text-[12px] text-[var(--color-faint)]">
                     <span id="status-dot" class="status-dot" style="background:var(--color-faint)"></span>
                     <span id="status-text" data-i18n="connecting">连接中…</span>
