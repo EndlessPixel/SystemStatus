@@ -52,3 +52,8 @@ window.LANGUAGE_CONFIG = {
         nativeName: 'ไทย'
     }
 };
+
+// 下拉菜单顺序（与 index.html 加载顺序一致）
+window.LANGUAGE_ORDER = [
+    'zh-CN', 'en-US', 'ja-JP', 'fr-FR', 'de-DE', 'ru-RU', 'ko-KR', 'es-ES', 'id-ID', 'th-TH'
+];
