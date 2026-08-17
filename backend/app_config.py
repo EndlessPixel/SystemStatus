@@ -7,8 +7,23 @@ from typing import Dict, List
 
 try:
     import yaml
+    _YAML_LOADER = "pyyaml"
 except ImportError:
-    yaml = None
+    try:
+        # ruamel.yaml 为纯 Python 实现，兼容 Python 3.14（PyYAML 的 C 扩展在 3.13+ 无法构建）
+        from ruamel.yaml import YAML as _RuamelYAML
+        _yaml_loader = _RuamelYAML(typ="safe")
+        def _safe_load(stream):
+            return _yaml_loader.load(stream)
+        class _YamlShim:
+            @staticmethod
+            def safe_load(stream):
+                return _safe_load(stream)
+        yaml = _YamlShim
+        _YAML_LOADER = "ruamel"
+    except ImportError:
+        yaml = None
+        _YAML_LOADER = None
 
 BASE_DIR = Path(__file__).parent.parent
 CONFIG_PATH = BASE_DIR / "config.yml"
