@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import subprocess
 os.environ["PYTHONFAULTHANDLER"] = "0"
 if sys.platform == "win32":
@@ -7,6 +8,19 @@ if sys.platform == "win32":
         import win32api
         win32api.SetConsoleCtrlHandler(None, 0)
     except:pass
+
+    # Windows 下静默处理底层 socket 异常（如网络切换导致的 WinError 64），
+    # 避免 asyncio 回调把已断开连接的错误刷成 traceback
+    def _loop_exception_handler(loop, context):
+        exc = context.get("exception")
+        msg = str(context.get("message", ""))
+        if isinstance(exc, OSError) or "recvfrom" in msg or "WinError 64" in msg:
+            return
+        loop.default_exception_handler(context)
+    try:
+        asyncio.get_event_loop().set_exception_handler(_loop_exception_handler)
+    except Exception:
+        pass
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
@@ -172,5 +186,14 @@ if __name__ == "__main__":
     start_monitor()
     try:
         import uvicorn
-        uvicorn.run(app, host=HOST, port=PORT)
+        # Windows 下用 wsproto 处理 WebSocket：基于纯 asyncio 流，规避 ProactorEventLoop
+        # 在 UDP/传输 socket 上的 WinError 64 异常（默认 websockets 库会冒泡到 asyncio 回调）
+        run_kwargs = {}
+        if sys.platform == "win32":
+            try:
+                import wsproto  # noqa: F401
+                run_kwargs["ws"] = "wsproto"
+            except Exception:
+                pass
+        uvicorn.run(app, host=HOST, port=PORT, **run_kwargs)
     finally:shutdown_nvml()
