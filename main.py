@@ -9,16 +9,32 @@ if sys.platform == "win32":
         win32api.SetConsoleCtrlHandler(None, 0)
     except:pass
 
-    # Windows 下静默处理底层 socket 异常（如网络切换导致的 WinError 64），
-    # 避免 asyncio 回调把已断开连接的错误刷成 traceback
+    # Windows 下静默处理底层 socket 异常（如网络切换 / 客户端断开导致的
+    # WinError 10054、WinError 64），避免 asyncio 把已断开连接的清理错误刷成 traceback。
+    # 这些异常属于正常断连，不需要打日志，也不影响服务运行。
+
+    # 1) 全局异常处理器：忽略 OSError / recvfrom / WinError 64 / WinError 10054
     def _loop_exception_handler(loop, context):
         exc = context.get("exception")
         msg = str(context.get("message", ""))
-        if isinstance(exc, OSError) or "recvfrom" in msg or "WinError 64" in msg:
+        if isinstance(exc, OSError) or "recvfrom" in msg or "WinError 64" in msg or "WinError 10054" in msg:
             return
         loop.default_exception_handler(context)
+
+    # 2) monkeypatch：Proactor 在连接丢失回调里对关闭的 socket 调 shutdown() 会抛
+    #    ConnectionResetError(WinError 10054)，这里直接吞掉，避免刷屏。
     try:
-        asyncio.get_event_loop().set_exception_handler(_loop_exception_handler)
+        _orig_call_connection_lost = asyncio.ProactorBasePipeTransport._call_connection_lost
+        def _patched_call_connection_lost(self, exc):
+            if exc is None or isinstance(exc, (ConnectionResetError, ConnectionAbortedError,
+                                              BrokenPipeError)) or (isinstance(exc, OSError) and
+                                              getattr(exc, "winerror", None) in (64, 10054)):
+                exc = None
+            try:
+                _orig_call_connection_lost(self, exc)
+            except (OSError, RuntimeError):
+                pass
+        asyncio.ProactorBasePipeTransport._call_connection_lost = _patched_call_connection_lost
     except Exception:
         pass
 from fastapi import FastAPI, Request, HTTPException
@@ -193,6 +209,14 @@ if __name__ == "__main__":
             try:
                 import wsproto  # noqa: F401
                 run_kwargs["ws"] = "wsproto"
+            except Exception:
+                pass
+            # 在 uvicorn 真正运行的 loop 上挂异常处理器（避免 get_event_loop 拿到旧 loop 而失效）
+            try:
+                loop = asyncio.new_event_loop()
+                asyncio.set_event_loop(loop)
+                loop.set_exception_handler(_loop_exception_handler)
+                run_kwargs["loop"] = loop
             except Exception:
                 pass
         uvicorn.run(app, host=HOST, port=PORT, **run_kwargs)
