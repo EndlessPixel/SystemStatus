@@ -202,6 +202,10 @@ if __name__ == "__main__":
     start_monitor()
     try:
         import uvicorn
+        import threading
+        import time
+        import socket
+
         # Windows 下用 wsproto 处理 WebSocket：基于纯 asyncio 流，规避 ProactorEventLoop
         # 在 UDP/传输 socket 上的 WinError 64 异常（默认 websockets 库会冒泡到 asyncio 回调）
         run_kwargs = {}
@@ -211,13 +215,59 @@ if __name__ == "__main__":
                 run_kwargs["ws"] = "wsproto"
             except Exception:
                 pass
-            # 在 uvicorn 真正运行的 loop 上挂异常处理器（避免 get_event_loop 拿到旧 loop 而失效）
+
+        def make_config():
+            cfg = uvicorn.Config(app, host=HOST, port=PORT, **run_kwargs)
+            return cfg
+
+        # 看门狗：监听 socket 因网络变动（WinError 64 等）失效后，uvicorn 不会自动重绑，
+        # 表现为「端口占用但不再服务」。这里周期性探测本地连通性，发现监听死亡即让当前
+        # server 退出，由外层循环重建并重新绑定端口，实现自愈。
+        current_server = {"ref": None}
+
+        def _watchdog():
+            while True:
+                time.sleep(5)
+                srv = current_server["ref"]
+                if srv is None:
+                    continue
+                alive = False
+                try:
+                    # uvicorn 内部维护的监听 server 列表非空，且本地 TCP 实际可连，才算活着
+                    if getattr(srv, "servers", None):
+                        with socket.create_connection(("127.0.0.1", PORT), timeout=2):
+                            alive = True
+                except Exception:
+                    alive = False
+                if not alive:
+                    try:
+                        srv.should_exit = True
+                    except Exception:
+                        pass
+
+        wd = threading.Thread(target=_watchdog, daemon=True)
+        wd.start()
+
+        # 外层看门狗循环：server.run() 退出（异常或 should_exit）后，重建 server 重新绑定端口。
+        # 每次重建都会创建全新的事件循环与监听 socket，从而彻底摆脱失效的底层网络名。
+        restart_delay = 1
+        while True:
             try:
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-                loop.set_exception_handler(_loop_exception_handler)
-                run_kwargs["loop"] = loop
-            except Exception:
-                pass
-        uvicorn.run(app, host=HOST, port=PORT, **run_kwargs)
-    finally:shutdown_nvml()
+                asyncio.set_event_loop(None)  # 丢弃可能已损坏的旧 loop
+                if sys.platform == "win32":
+                    try:
+                        loop = asyncio.new_event_loop()
+                        asyncio.set_event_loop(loop)
+                        loop.set_exception_handler(_loop_exception_handler)
+                    except Exception:
+                        pass
+                server = uvicorn.Server(make_config())
+                current_server["ref"] = server
+                server.run()
+            except Exception as e:
+                print(f"[WARN] uvicorn server stopped ({e}); restarting in {restart_delay}s...")
+            current_server["ref"] = None
+            time.sleep(restart_delay)
+            restart_delay = min(restart_delay * 2, 30)
+    finally:
+        shutdown_nvml()
