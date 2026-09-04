@@ -455,32 +455,40 @@
             if (refs.coreFills[i]) { setBar(refs.coreFills[i].fill, u); refs.coreFills[i].val.textContent = Math.round(u) + "%"; }
         });
 
-        // 每核频率
+        // 每核频率（只渲染实际读到的，不强行扩展到与占用核心数一致，
+        // 否则虚拟化环境里会多出大量「—」）。
         const coreFreqs = rt.cpu_core_freq || [];
-        const n = Math.max(cores.length, coreFreqs.length);
-        if (n !== refs.cpuCoreFreqs.childElementCount) {
+        if (coreFreqs.length !== refs.cpuCoreFreqs.childElementCount) {
             refs.cpuCoreFreqs.innerHTML = "";
             refs.coreFreqVals = [];
-            for (let i = 0; i < n; i++) {
+            coreFreqs.forEach((_, i) => {
                 const row = el("div");
                 row.innerHTML = `<div class="flex justify-between text-[12px] mb-1">
                     <span class="text-[var(--color-subtle)]">#${i}</span>
                     <span class="font-medium core-freq-val">—</span></div>`;
                 refs.cpuCoreFreqs.appendChild(row);
                 refs.coreFreqVals.push(row.querySelector(".core-freq-val"));
-            }
+            });
         }
-        for (let i = 0; i < n; i++) {
+        coreFreqs.forEach((v, i) => {
             if (refs.coreFreqVals[i]) {
-                const v = coreFreqs[i];
                 refs.coreFreqVals[i].textContent = v != null ? Math.round(v) + " MHz" : "—";
             }
-        }
+        });
 
-        // 每核占用与每核频率数量对不上（常见于 LXC 等容器）：读了也分不清谁是谁，
-        // 默认折叠这两块，点击卡片标题可展开查看。
+        // 折叠/提示策略：
+        //  - 完全读不到频率（cpu_core_freq_available=false）→ 折叠两块并提示
+        //  - 读到了但数量与占用核心不一致（QEMU/LXC 常见）→ 不折叠，仅附简短说明
+        const freqAvailable = rt.cpu_core_freq_available !== false;
         const consistent = rt.cpu_cores_consistent !== false;
-        setCoreCardsCollapsed(!consistent, consistent ? "" : t("coreMismatch", "核心占用数与频率数不一致，无法一一对应，已默认收起"));
+        if (!freqAvailable) {
+            setCoreCardsCollapsed(true, t("coreFreqNone", "无法读取每核心频率，已默认收起"));
+        } else if (!consistent) {
+            setCoreCardsCollapsed(false, t("coreFreqPartial",
+                `仅检测到 ${coreFreqs.length} 个核心频率，无法与 ${cores.length} 个占用核心一一对应`));
+        } else {
+            setCoreCardsCollapsed(false, "");
+        }
 
         const freq = rt.cpu_freq || [];
         const fLast = freq.length ? freq[freq.length - 1][1] : 0;
