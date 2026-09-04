@@ -935,23 +935,29 @@
     }
 
     /* ============ 语言切换 ============ */
+    // 卡片内大量文本（metric 标签、磁盘/网络/进程表头等）在 build 阶段用 t() 写死，
+    // 切换语言后仅靠 applyI18n 刷新不了，因此切换语言时整体重建界面静态结构。
+    function rebuildUI() {
+        // 先释放旧图表实例，避免持有已移除的 DOM
+        Object.values(charts).forEach((c) => { try { c && c.dispose(); } catch (e) {} });
+        for (const k in charts) delete charts[k];
+        ["sec-basic", "sec-cpu", "sec-memory", "sec-disk", "sec-gpu", "sec-network", "sec-process"]
+            .forEach((id) => { const s = document.getElementById(id); if (s) s.innerHTML = ""; });
+        built = false;
+        if (lastSnap) firstRender(lastSnap);
+        applyI18n();
+        const active = document.querySelector(".section.active");
+        const sec = active ? active.dataset.section : "basic";
+        activateCharts(sec);
+    }
     function setLang(next) {
         if (!LANGS[next]) return;
         lang = next;
         T = LANGS[lang] || {};
         setCookie("lang", lang);
         document.documentElement.lang = lang;
-        applyI18n();
+        rebuildUI();
         const sel = $("#lang-select"); if (sel) sel.value = lang;
-        // 图表内部文本（legend / 轴名）依赖 t()，需重渲染可见图表
-        const activeSection = document.querySelector(".section.active");
-        const sec = activeSection ? activeSection.dataset.section : "basic";
-        if (lastSnap) {
-            requestAnimationFrame(() => {
-                activateCharts(sec);
-                Object.values(charts).forEach((c) => c && c.resize());
-            });
-        }
     }
 
     /* ============ 主题切换 ============ */
