@@ -85,7 +85,7 @@
         });
         if (hintEl) {
             hintEl.textContent = hint || "";
-            hintEl.classList.toggle("hidden", !collapsed);
+            hintEl.classList.toggle("hidden", !hint);
         }
     }
     function toggleCoreCards() {
@@ -485,7 +485,8 @@
             setCoreCardsCollapsed(true, t("coreFreqNone", "无法读取每核心频率，已默认收起"));
         } else if (!consistent) {
             setCoreCardsCollapsed(false, t("coreFreqPartial",
-                `仅检测到 ${coreFreqs.length} 个核心频率，无法与 ${cores.length} 个占用核心一一对应`));
+                "仅检测到 {n} 个核心频率，无法与 {m} 个占用核心一一对应")
+                .replace("{n}", coreFreqs.length).replace("{m}", cores.length));
         } else {
             setCoreCardsCollapsed(false, "");
         }
