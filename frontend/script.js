@@ -172,6 +172,13 @@
         procLine.innerHTML = `${t("procCount", "进程数")}: <span class="font-medium text-[var(--color-ink)]" id="b-proc">—</span>`;
         up.appendChild(loadLine); up.appendChild(procLine);
         grid.appendChild(up);
+        // 系统信息
+        const sys = card("sysInfo");
+        refs.bOs = metricRow(sys, "sysOs", "b-os", "");
+        refs.bArch = metricRow(sys, "sysArch", "b-arch", "");
+        refs.bLang = metricRow(sys, "sysLang", "b-lang", "");
+        refs.bBoot = metricRow(sys, "bootTime", "b-sysboot", "");
+        grid.appendChild(sys);
         // 内存型号
         const mm = card("memModel");
         refs.bMemModel = metricRow(mm, "model", "b-memmodel", "");
@@ -427,6 +434,11 @@
         $("#b-proc").textContent = proc != null ? proc : "—";
         refs.bMemModel.textContent = esc(mem.model);
         refs.bMemFreq.textContent = mem.mem_frequency != null ? mem.mem_frequency : "—";
+        const sysinfo = hw.system || {};
+        refs.bOs.textContent = esc(sysinfo.os);
+        refs.bArch.textContent = esc(sysinfo.arch);
+        refs.bLang.textContent = esc(sysinfo.lang);
+        refs.bBoot.textContent = fmtUptime(sysinfo.boot_time);
     }
 
     function updateCpu(snap) {
