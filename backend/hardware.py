@@ -7,6 +7,7 @@ import os
 import psutil
 import re
 import time
+import locale
 from typing import Dict, List
 import subprocess
 from backend.app_config import get_disk_filter
@@ -549,6 +550,58 @@ def _df_partitions() -> List[Dict]:
     return out
 
 
+def get_system_info() -> Dict:
+    """获取操作系统/系统信息：版本、架构、语言/区域、上次启动时间"""
+    # 系统版本
+    system = platform.system()  # Windows / Linux / Darwin
+    if system == "Linux":
+        # 优先读取 /etc/os-release 的 PRETTY_NAME，比 platform 的散装字段更友好
+        pretty = ""
+        try:
+            with open("/etc/os-release", "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    line = line.strip()
+                    if line.startswith("PRETTY_NAME="):
+                        pretty = line.split("=", 1)[1].strip().strip('"')
+                        break
+        except Exception:
+            pretty = ""
+        os_version = pretty or f"{system} {platform.release()}"
+    elif system == "Windows":
+        # platform.release() 在 Windows 上给出 10 / 11 / Server 2022 等
+        os_version = f"Windows {platform.release()}"
+    else:
+        os_version = f"{system} {platform.release()}"
+
+    # 架构
+    arch = platform.machine() or platform.architecture()[0]
+
+    # 语言/区域
+    lang = os.environ.get("LANG") or os.environ.get("LC_ALL")
+    if not lang:
+        try:
+            loc = locale.getlocale()
+            if loc and loc[0]:
+                lang = ".".join([p for p in loc if p])
+        except Exception:
+            lang = ""
+    if not lang:
+        lang = "unknown"
+
+    # 上次启动时间（Unix 时间戳）
+    try:
+        boot_time = psutil.boot_time()
+    except Exception:
+        boot_time = 0
+
+    return {
+        "os": os_version,
+        "arch": arch,
+        "lang": lang,
+        "boot_time": boot_time
+    }
+
+
 def get_hardware_info() -> Dict:
     """获取完整硬件信息"""
     # CPU
@@ -661,5 +714,6 @@ def get_hardware_info() -> Dict:
         "disk_smart": disk_smart,
         "gpu": gpu_info,
         "gpu_details": gpu_details,
-        "network": net_ifaces
+        "network": net_ifaces,
+        "system": get_system_info()
     }
