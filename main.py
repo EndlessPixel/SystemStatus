@@ -48,7 +48,11 @@ import time
 from backend.hardware import init_nvml, shutdown_nvml
 from backend.monitor import collect_real_time_data, restore_from_cache, update_cache_file
 from backend.routers import api_router
-from backend.app_config import get_server_config
+try:
+    from backend.app_config import get_server_config
+except Exception:  # 部署遗漏 app_config 时回退默认监听配置
+    def get_server_config():
+        return {"host": "0.0.0.0", "port": 8001}
 BASE_DIR = Path(__file__).parent.absolute()
 FRONTEND_DIR = BASE_DIR / "frontend"
 PUBLIC_DIR = BASE_DIR / "public"
