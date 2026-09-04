@@ -7,7 +7,15 @@ import asyncio
 
 from .. import monitor
 from ..hardware import get_hardware_info, get_gpu_info
-from ..app_config import get_server_config, get_display_config, get_web_ui_config
+try:
+    from ..app_config import get_server_config, get_display_config, get_web_ui_config
+except Exception:  # 部署遗漏 app_config 时回退默认配置
+    def get_server_config():
+        return {"host": "0.0.0.0", "port": 8001}
+    def get_display_config():
+        return {"show_network": True, "show_battery": True}
+    def get_web_ui_config():
+        return {"page_title": {"enable": False, "lang": {}}, "web_title": {"enable": False, "lang": {}}}
 
 api_router = APIRouter(prefix="/api")
 
