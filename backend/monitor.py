@@ -9,7 +9,11 @@ import json
 import os
 from typing import Dict, List
 from .hardware import get_hardware_info, NVML_AVAILABLE, NVML_HANDLE, shutdown_nvml, map_physical_disk, get_intel_gpu_usage, get_gpu_info
-from .app_config import get_display_config
+try:
+    from .app_config import get_display_config
+except Exception:  # 部署遗漏 app_config 时回退默认显示配置
+    def get_display_config():
+        return {"show_network": True, "show_battery": True}
 
 # 数据缓存
 DATA_CACHE = {
