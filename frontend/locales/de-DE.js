@@ -33,6 +33,8 @@ window.LANGUAGE_DATA['de-DE'] = {
         perCore: "Pro Kern",
         perCoreFreq: "Takt pro Kern",
         coreMismatch: "Anzahl der Kern-Auslastungen und -Takte stimmt nicht überein und lässt sich nicht zuordnen; standardmäßig eingeklappt",
+        coreFreqNone: "Takt pro Kern nicht verfügbar; standardmäßig eingeklappt",
+        coreFreqPartial: "Nur {n} Kern-Takte erkannt; lassen sich nicht {m} Auslastungskernen zuordnen",
         cpuFreq: "CPU-Takt",
         memUsage: "Speicherauslastung",
         memDetail: "Speicherdetails",

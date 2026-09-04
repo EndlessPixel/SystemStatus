@@ -32,6 +32,8 @@ window.LANGUAGE_DATA['id-ID'] = {
         perCore: "Penggunaan per Inti",
         perCoreFreq: "Frekuensi per Inti",
         coreMismatch: "Jumlah inti penggunaan dan frekuensi tidak cocok dan tidak dapat dipasangkan; disembunyikan secara default",
+        coreFreqNone: "Frekuensi per inti tidak tersedia; disembunyikan secara default",
+        coreFreqPartial: "Hanya {n} frekuensi inti terdeteksi; tidak dapat dipasangkan dengan {m} inti penggunaan",
         cpuFreq: "Frekuensi CPU",
         memUsage: "Penggunaan Memori",
         memDetail: "Detail Memori",

@@ -32,6 +32,8 @@ window.LANGUAGE_DATA['fr-FR'] = {
         perCore: "Par cœur",
         perCoreFreq: "Fréquence par cœur",
         coreMismatch: "Le nombre de cœurs d'utilisation et de fréquence ne correspond pas et ne peut pas être associé ; replié par défaut",
+        coreFreqNone: "Fréquence par cœur indisponible ; replié par défaut",
+        coreFreqPartial: "Seulement {n} fréquences de cœur détectées ; impossible de les associer aux {m} cœurs d'utilisation",
         cpuFreq: "Fréquence CPU",
         memUsage: "Utilisation mémoire",
         memDetail: "Détail mémoire",
