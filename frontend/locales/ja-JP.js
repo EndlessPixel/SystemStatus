@@ -67,6 +67,7 @@ window.LANGUAGE_DATA['ja-JP'] = {
         write: "書き込み",
         ioWait: "待機",
         partitions: "パーティション",
+        diskIoNone: "ディスク IO データがありません（より高い権限が必要な場合があります）",
         diskTotal: "合計",
         total: "合計", used: "使用中", free: "空き",
         disk: "ディスク",

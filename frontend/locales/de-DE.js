@@ -68,6 +68,7 @@ window.LANGUAGE_DATA['de-DE'] = {
         write: "Schreiben",
         ioWait: "E/A-Warte",
         partitions: "Partitionen",
+        diskIoNone: "Keine Festplatten-E/A-Daten (ggf. höhere Rechte erforderlich)",
         diskTotal: "Gesamt",
         total: "Gesamt", used: "Belegt", free: "Frei",
         disk: "Festplatte",

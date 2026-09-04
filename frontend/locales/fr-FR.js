@@ -67,6 +67,7 @@ window.LANGUAGE_DATA['fr-FR'] = {
         write: "Écriture",
         ioWait: "Attente E/S",
         partitions: "partitions",
+        diskIoNone: "Aucune donnée d'E/S disque (des privilèges plus élevés peuvent être requis)",
         diskTotal: "Total",
         total: "Total", used: "Utilisé", free: "Libre",
         disk: "Disque",

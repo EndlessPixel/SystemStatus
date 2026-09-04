@@ -70,6 +70,7 @@ window.LANGUAGE_DATA['zh-CN'] = {
         write: "写入",
         ioWait: "等待",
         partitions: "分区",
+        diskIoNone: "暂无磁盘 IO 数据（可能需要更高权限）",
         diskTotal: "合计",
         total: "总计", used: "已用", free: "可用",
         disk: "磁盘",
