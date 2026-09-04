@@ -3,6 +3,7 @@
 包括CPU、内存、GPU、网卡、硬盘等信息
 """
 import platform
+import os
 import psutil
 import re
 import time
@@ -521,6 +522,33 @@ def map_physical_disk(device: str) -> str:
     return re.sub(r'\d+$', '', d) or device
 
 
+def _df_partitions() -> List[Dict]:
+    """
+    LXC / 容器等 psutil.disk_partitions 读不到挂载点时，回退用 findmnt 解析挂载表。
+    用 findmnt 而非 df：findmnt 只读挂载表、不 stat 远程文件系统，不会卡在故障挂载点。
+    返回与 disk_partitions 同构的 dict 列表：{device, fstype, mountpoint, opts}
+    """
+    out = []
+    try:
+        env = dict(os.environ)
+        env["LC_ALL"] = "C"
+        result = subprocess.run(
+            ['findmnt', '--list', '-b', '-o', 'SOURCE,FSTYPE,TARGET'],
+            capture_output=True, text=True, timeout=5, encoding='utf-8', errors='ignore', env=env
+        )
+        for line in result.stdout.strip().split('\n'):
+            cols = line.split()
+            if len(cols) < 3:
+                continue
+            device, fstype, mountpoint = cols[0], cols[1], ' '.join(cols[2:])
+            if not mountpoint or not fstype or mountpoint == "TARGET" or fstype == "FSTYPE":
+                continue
+            out.append({"device": device, "fstype": fstype, "mountpoint": mountpoint, "opts": ""})
+    except Exception:
+        pass
+    return out
+
+
 def get_hardware_info() -> Dict:
     """获取完整硬件信息"""
     # CPU
@@ -544,34 +572,52 @@ def get_hardware_info() -> Dict:
     filter_mountpoints = disk_filter.get("mountpoints", [])
     filter_fstypes = set(disk_filter.get("fstypes", []))
 
-    for part in psutil.disk_partitions(all=False):
-        if "cdrom" in part.opts or part.fstype == "":
+    # 优先 psutil；在 LXC 等容器里 disk_partitions 常返回空或不完整，回退到 df
+    raw_parts = [{"device": p.device, "fstype": p.fstype, "mountpoint": p.mountpoint, "opts": p.opts}
+                 for p in psutil.disk_partitions(all=False)]
+    if not raw_parts and platform.system() == "Linux":
+        raw_parts = _df_partitions()
+
+    for part in raw_parts:
+        if "cdrom" in part["opts"] or part["fstype"] == "":
+            continue
+        # findmnt 回退会带出 tmpfs/devtmpfs 等虚拟文件系统，过滤掉明显无监控意义的类型
+        # 注意：保留 overlay（LXC 容器根文件系统常是 overlay），不过滤
+        if part["fstype"] in ("tmpfs", "devtmpfs", "efivarfs", "devpts", "sysfs", "proc",
+                              "securityfs", "cgroup", "cgroup2", "debugfs", "tracefs",
+                              "mqueue", "autofs", "binfmt_misc", "configfs", "fusectl", "pstore", "bpf"):
             continue
         # 命中任一过滤规则则跳过：设备名 / 挂载点 / 文件系统类型
-        if part.device in filter_devices:
+        if part["device"] in filter_devices:
             continue
-        if part.fstype in filter_fstypes:
+        if part["fstype"] in filter_fstypes:
             continue
         if any(
-            part.mountpoint == mp or part.mountpoint.startswith(mp.rstrip("/") + "/")
+            part["mountpoint"] == mp or part["mountpoint"].startswith(mp.rstrip("/") + "/")
             for mp in filter_mountpoints
         ):
             continue
         # Linux 下过滤 /dev/loop* 循环设备（snap、docker 等挂载），避免冗余条目
-        if platform.system() == "Linux" and part.device.startswith("/dev/loop"):
+        if platform.system() == "Linux" and part["device"].startswith("/dev/loop"):
             continue
         try:
-            usage = psutil.disk_usage(part.mountpoint)
+            # 容器环境下 psutil.disk_usage 可能因权限抛错，改用更底层的 os.statvfs
+            st = os.statvfs(part["mountpoint"])
+            total = st.f_blocks * st.f_frsize
+            free = st.f_bavail * st.f_frsize
+            used = total - free
+            if total <= 0:
+                continue
             disks.append({
-                "device": part.device,
-                "physical_disk": map_physical_disk(part.device),
-                "mountpoint": part.mountpoint,
-                "fstype": part.fstype,
-                "total": round(usage.total / (1024**3), 2),
-                "used": round(usage.used / (1024**3), 2),
-                "usage_percent": round(usage.percent, 1)
+                "device": part["device"],
+                "physical_disk": map_physical_disk(part["device"]),
+                "mountpoint": part["mountpoint"],
+                "fstype": part["fstype"],
+                "total": round(total / (1024**3), 2),
+                "used": round(used / (1024**3), 2),
+                "usage_percent": round(used / total * 100, 1)
             })
-        except:
+        except Exception:
             continue
 
     # 显卡
