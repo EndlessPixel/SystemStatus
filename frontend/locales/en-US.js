@@ -32,6 +32,7 @@ window.LANGUAGE_DATA['en-US'] = {
         cpuUsage: "CPU Usage",
         perCore: "Per-Core Usage",
         perCoreFreq: "Per-Core Frequency",
+        coreMismatch: "Core usage count and frequency count don't match and can't be paired; collapsed by default",
         cpuFreq: "CPU Frequency",
         memUsage: "Memory Usage",
         memDetail: "Memory Detail",

@@ -31,6 +31,7 @@ window.LANGUAGE_DATA['ja-JP'] = {
         cpuUsage: "CPU 使用率",
         perCore: "コア別使用率",
         perCoreFreq: "コア別周波数",
+        coreMismatch: "使用率と周波数のコア数が一致せず紐付けできないため、既定で折りたたんでいます",
         cpuFreq: "CPU 周波数",
         memUsage: "メモリ使用率",
         memDetail: "メモリ詳細",

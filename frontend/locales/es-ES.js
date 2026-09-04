@@ -31,6 +31,7 @@ window.LANGUAGE_DATA['es-ES'] = {
         cpuUsage: "Uso de CPU",
         perCore: "Uso por núcleo",
         perCoreFreq: "Frecuencia por núcleo",
+        coreMismatch: "El número de núcleos de uso y de frecuencia no coincide y no se pueden emparejar; plegado por defecto",
         cpuFreq: "Frecuencia de CPU",
         memUsage: "Uso de memoria",
         memDetail: "Detalle de memoria",

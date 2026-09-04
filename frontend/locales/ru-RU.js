@@ -31,6 +31,7 @@ window.LANGUAGE_DATA['ru-RU'] = {
         cpuUsage: "Загрузка ЦП",
         perCore: "По ядрам",
         perCoreFreq: "Частота по ядрам",
+        coreMismatch: "Количество ядер загрузки и частоты не совпадает и не сопоставляется; свёрнуто по умолчанию",
         cpuFreq: "Частота ЦП",
         memUsage: "Загрузка памяти",
         memDetail: "Подробно",

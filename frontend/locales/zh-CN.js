@@ -34,6 +34,7 @@ window.LANGUAGE_DATA['zh-CN'] = {
         cpuUsage: "CPU 占用率",
         perCore: "每核心占用",
         perCoreFreq: "每核心频率",
+        coreMismatch: "核心占用数与频率数不一致，无法一一对应，已默认收起",
         cpuFreq: "CPU 频率",
         memUsage: "内存占用率",
         memDetail: "内存详情",
