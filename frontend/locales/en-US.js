@@ -68,6 +68,7 @@ window.LANGUAGE_DATA['en-US'] = {
         write: "Write",
         ioWait: "I/O Wait",
         partitions: "partitions",
+        diskIoNone: "No disk I/O data (higher privileges may be required)",
         diskTotal: "Total",
         total: "Total", used: "Used", free: "Free",
         disk: "Disk",

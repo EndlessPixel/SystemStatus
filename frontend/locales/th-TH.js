@@ -67,6 +67,7 @@ window.LANGUAGE_DATA['th-TH'] = {
         write: "เขียน",
         ioWait: "รอ I/O",
         partitions: "พาร์ติชัน",
+        diskIoNone: "ไม่มีข้อมูล IO ของดิสก์ (อาจต้องการสิทธิ์ที่สูงกว่า)",
         diskTotal: "รวม",
         total: "รวม", used: "ใช้ไป", free: "ว่าง",
         disk: "ดิสก์",

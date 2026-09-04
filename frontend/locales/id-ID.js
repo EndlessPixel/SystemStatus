@@ -67,6 +67,7 @@ window.LANGUAGE_DATA['id-ID'] = {
         write: "Tulis",
         ioWait: "Tunggu I/O",
         partitions: "partisi",
+        diskIoNone: "Tidak ada data IO disk (mungkin memerlukan hak akses lebih tinggi)",
         diskTotal: "Total",
         total: "Total", used: "Terpakai", free: "Tersedia",
         disk: "Disk",

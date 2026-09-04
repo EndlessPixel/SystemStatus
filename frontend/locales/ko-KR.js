@@ -67,6 +67,7 @@ window.LANGUAGE_DATA['ko-KR'] = {
         write: "쓰기",
         ioWait: "대기",
         partitions: "파티션",
+        diskIoNone: "디스크 IO 데이터가 없습니다(더 높은 권한이 필요할 수 있음)",
         diskTotal: "합계",
         total: "전체", used: "사용됨", free: "사용 가능",
         disk: "디스크",

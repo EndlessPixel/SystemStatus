@@ -67,6 +67,7 @@ window.LANGUAGE_DATA['ru-RU'] = {
         write: "Запись",
         ioWait: "Ожидание",
         partitions: "разделов",
+        diskIoNone: "Нет данных дискового ввода-вывода (могут потребоваться более высокие права)",
         diskTotal: "Всего",
         total: "Всего", used: "Занято", free: "Свободно",
         disk: "Диск",
