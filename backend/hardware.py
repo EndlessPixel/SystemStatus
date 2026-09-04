@@ -654,8 +654,11 @@ def get_hardware_info() -> Dict:
             for mp in filter_mountpoints
         ):
             continue
-        # Linux 下过滤 /dev/loop* 循环设备（snap、docker 等挂载），避免冗余条目
-        if platform.system() == "Linux" and part["device"].startswith("/dev/loop"):
+        # Linux 下过滤 /dev/loop* 循环设备（snap、docker 等挂载），避免冗余条目。
+        # 但 LXC/LXD 等容器常把 loop 设备作为真正的根文件系统（/dev/loop0 -> /），
+        # 此时不能过滤，否则容器里会一块盘都读不到。
+        if (platform.system() == "Linux" and part["device"].startswith("/dev/loop")
+                and part["mountpoint"] != "/"):
             continue
         try:
             # 容器环境下 psutil.disk_usage 可能因权限抛错，改用更底层的 os.statvfs
