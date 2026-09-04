@@ -454,6 +454,14 @@ def get_real_time_data() -> Dict:
         "cpu_temperature": format_data(DATA_CACHE["cpu_temperature"]),
         "cpu_core_usage": DATA_CACHE["cpu_core_usage"],
         "cpu_core_freq": DATA_CACHE["cpu_core_freq"],
+        # 每核占用与每核频率数量是否一致。容器（如 LXC）中两者数量常常
+        # 对不上（占用能看到宿主机全部逻辑核心，频率只能读到有限几个），
+        # 此时无法一一对应，前端应默认折叠这两块以免显示混乱。
+        "cpu_cores_consistent": bool(
+            DATA_CACHE["cpu_core_usage"]
+            and DATA_CACHE["cpu_core_freq"]
+            and len(DATA_CACHE["cpu_core_usage"]) == len(DATA_CACHE["cpu_core_freq"])
+        ),
         "cpu_freq": format_data(DATA_CACHE["cpu_freq"]),
         "boot_time": DATA_CACHE["boot_time"],
         "battery_info": DATA_CACHE["battery_info"],
