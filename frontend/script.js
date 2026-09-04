@@ -649,7 +649,16 @@
             const ch = ensureChart(ref.chartId);
             if (!ch) return;  // 容器隐藏或零尺寸时跳过，待激活时渲染
             if (!series) {
-                ch.clear(); return;
+                // 无 IO 数据（如容器无 /proc/diskstats 权限）时给出提示，而非空白图表
+                ch.clear();
+                ch.setOption({
+                    title: {
+                        text: t("diskIoNone", "暂无磁盘 IO 数据（可能需要更高权限）"),
+                        left: "center", top: "middle",
+                        textStyle: { color: cssVar("--color-faint"), fontSize: 12, fontWeight: "normal" }
+                    }
+                });
+                return;
             }
             const option = {
                 grid: { left: 48, right: 48, top: 30, bottom: 24 },
