@@ -210,9 +210,13 @@ def collect_real_time_data():
             io_counters = psutil.disk_io_counters(perdisk=True) or {}
             cur = {}
             is_linux = platform.system() == "Linux"
+            # 跳过循环设备以避免与分区过滤口径不一致；但 LXC/LXD 等容器常把
+            # loop 设备作为真正的根盘，此时系统里除 loop 外没有其他真实块设备，
+            # 若仍跳过会导致容器里完全没有 IO 数据（图表空白）。
+            has_real_disk = any(not k.startswith("loop") for k in io_counters.keys())
             for k, c in io_counters.items():
-                if is_linux and k.startswith("loop"):
-                    continue  # 跳过循环设备，避免与分区过滤口径不一致
+                if is_linux and k.startswith("loop") and has_real_disk:
+                    continue
                 pd = map_physical_disk(k)
                 rb, wb = c.read_bytes, c.write_bytes
                 bt = getattr(c, "busy_time", 0) or 0  # 仅 Linux 可用
