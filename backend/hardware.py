@@ -10,7 +10,11 @@ import time
 import locale
 from typing import Dict, List
 import subprocess
-from backend.app_config import get_disk_filter
+try:
+    from backend.app_config import get_disk_filter
+except Exception:  # 部署遗漏 app_config 时回退默认过滤，避免整个服务起不来
+    def get_disk_filter():
+        return {"devices": [], "mountpoints": ["/boot/efi"], "fstypes": ["vfat", "squashfs", "tmpfs"]}
 
 # NVML全局变量
 NVML_AVAILABLE = False
