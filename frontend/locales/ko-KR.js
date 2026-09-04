@@ -32,6 +32,8 @@ window.LANGUAGE_DATA['ko-KR'] = {
         perCore: "코어별 사용률",
         perCoreFreq: "코어별 주파수",
         coreMismatch: "사용률 코어 수와 주파수 코어 수가 일치하지 않아 대응할 수 없으므로 기본적으로 접었습니다",
+        coreFreqNone: "코어별 주파수를 읽을 수 없어 기본적으로 접었습니다",
+        coreFreqPartial: "감지된 코어 주파수는 {n}개뿐이며 사용률 코어 {m}개와 대응할 수 없습니다",
         cpuFreq: "CPU 주파수",
         memUsage: "메모리 사용률",
         memDetail: "메모리 상세",
