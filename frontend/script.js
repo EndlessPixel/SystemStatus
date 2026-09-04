@@ -71,6 +71,28 @@
         c.appendChild(title);
         return c;
     }
+    // 折叠/展开「每核占用」「每核频率」两张卡片（数量对不上时默认收起）
+    const _coreCardsCollapsed = { state: false };
+    function setCoreCardsCollapsed(collapsed, hint) {
+        const cardA = $("#card-cpu-cores"), cardB = $("#card-cpu-core-freq");
+        const hintEl = $("#cpu-cores-hint");
+        if (!cardA || !cardB) return;
+        _coreCardsCollapsed.state = collapsed;
+        [cardA, cardB].forEach((cardEl) => {
+            cardEl.classList.toggle("collapsed", collapsed);
+            const title = cardEl.querySelector(".card-title");
+            if (title) title.classList.toggle("collapsible", collapsed);
+        });
+        if (hintEl) {
+            hintEl.textContent = hint || "";
+            hintEl.classList.toggle("hidden", !collapsed);
+        }
+    }
+    function toggleCoreCards() {
+        const cardA = $("#card-cpu-cores");
+        if (!cardA) return;
+        setCoreCardsCollapsed(!cardA.classList.contains("collapsed"), "");
+    }
     function metricRow(parent, labelI18n, valueId, unit) {
         const row = el("div", "flex items-baseline justify-between py-1.5");
         row.appendChild(el("span", "metric-label", t(labelI18n, labelI18n)));
@@ -185,12 +207,17 @@
         // 每核使用率（整行）
         const core = card("perCore");
         core.className += " xl:col-span-2";
+        core.id = "card-cpu-cores";
         const cw = el("div", "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-2"); cw.id = "cpu-cores";
         core.appendChild(cw); refs.cpuCores = cw;
+        const coreHint = el("div", "cpu-core-hint hidden"); coreHint.id = "cpu-cores-hint";
+        core.appendChild(coreHint);
         grid.appendChild(core);
+        core.querySelector(".card-title").addEventListener("click", () => toggleCoreCards());
         // 每核频率（整行）
         const coreFreq = card("perCoreFreq");
         coreFreq.className += " xl:col-span-2";
+        coreFreq.id = "card-cpu-core-freq";
         const cfw = el("div", "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-x-4 gap-y-2"); cfw.id = "cpu-core-freqs";
         coreFreq.appendChild(cfw); refs.cpuCoreFreqs = cfw;
         grid.appendChild(coreFreq);
@@ -449,6 +476,11 @@
                 refs.coreFreqVals[i].textContent = v != null ? Math.round(v) + " MHz" : "—";
             }
         }
+
+        // 每核占用与每核频率数量对不上（常见于 LXC 等容器）：读了也分不清谁是谁，
+        // 默认折叠这两块，点击卡片标题可展开查看。
+        const consistent = rt.cpu_cores_consistent !== false;
+        setCoreCardsCollapsed(!consistent, consistent ? "" : t("coreMismatch", "核心占用数与频率数不一致，无法一一对应，已默认收起"));
 
         const freq = rt.cpu_freq || [];
         const fLast = freq.length ? freq[freq.length - 1][1] : 0;
