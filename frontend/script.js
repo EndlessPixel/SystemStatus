@@ -886,7 +886,11 @@
     }
 
     /* ============ 连接状态 ============ */
+    // 记录当前连接状态：切换语言时 applyI18n 会把 #status-text 重置回「连接中…」，
+    // 需在 i18n 刷新后用当前状态重新渲染，否则会一直卡在「连接中…」。
+    let connOk = null;
     function setStatus(ok) {
+        connOk = !!ok;
         const dot = $("#status-dot"), txt = $("#status-text");
         dot.style.background = ok ? "var(--color-green)" : "var(--color-red)";
         txt.textContent = ok ? t("connected", "已连接") : t("disconnected", "连接断开");
@@ -980,6 +984,9 @@
         });
         // 浏览器标签页标题，可被 web_ui.page_title 覆盖
         document.title = effectiveText("page_title", "系统监控面板");
+        // #status-text 带 data-i18n="connecting"，上面会被重置回「连接中…」；
+        // 若已确定连接状态，用新语言重新渲染真实状态（已连接 / 连接断开）。
+        if (connOk !== null) setStatus(connOk);
     }
 
     /* ============ 语言切换 ============ */
