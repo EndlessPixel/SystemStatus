@@ -2,3 +2,4 @@ tmp.json
 __pycache__
 .venv
 *.log
+.codebuddy/
