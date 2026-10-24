@@ -77,26 +77,37 @@
         return c;
     }
     // 折叠/展开「每核占用」「每核频率」两张卡片（数量对不上时默认收起）
-    const _coreCardsCollapsed = { state: false };
-    function setCoreCardsCollapsed(collapsed, hint) {
+    // 注意：自动策略与用户手动操作要分开。updateCpu 每秒都会跑，若每帧无条件
+    // 设置折叠状态，用户手动折叠后会被立刻重置回展开，折叠等于失效。
+    let _autoCollapseApplied = null; // 上次自动应用的目标；null 表示尚未应用
+    function setCoreCardsCollapsed(collapsed) {
         const cardA = $("#card-cpu-cores"), cardB = $("#card-cpu-core-freq");
-        const hintEl = $("#cpu-cores-hint");
         if (!cardA || !cardB) return;
-        _coreCardsCollapsed.state = collapsed;
         [cardA, cardB].forEach((cardEl) => {
             cardEl.classList.toggle("collapsed", collapsed);
             const title = cardEl.querySelector(".card-title");
             if (title) title.classList.toggle("collapsible", collapsed);
         });
-        if (hintEl) {
-            hintEl.textContent = hint || "";
-            hintEl.classList.toggle("hidden", !hint);
-        }
+    }
+    function setCoreHint(hint) {
+        const hintEl = $("#cpu-cores-hint");
+        if (!hintEl) return;
+        hintEl.textContent = hint || "";
+        hintEl.classList.toggle("hidden", !hint);
+    }
+    // 自动策略：提示文本每次都更新；折叠状态仅在「目标发生变化」时应用，
+    // 因此用户手动折叠后不会被后续数据刷新覆盖。
+    function applyCoreAutoCollapse(target, hint) {
+        setCoreHint(hint);
+        if (_autoCollapseApplied === target) return;
+        _autoCollapseApplied = target;
+        setCoreCardsCollapsed(target);
     }
     function toggleCoreCards() {
         const cardA = $("#card-cpu-cores");
         if (!cardA) return;
-        setCoreCardsCollapsed(!cardA.classList.contains("collapsed"), "");
+        // 仅切换折叠，不改动自动目标，也不清空提示
+        setCoreCardsCollapsed(!cardA.classList.contains("collapsed"));
     }
     function metricRow(parent, labelI18n, valueId, unit) {
         const row = el("div", "flex items-baseline justify-between py-1.5");
@@ -503,13 +514,13 @@
         const freqAvailable = rt.cpu_core_freq_available !== false;
         const consistent = rt.cpu_cores_consistent !== false;
         if (!freqAvailable) {
-            setCoreCardsCollapsed(true, t("coreFreqNone", "无法读取每核心频率，已默认收起"));
+            applyCoreAutoCollapse(true, t("coreFreqNone", "无法读取每核心频率，已默认收起"));
         } else if (!consistent) {
-            setCoreCardsCollapsed(false, t("coreFreqPartial",
+            applyCoreAutoCollapse(false, t("coreFreqPartial",
                 "仅检测到 {n} 个核心频率，无法与 {m} 个占用核心一一对应")
                 .replace("{n}", coreFreqs.length).replace("{m}", cores.length));
         } else {
-            setCoreCardsCollapsed(false, "");
+            applyCoreAutoCollapse(false, "");
         }
 
         const freq = rt.cpu_freq || [];
@@ -996,14 +1007,31 @@
         // 先释放旧图表实例，避免持有已移除的 DOM
         Object.values(charts).forEach((c) => { try { c && c.dispose(); } catch (e) {} });
         for (const k in charts) delete charts[k];
+        // 卡片已被重建（无 collapsed 类），需让自动折叠策略重新应用一次
+        _autoCollapseApplied = null;
+        // 保留用户已选中的网卡，避免切换语言后跳回第一张
+        const keepNic = refs.netSelectedNic;
         ["sec-basic", "sec-cpu", "sec-memory", "sec-disk", "sec-gpu", "sec-network", "sec-process"]
             .forEach((id) => { const s = document.getElementById(id); if (s) s.innerHTML = ""; });
         built = false;
         if (lastSnap) firstRender(lastSnap);
+        // 恢复网卡选择（该网卡仍存在时才恢复，否则回退默认第一张）
+        if (keepNic) {
+            const names = (((lastSnap || {}).hardware_info || {}).network) || [];
+            if (names.some((n) => n.name === keepNic)) {
+                refs.netSelectedNic = keepNic;
+                // 用恢复后的选择重渲染：高亮、标题与网卡图表
+                if (lastSnap) updateNetwork(lastSnap);
+            }
+        }
         applyI18n();
         const active = document.querySelector(".section.active");
         const sec = active ? active.dataset.section : "basic";
-        activateCharts(sec);
+        // 等布局完成后再初始化图表，避免容器零尺寸导致图表不渲染
+        requestAnimationFrame(() => {
+            activateCharts(sec);
+            Object.values(charts).forEach((c) => c && c.resize());
+        });
     }
     function setLang(next) {
         if (!LANGS[next]) return;

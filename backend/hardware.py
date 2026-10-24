@@ -8,6 +8,7 @@ import psutil
 import re
 import time
 import locale
+import functools
 from typing import Dict, List
 import subprocess
 try:
@@ -20,6 +21,35 @@ except Exception:  # 部署遗漏 app_config 时回退默认过滤，避免整�
 NVML_AVAILABLE = False
 NVML_HANDLE = None
 NVML_PERMANENTLY_DISABLED = False
+
+# ===== 慢采集结果缓存 =====
+# get_hardware_info() 会被 /api/data 与 WebSocket 每秒调用，其中的 smartctl / dmidecode
+# 等外部命令结果变化极慢（分钟级），若每次都 fork 子进程，会严重拖慢采集线程
+# （smartctl 最多 8 块盘、每块 8s 超时）。这里按 TTL 缓存这些慢采集结果。
+_SLOW_TTL = 60.0  # 秒
+
+def _cached_slow(ttl=_SLOW_TTL):
+    """缓存慢采集函数的结果，ttl 秒内直接返回上次结果。"""
+    def deco(fn):
+        st = {"ts": 0.0, "val": None, "ok": False}
+        @functools.wraps(fn)
+        def wrapper(*args, **kwargs):
+            now = time.time()
+            if st["ok"] and (now - st["ts"]) < ttl:
+                return st["val"]
+            try:
+                val = fn(*args, **kwargs)
+            except Exception:
+                # 采集失败时：有旧值就用旧值，绝不因缓存层引入新的失败模式
+                if st["ok"]:
+                    return st["val"]
+                raise
+            st["val"] = val
+            st["ts"] = now
+            st["ok"] = True
+            return val
+        return wrapper
+    return deco
 
 def init_nvml():
     """初始化NVML并获取设备句柄"""
@@ -80,6 +110,7 @@ def get_cpu_model() -> str:
     except:
         return "Unknown CPU Model"
 
+@_cached_slow()
 def get_memory_model() -> str:
     """获取内存型号"""
     try:
@@ -105,6 +136,7 @@ def get_memory_model() -> str:
     except:
         return "DDR Series"
 
+@_cached_slow()
 def get_gpu_info() -> Dict:
     """
     获取 GPU 信息（NVIDIA/Intel/AMD 跨平台识别）
@@ -301,6 +333,7 @@ def get_gpu_details() -> Dict:
     return details
 
 
+@_cached_slow()
 def get_memory_frequency() -> object:
     """
     获取内存频率（MHz），无法获取时返回 None
@@ -383,6 +416,7 @@ def get_memory_frequency() -> object:
     return None
 
 
+@_cached_slow()
 def get_disk_smart() -> List[Dict]:
     """
     获取硬盘 SMART 属性（需 smartmontools，Linux 下通常需要 root）
