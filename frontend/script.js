@@ -52,7 +52,12 @@
         if (html !== undefined) e.innerHTML = html;
         return e;
     };
-    const esc = (s) => (s == null ? "—" : String(s));
+    // HTML 转义：用于拼接 innerHTML 的动态数据（网卡名、磁盘/分区名、挂载点等），
+    // 防止系统返回的文本携带标签/事件属性造成 XSS。
+    const _ESC_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    const esc = (s) => (s == null ? "—" : String(s).replace(/[&<>"']/g, (c) => _ESC_MAP[c]));
+    // 仅做「空值占位」的字符串化：用于 textContent 赋值（不可转义，否则会显示实体）
+    const txt = (s) => (s == null ? "—" : String(s));
     const fmtUptime = (bootTime) => {
         if (!bootTime) return "—";
         const s = Math.floor(Date.now() / 1000 - bootTime);
@@ -426,22 +431,22 @@
         const hw = snap.hardware_info || {};
         const rt = snap.real_time_data || {};
         const cpu = hw.cpu || {}, mem = hw.memory || {}, net = hw.network || [], gpu = hw.gpu || {};
-        refs.bCpu.textContent = esc(cpu.model);
+        refs.bCpu.textContent = txt(cpu.model);
         refs.bCore.textContent = `${cpu.cores || 0} / ${cpu.physical_cores || 0}`;
         refs.bMem.textContent = mem.total != null ? mem.total : "—";
-        $("#b-gpu").textContent = esc(gpu.model);
+        $("#b-gpu").textContent = txt(gpu.model);
         $("#b-net").textContent = net.map((n) => n.name).join(", ") || "—";
         refs.bUptime.textContent = fmtUptime(rt.boot_time);
         const load = (rt.system_load || []).slice(-1)[0]?.[1];
         $("#b-load").textContent = load != null ? load : "—";
         const proc = (rt.process_count || []).slice(-1)[0]?.[1];
         $("#b-proc").textContent = proc != null ? proc : "—";
-        refs.bMemModel.textContent = esc(mem.model);
+        refs.bMemModel.textContent = txt(mem.model);
         refs.bMemFreq.textContent = mem.mem_frequency != null ? mem.mem_frequency : "—";
         const sysinfo = hw.system || {};
-        refs.bOs.textContent = esc(sysinfo.os);
-        refs.bArch.textContent = esc(sysinfo.arch);
-        refs.bLang.textContent = esc(sysinfo.lang);
+        refs.bOs.textContent = txt(sysinfo.os);
+        refs.bArch.textContent = txt(sysinfo.arch);
+        refs.bLang.textContent = txt(sysinfo.lang);
         refs.bBoot.textContent = fmtUptime(sysinfo.boot_time);
     }
 
@@ -536,7 +541,7 @@
         refs.memTotal.textContent = totalGb;
         refs.memUsedD.textContent = usedGb.toFixed(1);
         refs.memFree.textContent = (totalGb - usedGb).toFixed(1);
-        refs.memModel.textContent = esc(mem.model);
+        refs.memModel.textContent = txt(mem.model);
         refs.memFreq.textContent = mem.mem_frequency != null ? mem.mem_frequency : "—";
 
         // 交换分区 / 页面文件
@@ -716,7 +721,7 @@
             buildGpuContent();
         }
         if (!hasGpu) return;
-        refs.gpuModel.textContent = esc(info.model || det.model);
+        refs.gpuModel.textContent = txt(info.model || det.model);
         // 利用率：优先用硬件详情里的静态值，否则回退到实时采集（Intel 等无 NVML 显卡）
         if (det.utilization != null) {
             refs.gpuUsage.textContent = det.utilization;
@@ -844,7 +849,7 @@
         const ch = ensureChart("net-nic-chart");
         if (!ch) return;
         const series = (nic && perNic[nic]) || { up: [], down: [] };
-        if (refs.nicSelected) refs.nicSelected.textContent = `${esc(nic || "—")} · ${t("nicTraffic", "网卡流量")}`;
+        if (refs.nicSelected) refs.nicSelected.textContent = `${txt(nic || "—")} · ${t("nicTraffic", "网卡流量")}`;
         ch.setOption({
             grid: { left: 44, right: 16, top: 30, bottom: 24 },
             tooltip: { trigger: "axis" },
