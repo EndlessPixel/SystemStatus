@@ -127,13 +127,17 @@
     }
     function lineOption(series, color, unit) {
         const area = color.replace("rgb(", "rgba(").replace(")", ",.18)");
+        // 窄屏压缩留白与字号，保证坐标轴标签不被裁掉
+        const narrow = window.innerWidth < 640;
+        const fs = narrow ? 10 : 11;
         return {
-            grid: { left: 44, right: 16, top: 18, bottom: 24 },
+            grid: { left: narrow ? 34 : 44, right: narrow ? 10 : 16, top: 18, bottom: narrow ? 20 : 24 },
             tooltip: { trigger: "axis" },
             xAxis: { type: "time", axisLine: { show: false }, axisTick: { show: false },
-                axisLabel: { color: cssVar("--color-faint"), fontSize: 11 } },
+                axisLabel: { color: cssVar("--color-faint"), fontSize: fs,
+                    hideOverlap: true } },
             yAxis: { type: "value", max: (v) => Math.max(100, Math.ceil(v.max / 100) * 100),
-                axisLabel: { color: cssVar("--color-faint"), fontSize: 11, formatter: "{value}" + (unit || "") },
+                axisLabel: { color: cssVar("--color-faint"), fontSize: fs, formatter: "{value}" + (unit || "") },
                 splitLine: { lineStyle: { color: "rgba(128,128,128,.12)" } } },
             series: [{
                 type: "line", showSymbol: false, smooth: true, data: series,
@@ -199,7 +203,7 @@
         big.appendChild(head);
         const track = el("div", "bar-track mt-2"); const fill = el("div", "bar-fill"); track.appendChild(fill);
         refs.cpuFill = fill; big.appendChild(track);
-        const chart = el("div"); chart.id = "cpu-chart"; chart.style.cssText = "height:200px;margin-top:14px";
+        const chart = el("div", "chart-box"); chart.id = "cpu-chart"; chart.style.cssText = "height:200px;margin-top:14px";
         big.appendChild(chart);
         grid.appendChild(big);
         // 频率 + 图表
@@ -208,7 +212,7 @@
         const fv = el("span", "metric-value"); fv.id = "cpu-freq-val"; fv.textContent = "0";
         fhead.appendChild(fv); fhead.appendChild(el("span", "metric-unit", "MHz"));
         freq.appendChild(fhead);
-        const fchart = el("div"); fchart.id = "cpu-freq-chart"; fchart.style.cssText = "height:200px;margin-top:10px";
+        const fchart = el("div", "chart-box"); fchart.id = "cpu-freq-chart"; fchart.style.cssText = "height:200px;margin-top:10px";
         freq.appendChild(fchart);
         grid.appendChild(freq);
         // 每核使用率（整行）
@@ -245,7 +249,7 @@
         usage.appendChild(pctTxt);
         const track = el("div", "bar-track mt-2"); const fill = el("div", "bar-fill"); track.appendChild(fill);
         refs.memFill = fill; usage.appendChild(track);
-        const chart = el("div"); chart.id = "mem-chart"; chart.style.cssText = "height:200px;margin-top:14px";
+        const chart = el("div", "chart-box"); chart.id = "mem-chart"; chart.style.cssText = "height:200px;margin-top:14px";
         usage.appendChild(chart);
         grid.appendChild(usage);
 
@@ -293,7 +297,7 @@
         refs.gpuTemp = metricRow(g, "temp", "gpu-temp", "°C");
         refs.gpuFreq = metricRow(g, "freq", "gpu-freq", "MHz");
         // GPU 使用率历史图
-        const gchart = el("div"); gchart.id = "gpu-chart"; gchart.style.cssText = "height:160px;margin-top:12px";
+        const gchart = el("div", "chart-box"); gchart.id = "gpu-chart"; gchart.style.cssText = "height:160px;margin-top:12px";
         g.appendChild(gchart);
         grid.appendChild(g);
         const gm = card("gpuMem");
@@ -330,7 +334,7 @@
             <div class="flex items-end gap-1"><span class="metric-value" id="net-up" style="font-size:24px">0</span><span class="metric-unit">KB/s</span></div>`;
         head.appendChild(down); head.appendChild(up);
         traffic.appendChild(head);
-        const chart = el("div"); chart.id = "net-chart"; chart.style.cssText = "height:200px";
+        const chart = el("div", "chart-box"); chart.id = "net-chart"; chart.style.cssText = "height:200px";
         traffic.appendChild(chart);
         grid.appendChild(traffic);
 
@@ -346,7 +350,7 @@
         nicCard.className += " xl:col-span-2";
         refs.nicSelected = el("div", "text-[12px] text-[var(--color-faint)] mb-1");
         nicCard.appendChild(refs.nicSelected);
-        const nicChart = el("div"); nicChart.id = "net-nic-chart"; nicChart.style.cssText = "height:200px";
+        const nicChart = el("div", "chart-box"); nicChart.id = "net-nic-chart"; nicChart.style.cssText = "height:200px";
         nicCard.appendChild(nicChart);
         grid.appendChild(nicCard);
         refs.netSelectedNic = null;
@@ -619,7 +623,7 @@
                 });
                 c.appendChild(plist);
                 // IO 图表（读写 + 等待）
-                const chart = el("div"); const chartId = "disk-io-" + pd.replace(/[^a-zA-Z0-9]/g, "_");
+                const chart = el("div", "chart-box"); const chartId = "disk-io-" + pd.replace(/[^a-zA-Z0-9]/g, "_");
                 chart.id = chartId; chart.style.cssText = "height:180px;margin-top:8px";
                 c.appendChild(chart);
                 refs.diskGrid.appendChild(c);
@@ -660,15 +664,21 @@
                 });
                 return;
             }
+            // 窄屏压缩左右留白与字号，避免标签被裁切
+            const narrow = window.innerWidth < 640;
+            const gridL = narrow ? 38 : 48, gridR = narrow ? 34 : 48;
+            const fs = narrow ? 9 : 10;
             const option = {
-                grid: { left: 48, right: 48, top: 30, bottom: 24 },
+                grid: { left: gridL, right: gridR, top: 30, bottom: narrow ? 20 : 24 },
                 tooltip: { trigger: "axis" },
                 legend: {
                     data: [t("read", "读取"), t("write", "写入"), t("ioWait", "等待")],
-                    textStyle: { color: cssVar("--color-subtle"), fontSize: 11 },
-                    top: 0
+                    textStyle: { color: cssVar("--color-subtle"), fontSize: fs },
+                    top: 0,
+                    itemWidth: narrow ? 12 : 25,
+                    itemHeight: narrow ? 8 : 14
                 },
-                xAxis: { type: "time", axisLabel: { color: cssVar("--color-faint"), fontSize: 10 }, axisLine: { lineStyle: { color: cssVar("--color-border") } } },
+                xAxis: { type: "time", axisLabel: { color: cssVar("--color-faint"), fontSize: fs, hideOverlap: true }, axisLine: { lineStyle: { color: cssVar("--color-border") } } },
                 yAxis: [
                     { type: "value", name: "KB/s", nameTextStyle: { color: cssVar("--color-faint"), fontSize: 10 },
                       axisLabel: { color: cssVar("--color-faint"), fontSize: 10 }, splitLine: { lineStyle: { color: cssVar("--color-border") } } },
@@ -744,7 +754,7 @@
         refs.gpuUsage = metricRow(g, "usage", "gpu-usage", "%");
         refs.gpuTemp = metricRow(g, "temp", "gpu-temp", "°C");
         refs.gpuFreq = metricRow(g, "freq", "gpu-freq", "MHz");
-        const gchart = el("div"); gchart.id = "gpu-chart"; gchart.style.cssText = "height:160px;margin-top:12px";
+        const gchart = el("div", "chart-box"); gchart.id = "gpu-chart"; gchart.style.cssText = "height:160px;margin-top:12px";
         g.appendChild(gchart);
         grid.appendChild(g);
         const gm = card("gpuMem");
@@ -875,6 +885,9 @@
         const dot = $("#status-dot"), txt = $("#status-text");
         dot.style.background = ok ? "var(--color-green)" : "var(--color-red)";
         txt.textContent = ok ? t("connected", "已连接") : t("disconnected", "连接断开");
+        // 移动端顶栏也有一个状态点，同步颜色
+        const mDot = $("#mobile-status-dot");
+        if (mDot) mDot.style.background = ok ? "var(--color-green)" : "var(--color-red)";
     }
 
     /* ============ 侧边栏 ============ */
@@ -901,9 +914,30 @@
             nav.appendChild(a);
         });
     }
+    /* ============ 移动端抽屉导航 ============ */
+    const MOBILE_BP = 1024; // 与 CSS @media (max-width:1024px) 保持一致
+    function isNarrow() { return window.innerWidth <= MOBILE_BP; }
+    function closeDrawer() {
+        const aside = $("#sidebar"), ov = $("#nav-overlay");
+        if (aside) aside.classList.remove("open");
+        if (ov) ov.classList.remove("open");
+    }
+    function initMobileNav() {
+        const aside = $("#sidebar"), ov = $("#nav-overlay"), btn = $("#menu-btn");
+        if (!aside || !btn) return;
+        btn.addEventListener("click", () => {
+            const open = aside.classList.toggle("open");
+            if (ov) ov.classList.toggle("open", open);
+        });
+        if (ov) ov.addEventListener("click", closeDrawer);
+        // 回到宽屏时复位，避免抽屉状态残留
+        window.addEventListener("resize", () => { if (!isNarrow()) closeDrawer(); });
+    }
+
     function switchSection(section, node) {
         document.querySelectorAll(".nav-item").forEach((n) => n.classList.remove("active"));
         node.classList.add("active");
+        if (isNarrow()) closeDrawer(); // 窄屏选完页面自动收起抽屉
         document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
         const target = document.querySelector(`.section[data-section="${section}"]`);
         if (target) target.classList.add("active");
@@ -1060,10 +1094,20 @@
             if (node) switchSection(savedSection, node);
         }
         initControls();
+        initMobileNav();
         applyBackground();
         fetch("/api/cache").then((r) => r.json()).then(onSnapshot).catch(() => {});
         startWebSocket();
-        window.addEventListener("resize", () => Object.values(charts).forEach((c) => c.resize()));
+        // 视口变化（旋转/分屏）后重设图表：grid 与字号会随宽度调整
+        let resizeTimer = null;
+        window.addEventListener("resize", () => {
+            Object.values(charts).forEach((c) => c && c.resize());
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                const active = document.querySelector(".section.active");
+                if (active && lastSnap) activateCharts(active.dataset.section);
+            }, 150);
+        });
     }
 
     /* ============ 语言 / 主题控件 ============ */
