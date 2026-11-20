@@ -6,7 +6,7 @@
   </a>
   <img src="https://img.shields.io/github/stars/EndlessPixel/SystemStatus?label=Stars" alt="Stars">
   <img src="https://img.shields.io/github/license/EndlessPixel/SystemStatus" alt="License">
-  <img src="https://img.shields.io/badge/Python-3.8+-blue?logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/Python-3.11+-blue?logo=python" alt="Python">
   <img src="https://img.shields.io/badge/FastAPI-Web%20Framework-green?logo=fastapi" alt="FastAPI">
   <img src="https://img.shields.io/badge/Tailwind%20CSS-v4-38bdf8?logo=tailwindcss" alt="Tailwind CSS">
   <img src="https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-lightgrey" alt="Platform">
@@ -82,7 +82,7 @@ docker run -d \
 
 ### 环境准备
 
-确保已安装 **Python 3.8+**，然后根据操作系统安装对应依赖：
+确保已安装 **Python 3.11+**（`fastapi` / `websockets` 等依赖已要求 3.11+），然后根据操作系统安装对应依赖：
 
 ```bash
 # Linux / macOS 等类 Unix 系统
