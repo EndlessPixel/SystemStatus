@@ -87,4 +87,5 @@ window.LANGUAGE_DATA['ko-KR'] = {
         navDocker: "Docker 컨테이너", docker: "컨테이너 목록", dockerName: "컨테이너", dockerStatus: "상태", dockerNet: "네트워크 ↓↑",
         dockerHint: "데이터 출처: Docker Engine API (/var/run/docker.sock 마운트 필요)",
         dockerNone: "컨테이너가 감지되지 않았습니다 (/var/run/docker.sock 마운트 필요)",
+        procConns: "연결 수", procNetHint: "네트워크 속도는 별도 네트워크 네임스페이스의 프로세스에서만 확인할 수 있습니다. 연결 수는 프로세스가 실제로 보유한 소켓 수입니다.",
 };

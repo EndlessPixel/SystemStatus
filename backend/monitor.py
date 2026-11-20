@@ -35,7 +35,9 @@ DATA_CACHE = {
 
 # 进程磁盘 IO 速率计算缓存：{pid: (read_bytes, write_bytes, ts)}
 _PROC_IO_LAST = {}
-# 进程网络速率计算缓存：{pid: (rx_bytes, tx_bytes, ts)}（仅 Linux 可用）
+# 进程网络速率计算缓存：{netns_inode: (rx_bytes, tx_bytes, ts)}（仅 Linux 可用）
+# key 用 netns inode 而非 pid：/proc/<pid>/net/dev 是网络命名空间级共享的，
+# 同一 netns 下所有进程读到的是同一组字节数，不能按 pid 归因。
 _PROC_NET_LAST = {}
 
 
@@ -254,6 +256,14 @@ def collect_real_time_data():
         # 进程监测（只读，前 20 按 CPU 降序）
         try:
             gpu_mem = get_gpu_process_memory()
+            # 每个进程真实的 socket 连接数（跨平台），用于替代原本全表相同的伪造网络速率
+            conn_by_pid = {}
+            try:
+                for conn in psutil.net_connections(kind='inet'):
+                    if conn.pid:
+                        conn_by_pid[conn.pid] = conn_by_pid.get(conn.pid, 0) + 1
+            except Exception:
+                pass
             proc_list = []
             io_snapshot = {}
             for p in psutil.process_iter(['pid', 'name']):
@@ -285,19 +295,41 @@ def collect_real_time_data():
                     "mem": round(mem, 1),
                     "disk_read": round(disk_read, 1),
                     "disk_write": round(disk_write, 1),
-                    "net_up": 0.0,
-                    "net_down": 0.0,
+                    "net_up": None,      # 同 netns 进程无法按进程归因，留空由前端显示 —
+                    "net_down": None,
+                    "net_conns": conn_by_pid.get(pid, 0),
                     "gpu": gpu_mem.get(pid, 0),  # MB；0 表示未用 GPU
                 })
             for pid in list(_PROC_IO_LAST.keys()):
                 if pid not in io_snapshot:
                     del _PROC_IO_LAST[pid]
             _PROC_IO_LAST.update(io_snapshot)
-            # 进程网络速率（Linux：/proc/<pid>/net/dev 累计收发；Windows 无简易 API，留 0）
-            net_snapshot = {}
+            # 进程网络速率修复：
+            # 旧逻辑逐个 pid 读取 /proc/<pid>/net/dev，但该文件是「网络命名空间」级共享的，
+            # 同一 netns 下所有进程读到完全相同的累计字节数，导致表格网络列千篇一律（错误数据）。
+            # 新逻辑：
+            #   - 按 netns inode 去重，每个 netns 只计算一次速率；
+            #   - 仅把速率归给处于独立 netns 的进程（容器进程等），同 netns 进程保持 None；
+            #   - 展示每个进程真实的 socket 连接数（net_conns）作为可区分的网络指标。
             if platform.system() == "Linux":
+                try:
+                    self_ns = os.stat("/proc/self/net").st_ino
+                except OSError:
+                    self_ns = None
+                net_snapshot = {}
+                seen_ns = set()
                 for p in proc_list:
                     pid = p["pid"]
+                    if self_ns is None:
+                        continue
+                    try:
+                        ns_ino = os.stat(f"/proc/{pid}/net").st_ino
+                    except OSError:
+                        continue
+                    if ns_ino == self_ns or ns_ino in seen_ns:
+                        continue
+                    seen_ns.add(ns_ino)
+                    key = str(ns_ino)
                     try:
                         rx = tx = 0
                         with open(f"/proc/{pid}/net/dev", "r", errors="ignore") as f:
@@ -307,18 +339,18 @@ def collect_real_time_data():
                                     continue
                                 cols = parts[1].split()
                                 rx += int(cols[0]); tx += int(cols[8])
-                        last = _PROC_NET_LAST.get(pid)
+                        last = _PROC_NET_LAST.get(key)
                         if last:
                             dt = timestamp - last[2]
                             if dt > 0.1:
                                 p["net_down"] = round(max(0.0, (rx - last[0]) / 1024 / dt), 1)
                                 p["net_up"] = round(max(0.0, (tx - last[1]) / 1024 / dt), 1)
-                        net_snapshot[pid] = (rx, tx, timestamp)
+                        net_snapshot[key] = (rx, tx, timestamp)
                     except (OSError, ValueError, IndexError):
-                        net_snapshot[pid] = _PROC_NET_LAST.get(pid, (0, 0, timestamp))
-                for pid in list(_PROC_NET_LAST.keys()):
-                    if pid not in net_snapshot:
-                        del _PROC_NET_LAST[pid]
+                        net_snapshot[key] = _PROC_NET_LAST.get(key, (0, 0, timestamp))
+                for key in list(_PROC_NET_LAST.keys()):
+                    if key not in net_snapshot:
+                        del _PROC_NET_LAST[key]
                 _PROC_NET_LAST.update(net_snapshot)
             # 过滤系统伪进程：它们不是真实占用，且 CPU 会被累加至多核之和（如 System Idle Process 达 1000%+）
             sys_names = {"system idle process", "system", "registry", "memory compression", "kernel_task"}

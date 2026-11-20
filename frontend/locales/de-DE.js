@@ -88,4 +88,5 @@ window.LANGUAGE_DATA['de-DE'] = {
         navDocker: "Docker-Container", docker: "Containerliste", dockerName: "Container", dockerStatus: "Status", dockerNet: "Netzwerk ↓↑",
         dockerHint: "Quelle: Docker Engine API (/var/run/docker.sock muss eingehängt werden)",
         dockerNone: "Keine Container erkannt (/var/run/docker.sock einhängen)",
+        procConns: "Verbindungen", procNetHint: "Netzwerkgeschwindigkeit ist nur für Prozesse in einem eigenen Network-Namespace verfügbar; Verbindungen zählt die tatsächlich gehaltenen Sockets.",
 };

@@ -87,4 +87,5 @@ window.LANGUAGE_DATA['id-ID'] = {
         navDocker: "Kontainer Docker", docker: "Daftar Kontainer", dockerName: "Kontainer", dockerStatus: "Status", dockerNet: "Jaringan ↓↑",
         dockerHint: "Sumber: Docker Engine API (pasang /var/run/docker.sock)",
         dockerNone: "Tidak ada kontainer terdeteksi (pasang /var/run/docker.sock)",
+        procConns: "Koneksi", procNetHint: "Kecepatan jaringan hanya tersedia untuk proses dalam namespace jaringan terpisah; Koneksi adalah jumlah socket yang benar-benar dipegang proses.",
 };

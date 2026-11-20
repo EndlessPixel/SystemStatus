@@ -88,4 +88,5 @@ window.LANGUAGE_DATA['en-US'] = {
         navDocker: "Docker Containers", docker: "Containers", dockerName: "Container", dockerStatus: "Status", dockerNet: "NET ↓↑",
         dockerHint: "Source: Docker Engine API (mount /var/run/docker.sock)",
         dockerNone: "No containers detected (mount /var/run/docker.sock or start a container)",
+        procConns: "Conns", procNetHint: "Network speed is only available for processes in a separate network namespace; Conns is the number of sockets actually held by the process.",
 };

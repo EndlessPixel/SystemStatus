@@ -87,4 +87,5 @@ window.LANGUAGE_DATA['ru-RU'] = {
         navDocker: "Docker-контейнеры", docker: "Список контейнеров", dockerName: "Контейнер", dockerStatus: "Состояние", dockerNet: "Сеть ↓↑",
         dockerHint: "Источник: Docker Engine API (требуется монтирование /var/run/docker.sock)",
         dockerNone: "Контейнеры не обнаружены (подключите /var/run/docker.sock)",
+        procConns: "Соединения", procNetHint: "Скорость сети доступна только для процессов в отдельном сетевом пространстве имён; «Соединения» — число реально открытых сокетов.",
 };

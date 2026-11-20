@@ -87,4 +87,5 @@ window.LANGUAGE_DATA['es-ES'] = {
         navDocker: "Contenedores Docker", docker: "Lista de contenedores", dockerName: "Contenedor", dockerStatus: "Estado", dockerNet: "Red ↓↑",
         dockerHint: "Fuente: Docker Engine API (monte /var/run/docker.sock)",
         dockerNone: "No se detectaron contenedores (monte /var/run/docker.sock)",
+        procConns: "Conexiones", procNetHint: "La velocidad de red solo está disponible para procesos en un espacio de nombres de red independiente; Conexiones cuenta los sockets reales del proceso.",
 };

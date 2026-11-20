@@ -87,4 +87,5 @@ window.LANGUAGE_DATA['th-TH'] = {
         navDocker: "คอนเทนเนอร์ Docker", docker: "รายการคอนเทนเนอร์", dockerName: "คอนเทนเนอร์", dockerStatus: "สถานะ", dockerNet: "เครือข่าย ↓↑",
         dockerHint: "แหล่งข้อมูล: Docker Engine API (ต้อง mount /var/run/docker.sock)",
         dockerNone: "ไม่พบคอนเทนเนอร์ (ต้อง mount /var/run/docker.sock)",
+        procConns: "การเชื่อมต่อ", procNetHint: "ความเร็วเครือข่ายใช้ได้เฉพาะกระบวนการใน network namespace แยกเท่านั้น; การเชื่อมต่อคือจำนวน socket ที่กระบวนการถืออยู่จริง",
 };

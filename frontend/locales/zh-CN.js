@@ -90,4 +90,5 @@ window.LANGUAGE_DATA['zh-CN'] = {
         navDocker: "Docker 容器", docker: "容器列表", dockerName: "容器", dockerStatus: "状态", dockerNet: "网络 ↓↑",
         dockerHint: "数据源：Docker Engine API（需挂载 /var/run/docker.sock）",
         dockerNone: "未检测到 Docker 容器（需挂载 /var/run/docker.sock 或暂无容器）",
+        procConns: "连接数", procNetHint: "网络速率仅在进程处于独立网络命名空间时可获取；连接数为该进程实际持有的 socket 数量。",
 };

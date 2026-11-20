@@ -87,4 +87,5 @@ window.LANGUAGE_DATA['ja-JP'] = {
         navDocker: "Docker コンテナ", docker: "コンテナ一覧", dockerName: "コンテナ", dockerStatus: "ステータス", dockerNet: "ネットワーク ↓↑",
         dockerHint: "データ源: Docker Engine API（/var/run/docker.sock のマウントが必要）",
         dockerNone: "コンテナが検出されませんでした（/var/run/docker.sock をマウントしてください）",
+        procConns: "接続数", procNetHint: "ネットワーク速度は独立したネットワーク名前空間のプロセスでのみ取得できます。接続数はプロセスが保持するソケット数です。",
 };

@@ -548,6 +548,7 @@
                 <th class="py-2 pr-3 font-medium text-right">MEM</th>
                 <th class="py-2 pr-3 font-medium text-right">DISK ↓↑</th>
                 <th class="py-2 pr-3 font-medium text-right">${t("procNet", "网络 ↓↑")}</th>
+                <th class="py-2 pr-3 font-medium text-right">${t("procConns", "连接数")}</th>
                 <th class="py-2 pr-3 font-medium text-right">GPU</th>
             </tr>
         </thead>`;
@@ -555,6 +556,10 @@
         table.appendChild(refs.procBody);
         wrap.appendChild(table);
         c.appendChild(wrap);
+        const netHint = el("div", "text-[11px] text-[var(--color-faint)] mt-2",
+            t("procNetHint", "网络速率仅在进程处于独立网络命名空间时可获取；连接数为该进程实际持有的 socket 数量。"));
+        netHint.setAttribute("data-i18n", "procNetHint");
+        c.appendChild(netHint);
         sec.appendChild(c);
     }
 
@@ -562,7 +567,7 @@
         const list = snap.real_time_data.processes || snap.processes || [];
         if (!refs.procBody) return;
         if (!list.length) {
-            refs.procBody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-[var(--color-faint)]">—</td></tr>`;
+            refs.procBody.innerHTML = `<tr><td colspan="8" class="py-4 text-center text-[var(--color-faint)]">—</td></tr>`;
             return;
         }
         // 仅在数量变化时全量重建，避免每秒重排抖动
@@ -577,6 +582,7 @@
                     <td class="py-1.5 pr-3 text-right proc-mem"></td>
                     <td class="py-1.5 pr-3 text-right proc-disk text-[12px] text-[var(--color-subtle)]"></td>
                     <td class="py-1.5 pr-3 text-right proc-net text-[12px] text-[var(--color-subtle)]"></td>
+                    <td class="py-1.5 pr-3 text-right proc-conns text-[12px] text-[var(--color-subtle)]"></td>
                     <td class="py-1.5 pr-3 text-right proc-gpu"></td>`;
                 refs.procBody.appendChild(tr);
             });
@@ -590,7 +596,9 @@
             const cpu = tr.querySelector(".proc-cpu"); cpu.textContent = p.cpu + "%"; cpu.style.color = colorByPct(p.cpu);
             tr.querySelector(".proc-mem").textContent = p.mem + "%";
             tr.querySelector(".proc-disk").textContent = `${p.disk_read} / ${p.disk_write} KB/s`;
-            tr.querySelector(".proc-net").textContent = `${p.net_down} / ${p.net_up} KB/s`;
+            const netCell = tr.querySelector(".proc-net");
+            netCell.textContent = p.net_down != null ? `${p.net_down} / ${p.net_up} KB/s` : "—";
+            tr.querySelector(".proc-conns").textContent = p.net_conns != null ? p.net_conns : "—";
             const gpu = tr.querySelector(".proc-gpu");
             gpu.textContent = p.gpu ? p.gpu + " MB" : "—";
             gpu.style.color = p.gpu ? "var(--color-orange)" : "var(--color-faint)";
