@@ -81,4 +81,6 @@ window.LANGUAGE_DATA['de-DE'] = {
         traffic: "Echtzeit-Traffic",
         download: "Download", upload: "Upload",
         interfaces: "Schnittstellen",
+        navSensors: "Sensoren", fans: "Lüftergeschwindigkeit",
+        fansNone: "Keine Lüftersensoren erkannt (Linux benötigt lm-sensors)",
 };

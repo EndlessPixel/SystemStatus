@@ -80,4 +80,6 @@ window.LANGUAGE_DATA['ru-RU'] = {
         traffic: "Трафик",
         download: "Приём", upload: "Отдача",
         interfaces: "Интерфейсы",
+        navSensors: "Датчики", fans: "Скорость вентиляторов",
+        fansNone: "Датчики вентиляторов не обнаружены (для Linux требуется lm-sensors)",
 };

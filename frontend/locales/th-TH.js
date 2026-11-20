@@ -80,4 +80,6 @@ window.LANGUAGE_DATA['th-TH'] = {
         traffic: "เทรฟฟิกแบบเรียลไทม์",
         download: "ดาวน์โหลด", upload: "อัปโหลด",
         interfaces: "อินเทอร์เฟซเครือข่าย",
+        navSensors: "เซ็นเซอร์", fans: "ความเร็วพัดลม",
+        fansNone: "ไม่พบเซ็นเซอร์พัดลม (Linux ต้องติดตั้ง lm-sensors)",
 };

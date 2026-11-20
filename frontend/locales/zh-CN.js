@@ -83,4 +83,6 @@ window.LANGUAGE_DATA['zh-CN'] = {
         traffic: "实时流量",
         download: "下载", upload: "上传",
         interfaces: "网络接口",
+        navSensors: "硬件传感器", fans: "风扇转速",
+        fansNone: "未检测到风扇转速传感器（Linux 需安装 lm-sensors）",
 };

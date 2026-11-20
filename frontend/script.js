@@ -335,6 +335,47 @@
         refs.gpuEmpty.textContent = t("noGpu", "未检测到可用的独立显卡（或驱动未安装）");
     }
 
+    function buildSensors() {
+        const sec = $("#sec-sensors");
+        sec.innerHTML = "";
+        const grid = el("div", "grid grid-cols-1 xl:grid-cols-2 gap-5");
+        const fans = card("fans");
+        refs.fanList = el("div", "flex flex-col gap-1");
+        fans.appendChild(refs.fanList);
+        grid.appendChild(fans);
+        sec.appendChild(grid);
+    }
+
+    function updateSensors(snap) {
+        const fans = (snap.hardware_info || {}).fans || [];
+        if (!refs.fanList) return;
+        if (!fans.length) {
+            refs.fanList.innerHTML = `<div class="text-[13px] text-[var(--color-faint)]">${t("fansNone", "未检测到风扇转速传感器（Linux 需安装 lm-sensors）")}</div>`;
+            return;
+        }
+        if (refs.fanList.childElementCount !== fans.length) {
+            refs.fanList.innerHTML = "";
+            fans.forEach(() => {
+                const row = el("div", "flex items-center justify-between py-1.5 px-2 rounded-lg");
+                row.style.background = "var(--color-hover)";
+                const name = el("span", "text-[13px] fan-name");
+                const right = el("span");
+                const rpm = el("span", "metric-value fan-rpm");
+                rpm.style.fontSize = "16px";
+                right.appendChild(rpm);
+                right.appendChild(el("span", "metric-unit", " RPM"));
+                row.appendChild(name); row.appendChild(right);
+                refs.fanList.appendChild(row);
+            });
+        }
+        fans.forEach((f, i) => {
+            const row = refs.fanList.children[i];
+            if (!row) return;
+            row.querySelector(".fan-name").textContent = [f.chip, f.label].filter(Boolean).join(" · ") || "—";
+            row.querySelector(".fan-rpm").textContent = f.rpm != null ? f.rpm : "—";
+        });
+    }
+
     function buildNetwork() {
         const sec = $("#sec-network");
         sec.innerHTML = "";
@@ -877,13 +918,13 @@
     let lastSnap = null;
     function firstRender(snap) {
         lastSnap = snap;
-        buildBasic(); buildCpu(); buildMemory(); buildDisk(); buildGpu(); buildNetwork(); buildProcess();
+        buildBasic(); buildCpu(); buildMemory(); buildDisk(); buildGpu(); buildSensors(); buildNetwork(); buildProcess();
         updateAll(snap);
         // 基础信息模块默认可见（无图表）；其余模块的图表在「首次激活」时再 init
     }
     function updateAll(snap) {
         lastSnap = snap;
-        updateBasic(snap); updateCpu(snap); updateMemory(snap); updateDisk(snap); updateGpu(snap); updateNetwork(snap); updateProcess(snap);
+        updateBasic(snap); updateCpu(snap); updateMemory(snap); updateDisk(snap); updateGpu(snap); updateSensors(snap); updateNetwork(snap); updateProcess(snap);
     }
     // 某模块被激活（可见）时，渲染其图表（此时容器尺寸正确）
     function activateCharts(section) {
@@ -917,6 +958,7 @@
         { i18n: "navMemory",  section: "memory" },
         { i18n: "navDisk",    section: "disk" },
         { i18n: "navGpu",     section: "gpu" },
+        { i18n: "navSensors", section: "sensors" },
         { i18n: "navNetwork", section: "network" },
         { i18n: "navProcess", section: "process" },
     ];
@@ -1011,7 +1053,7 @@
         _autoCollapseApplied = null;
         // 保留用户已选中的网卡，避免切换语言后跳回第一张
         const keepNic = refs.netSelectedNic;
-        ["sec-basic", "sec-cpu", "sec-memory", "sec-disk", "sec-gpu", "sec-network", "sec-process"]
+        ["sec-basic", "sec-cpu", "sec-memory", "sec-disk", "sec-gpu", "sec-sensors", "sec-network", "sec-process"]
             .forEach((id) => { const s = document.getElementById(id); if (s) s.innerHTML = ""; });
         built = false;
         if (lastSnap) firstRender(lastSnap);

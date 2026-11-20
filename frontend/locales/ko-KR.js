@@ -80,4 +80,6 @@ window.LANGUAGE_DATA['ko-KR'] = {
         traffic: "실시간 트래픽",
         download: "다운로드", upload: "업로드",
         interfaces: "네트워크 인터페이스",
+        navSensors: "센서", fans: "팬 속도",
+        fansNone: "팬 속도 센서가 감지되지 않았습니다 (Linux는 lm-sensors 필요)",
 };

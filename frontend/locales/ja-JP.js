@@ -80,4 +80,6 @@ window.LANGUAGE_DATA['ja-JP'] = {
         traffic: "リアルタイム通信量",
         download: "ダウンロード", upload: "アップロード",
         interfaces: "ネットワークインターフェース",
+        navSensors: "ハードウェアセンサー", fans: "ファン回転数",
+        fansNone: "ファン回転数センサーが検出されませんでした（Linux では lm-sensors が必要です）",
 };

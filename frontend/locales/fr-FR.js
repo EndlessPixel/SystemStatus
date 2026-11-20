@@ -80,4 +80,6 @@ window.LANGUAGE_DATA['fr-FR'] = {
         traffic: "Trafic en direct",
         download: "Réception", upload: "Émission",
         interfaces: "Interfaces",
+        navSensors: "Capteurs", fans: "Vitesse des ventilateurs",
+        fansNone: "Aucun capteur de ventilation détecté (Linux nécessite lm-sensors)",
 };

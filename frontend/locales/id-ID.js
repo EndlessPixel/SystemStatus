@@ -80,4 +80,6 @@ window.LANGUAGE_DATA['id-ID'] = {
         traffic: "Lalu Lintas Real-time",
         download: "Unduh", upload: "Unggah",
         interfaces: "Antarmuka",
+        navSensors: "Sensor", fans: "Kecepatan Kipas",
+        fansNone: "Tidak ada sensor kipas terdeteksi (Linux memerlukan lm-sensors)",
 };

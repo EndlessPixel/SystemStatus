@@ -588,6 +588,29 @@ def _df_partitions() -> List[Dict]:
     return out
 
 
+def get_fan_speeds() -> List[Dict]:
+    """
+    获取风扇转速（跨平台）。
+    数据源：psutil.sensors_fans()（Linux 通常需 lm-sensors，Windows/macOS 多数无数据）。
+    返回: [{"chip": 芯片名, "label": 风扇标签, "rpm": 转速}, ...]；无传感器时返回空列表。
+    """
+    fans: List[Dict] = []
+    try:
+        if not hasattr(psutil, "sensors_fans"):
+            return fans
+        for chip, entries in (psutil.sensors_fans() or {}).items():
+            for entry in entries:
+                rpm = getattr(entry, "current", None)
+                fans.append({
+                    "chip": chip,
+                    "label": getattr(entry, "label", "") or "",
+                    "rpm": int(rpm) if rpm is not None else None,
+                })
+    except Exception:
+        pass
+    return fans
+
+
 def get_system_info() -> Dict:
     """获取操作系统/系统信息：版本、架构、语言/区域、上次启动时间"""
     # 系统版本
@@ -756,5 +779,6 @@ def get_hardware_info() -> Dict:
         "gpu": gpu_info,
         "gpu_details": gpu_details,
         "network": net_ifaces,
+        "fans": get_fan_speeds(),
         "system": get_system_info()
     }
