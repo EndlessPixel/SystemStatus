@@ -84,4 +84,7 @@ window.LANGUAGE_DATA['id-ID'] = {
         fansNone: "Tidak ada sensor kipas terdeteksi (Linux memerlukan lm-sensors)",
         inodes: "Penggunaan inode", inodesNone: "Statistik inode tidak tersedia",
         tempSensors: "Sensor Suhu", tempSensorsNone: "Tidak ada sensor suhu terdeteksi (Linux memerlukan lm-sensors atau hak lebih tinggi)",
+        navDocker: "Kontainer Docker", docker: "Daftar Kontainer", dockerName: "Kontainer", dockerStatus: "Status", dockerNet: "Jaringan ↓↑",
+        dockerHint: "Sumber: Docker Engine API (pasang /var/run/docker.sock)",
+        dockerNone: "Tidak ada kontainer terdeteksi (pasang /var/run/docker.sock)",
 };

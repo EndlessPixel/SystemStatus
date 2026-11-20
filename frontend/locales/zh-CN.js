@@ -87,4 +87,7 @@ window.LANGUAGE_DATA['zh-CN'] = {
         fansNone: "未检测到风扇转速传感器（Linux 需安装 lm-sensors）",
         inodes: "inode 使用率", inodesNone: "不支持 inode 统计",
         tempSensors: "温度传感器", tempSensorsNone: "未检测到温度传感器（Linux 需 lm-sensors 或更高权限）",
+        navDocker: "Docker 容器", docker: "容器列表", dockerName: "容器", dockerStatus: "状态", dockerNet: "网络 ↓↑",
+        dockerHint: "数据源：Docker Engine API（需挂载 /var/run/docker.sock）",
+        dockerNone: "未检测到 Docker 容器（需挂载 /var/run/docker.sock 或暂无容器）",
 };

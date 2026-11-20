@@ -61,6 +61,21 @@ docker run -d \
 
 > 💡 相比 netdata / glances，SystemStatus 镜像更小、启动更快、UI 更简洁。
 
+### 监控宿主机上的其他容器（可选）
+
+默认启动方式下只能看到自身容器的资源。如需在 Web 面板查看宿主机上**所有容器**的 CPU / 内存 / 网络占用，需额外只读挂载 Docker socket：
+
+```bash
+docker run -d \
+  --name systemstatus \
+  -p 8001:8001 \
+  --privileged \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  systemmini/systemstatus
+```
+
+> ⚠️ 即使以只读方式挂载，能访问 `docker.sock` 也等同于获得宿主机 Docker 的较大权限，请仅在可信环境启用。未挂载时「Docker 容器」模块会显示空列表，不影响其他监控项。本地源码运行同样适用（自动探测 `/var/run/docker.sock` 与 `DOCKER_HOST` 中的 unix socket）。
+
 ---
 
 ## 🚀 本地开发启动
@@ -161,6 +176,9 @@ python main.py
   - Intel 核显使用率 / 频率 / 功耗检测（`intel_gpu_top -J`，**需 root + 安装 intel-gpu-tools**）
   - NVIDIA 显卡使用率 / 显存 / 温度 / 功耗检测（NVML，需安装 `nvidia-ml-py`）
 - **网络监控**：实时上下行流量（折线图）、网络接口名称与 IP 地址
+- **硬件传感器**：风扇转速（RPM）与全部温度传感器（CPU 各核 / 主板 / NVMe，按 high / critical 阈值着色），Linux 需 `lm-sensors` 或相应权限
+- **磁盘 inode 使用率**：与容量并列展示，口径与 `df -i` 一致，可提前发现「空间未满但 inode 耗尽」
+- **Docker 容器**：宿主机容器状态与 CPU / 内存 / 网络占用（需挂载 `docker.sock`，见上方部署说明）
 
 ### 🔐 Linux 权限说明
 

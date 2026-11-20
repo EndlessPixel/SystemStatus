@@ -84,4 +84,7 @@ window.LANGUAGE_DATA['ko-KR'] = {
         fansNone: "팬 속도 센서가 감지되지 않았습니다 (Linux는 lm-sensors 필요)",
         inodes: "inode 사용률", inodesNone: "inode 통계를 사용할 수 없습니다",
         tempSensors: "온도 센서", tempSensorsNone: "온도 센서가 감지되지 않았습니다 (Linux는 lm-sensors 또는 권한 필요)",
+        navDocker: "Docker 컨테이너", docker: "컨테이너 목록", dockerName: "컨테이너", dockerStatus: "상태", dockerNet: "네트워크 ↓↑",
+        dockerHint: "데이터 출처: Docker Engine API (/var/run/docker.sock 마운트 필요)",
+        dockerNone: "컨테이너가 감지되지 않았습니다 (/var/run/docker.sock 마운트 필요)",
 };

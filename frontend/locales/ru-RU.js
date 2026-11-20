@@ -84,4 +84,7 @@ window.LANGUAGE_DATA['ru-RU'] = {
         fansNone: "Датчики вентиляторов не обнаружены (для Linux требуется lm-sensors)",
         inodes: "Использование inode", inodesNone: "Статистика inode недоступна",
         tempSensors: "Датчики температуры", tempSensorsNone: "Датчики температуры не обнаружены (для Linux нужны lm-sensors или права root)",
+        navDocker: "Docker-контейнеры", docker: "Список контейнеров", dockerName: "Контейнер", dockerStatus: "Состояние", dockerNet: "Сеть ↓↑",
+        dockerHint: "Источник: Docker Engine API (требуется монтирование /var/run/docker.sock)",
+        dockerNone: "Контейнеры не обнаружены (подключите /var/run/docker.sock)",
 };

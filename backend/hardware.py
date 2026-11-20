@@ -17,6 +17,12 @@ except Exception:  # 部署遗漏 app_config 时回退默认过滤，避免整�
     def get_disk_filter():
         return {"devices": [], "mountpoints": ["/boot/efi"], "fstypes": ["vfat", "squashfs", "tmpfs"]}
 
+try:
+    from backend.docker_monitor import get_docker_containers
+except Exception:  # Docker 监控不可用时不影响主流程
+    def get_docker_containers():
+        return []
+
 # NVML全局变量
 NVML_AVAILABLE = False
 NVML_HANDLE = None
@@ -835,5 +841,6 @@ def get_hardware_info() -> Dict:
         "network": net_ifaces,
         "fans": get_fan_speeds(),
         "temperatures": get_all_temperatures(),
+        "docker": get_docker_containers(),
         "system": get_system_info()
     }

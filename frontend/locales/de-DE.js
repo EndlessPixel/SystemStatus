@@ -85,4 +85,7 @@ window.LANGUAGE_DATA['de-DE'] = {
         fansNone: "Keine Lüftersensoren erkannt (Linux benötigt lm-sensors)",
         inodes: "Inode-Auslastung", inodesNone: "Inode-Statistik nicht verfügbar",
         tempSensors: "Temperatursensoren", tempSensorsNone: "Keine Temperatursensoren erkannt (Linux benötigt lm-sensors oder höhere Rechte)",
+        navDocker: "Docker-Container", docker: "Containerliste", dockerName: "Container", dockerStatus: "Status", dockerNet: "Netzwerk ↓↑",
+        dockerHint: "Quelle: Docker Engine API (/var/run/docker.sock muss eingehängt werden)",
+        dockerNone: "Keine Container erkannt (/var/run/docker.sock einhängen)",
 };

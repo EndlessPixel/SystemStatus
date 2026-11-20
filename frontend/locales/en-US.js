@@ -85,4 +85,7 @@ window.LANGUAGE_DATA['en-US'] = {
         fansNone: "No fan speed sensors detected (Linux requires lm-sensors)",
         inodes: "Inode usage", inodesNone: "Inode stats unavailable",
         tempSensors: "Temperature Sensors", tempSensorsNone: "No temperature sensors detected (Linux requires lm-sensors or elevated privileges)",
+        navDocker: "Docker Containers", docker: "Containers", dockerName: "Container", dockerStatus: "Status", dockerNet: "NET ↓↑",
+        dockerHint: "Source: Docker Engine API (mount /var/run/docker.sock)",
+        dockerNone: "No containers detected (mount /var/run/docker.sock or start a container)",
 };

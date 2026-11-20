@@ -430,6 +430,71 @@
         });
     }
 
+    function buildDocker() {
+        const sec = $("#sec-docker");
+        sec.innerHTML = "";
+        const c = card("docker");
+        const hint = el("div", "text-[12px] text-[var(--color-faint)] mb-2",
+            t("dockerHint", "数据源：Docker Engine API（需挂载 /var/run/docker.sock）"));
+        hint.setAttribute("data-i18n", "dockerHint");
+        c.appendChild(hint);
+        const wrap = el("div", "overflow-x-auto");
+        const table = el("table", "w-full text-[13px] border-collapse");
+        table.innerHTML = `<thead>
+            <tr class="text-[var(--color-faint)] text-left" style="border-bottom:1px solid var(--color-border)">
+                <th class="py-2 pr-3 font-medium">${t("dockerName", "容器")}</th>
+                <th class="py-2 pr-3 font-medium">${t("dockerStatus", "状态")}</th>
+                <th class="py-2 pr-3 font-medium text-right">CPU</th>
+                <th class="py-2 pr-3 font-medium text-right">MEM</th>
+                <th class="py-2 pr-3 font-medium text-right">${t("dockerNet", "网络 ↓↑")}</th>
+            </tr>
+        </thead>`;
+        refs.dockerBody = el("tbody");
+        table.appendChild(refs.dockerBody);
+        wrap.appendChild(table);
+        c.appendChild(wrap);
+        sec.appendChild(c);
+    }
+
+    function updateDocker(snap) {
+        const list = (snap.hardware_info || {}).docker || [];
+        if (!refs.dockerBody) return;
+        if (!list.length) {
+            refs.dockerBody.innerHTML = `<tr><td colspan="5" class="py-4 text-center text-[var(--color-faint)]">${t("dockerNone", "未检测到 Docker 容器（需挂载 /var/run/docker.sock 或暂无容器）")}</td></tr>`;
+            return;
+        }
+        if (refs.dockerBody.childElementCount !== list.length || refs.dockerBody.firstElementChild?.querySelector("td[colspan]")) {
+            refs.dockerBody.innerHTML = "";
+            list.forEach(() => {
+                const tr = el("tr");
+                tr.style.borderBottom = "1px solid var(--color-border)";
+                tr.innerHTML = `<td class="py-1.5 pr-3 dk-name"></td>
+                    <td class="py-1.5 pr-3 dk-status"></td>
+                    <td class="py-1.5 pr-3 text-right dk-cpu"></td>
+                    <td class="py-1.5 pr-3 text-right dk-mem"></td>
+                    <td class="py-1.5 pr-3 text-right dk-net text-[12px] text-[var(--color-subtle)]"></td>`;
+                refs.dockerBody.appendChild(tr);
+            });
+        }
+        list.forEach((c, i) => {
+            const tr = refs.dockerBody.children[i];
+            if (!tr) return;
+            const name = tr.querySelector(".dk-name");
+            name.textContent = c.name;
+            name.title = `${c.image} (${c.id})`;
+            const st = tr.querySelector(".dk-status");
+            st.textContent = c.status;
+            st.style.color = c.running ? "var(--color-green)" : "var(--color-faint)";
+            const cpu = tr.querySelector(".dk-cpu");
+            cpu.textContent = c.cpu_percent != null ? c.cpu_percent + "%" : "—";
+            cpu.style.color = c.cpu_percent != null ? colorByPct(c.cpu_percent) : "";
+            tr.querySelector(".dk-mem").textContent = c.mem_used_mb != null
+                ? `${c.mem_used_mb} / ${c.mem_limit_mb} MB` : "—";
+            tr.querySelector(".dk-net").textContent = c.net_rx_mb != null
+                ? `↓ ${c.net_rx_mb}  ↑ ${c.net_tx_mb} MB` : "—";
+        });
+    }
+
     function buildNetwork() {
         const sec = $("#sec-network");
         sec.innerHTML = "";
@@ -987,13 +1052,13 @@
     let lastSnap = null;
     function firstRender(snap) {
         lastSnap = snap;
-        buildBasic(); buildCpu(); buildMemory(); buildDisk(); buildGpu(); buildSensors(); buildNetwork(); buildProcess();
+        buildBasic(); buildCpu(); buildMemory(); buildDisk(); buildGpu(); buildSensors(); buildDocker(); buildNetwork(); buildProcess();
         updateAll(snap);
         // 基础信息模块默认可见（无图表）；其余模块的图表在「首次激活」时再 init
     }
     function updateAll(snap) {
         lastSnap = snap;
-        updateBasic(snap); updateCpu(snap); updateMemory(snap); updateDisk(snap); updateGpu(snap); updateSensors(snap); updateNetwork(snap); updateProcess(snap);
+        updateBasic(snap); updateCpu(snap); updateMemory(snap); updateDisk(snap); updateGpu(snap); updateSensors(snap); updateDocker(snap); updateNetwork(snap); updateProcess(snap);
     }
     // 某模块被激活（可见）时，渲染其图表（此时容器尺寸正确）
     function activateCharts(section) {
@@ -1028,6 +1093,7 @@
         { i18n: "navDisk",    section: "disk" },
         { i18n: "navGpu",     section: "gpu" },
         { i18n: "navSensors", section: "sensors" },
+        { i18n: "navDocker",   section: "docker" },
         { i18n: "navNetwork", section: "network" },
         { i18n: "navProcess", section: "process" },
     ];
@@ -1122,7 +1188,7 @@
         _autoCollapseApplied = null;
         // 保留用户已选中的网卡，避免切换语言后跳回第一张
         const keepNic = refs.netSelectedNic;
-        ["sec-basic", "sec-cpu", "sec-memory", "sec-disk", "sec-gpu", "sec-sensors", "sec-network", "sec-process"]
+        ["sec-basic", "sec-cpu", "sec-memory", "sec-disk", "sec-gpu", "sec-sensors", "sec-docker", "sec-network", "sec-process"]
             .forEach((id) => { const s = document.getElementById(id); if (s) s.innerHTML = ""; });
         built = false;
         if (lastSnap) firstRender(lastSnap);

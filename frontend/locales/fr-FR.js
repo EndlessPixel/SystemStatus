@@ -84,4 +84,7 @@ window.LANGUAGE_DATA['fr-FR'] = {
         fansNone: "Aucun capteur de ventilation détecté (Linux nécessite lm-sensors)",
         inodes: "Utilisation des inodes", inodesNone: "Statistiques des inodes indisponibles",
         tempSensors: "Capteurs de température", tempSensorsNone: "Aucun capteur de température détecté (Linux nécessite lm-sensors ou des droits élevés)",
+        navDocker: "Conteneurs Docker", docker: "Liste des conteneurs", dockerName: "Conteneur", dockerStatus: "État", dockerNet: "Réseau ↓↑",
+        dockerHint: "Source : API Docker Engine (monter /var/run/docker.sock)",
+        dockerNone: "Aucun conteneur détecté (montez /var/run/docker.sock)",
 };

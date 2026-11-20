@@ -84,4 +84,7 @@ window.LANGUAGE_DATA['th-TH'] = {
         fansNone: "ไม่พบเซ็นเซอร์พัดลม (Linux ต้องติดตั้ง lm-sensors)",
         inodes: "การใช้งาน inode", inodesNone: "ไม่พร้อมใช้งานสถิติ inode",
         tempSensors: "เซ็นเซอร์อุณหภูมิ", tempSensorsNone: "ไม่พบเซ็นเซอร์อุณหภูมิ (Linux ต้องใช้ lm-sensors หรือสิทธิ์สูงกว่า)",
+        navDocker: "คอนเทนเนอร์ Docker", docker: "รายการคอนเทนเนอร์", dockerName: "คอนเทนเนอร์", dockerStatus: "สถานะ", dockerNet: "เครือข่าย ↓↑",
+        dockerHint: "แหล่งข้อมูล: Docker Engine API (ต้อง mount /var/run/docker.sock)",
+        dockerNone: "ไม่พบคอนเทนเนอร์ (ต้อง mount /var/run/docker.sock)",
 };

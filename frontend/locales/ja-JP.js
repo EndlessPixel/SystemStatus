@@ -84,4 +84,7 @@ window.LANGUAGE_DATA['ja-JP'] = {
         fansNone: "ファン回転数センサーが検出されませんでした（Linux では lm-sensors が必要です）",
         inodes: "inode 使用率", inodesNone: "inode 統計を利用できません",
         tempSensors: "温度センサー", tempSensorsNone: "温度センサーが検出されませんでした（Linux では lm-sensors または権限が必要です）",
+        navDocker: "Docker コンテナ", docker: "コンテナ一覧", dockerName: "コンテナ", dockerStatus: "ステータス", dockerNet: "ネットワーク ↓↑",
+        dockerHint: "データ源: Docker Engine API（/var/run/docker.sock のマウントが必要）",
+        dockerNone: "コンテナが検出されませんでした（/var/run/docker.sock をマウントしてください）",
 };
