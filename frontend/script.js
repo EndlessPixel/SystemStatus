@@ -868,6 +868,9 @@
             const gridL = narrow ? 38 : 48, gridR = narrow ? 34 : 48;
             const fs = narrow ? 9 : 10;
             const option = {
+                // 显式隐藏提示标题：setOption 默认为合并模式，若不覆盖 title，
+                // 之前「无数据」时写入的提示文字会残留在已有图表上。
+                title: { show: false },
                 grid: { left: gridL, right: gridR, top: 30, bottom: narrow ? 20 : 24 },
                 tooltip: { trigger: "axis" },
                 legend: {

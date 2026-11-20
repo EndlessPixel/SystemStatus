@@ -399,25 +399,11 @@ def update_cache_file():
         hardware_info = get_hardware_info()
         DATA_CACHE["gpu_vendor"] = (hardware_info.get("gpu") or {}).get("brand", "nvidia")
 
+        # 直接复用实时快照的格式化结果，保证 /api/cache 与 /api/data、WebSocket
+        # 字段完全一致；此前手写字段漏掉 disk_io 等，导致首屏误显示「无磁盘 IO」。
         cache_data = {
             "hardware_info": hardware_info,
-            "real_time_data": {
-                "cpu_usage": DATA_CACHE["cpu_usage"],
-                "mem_usage": DATA_CACHE["mem_usage"],
-                "gpu_usage": DATA_CACHE["gpu_usage"],
-                "gpu_intel_details": DATA_CACHE.get("gpu_intel_details"),
-                "net_upload_speed": DATA_CACHE["net_upload_speed"],
-                "net_download_speed": DATA_CACHE["net_download_speed"],
-                "cpu_core_usage": DATA_CACHE["cpu_core_usage"] or [],
-                "cpu_core_freq": DATA_CACHE["cpu_core_freq"] or [],
-                "cpu_freq": DATA_CACHE["cpu_freq"],
-                "system_load": DATA_CACHE["system_load"],
-                "process_count": DATA_CACHE["process_count"],
-                "cpu_temperature": DATA_CACHE["cpu_temperature"],
-                "boot_time": DATA_CACHE["boot_time"],
-                "battery_info": DATA_CACHE["battery_info"],
-                "timestamp": time.time()
-            },
+            "real_time_data": get_real_time_data(),
             "disk_usage": hardware_info["disks"]
         }
 
