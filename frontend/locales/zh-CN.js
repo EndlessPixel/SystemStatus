@@ -86,4 +86,5 @@ window.LANGUAGE_DATA['zh-CN'] = {
         navSensors: "硬件传感器", fans: "风扇转速",
         fansNone: "未检测到风扇转速传感器（Linux 需安装 lm-sensors）",
         inodes: "inode 使用率", inodesNone: "不支持 inode 统计",
+        tempSensors: "温度传感器", tempSensorsNone: "未检测到温度传感器（Linux 需 lm-sensors 或更高权限）",
 };

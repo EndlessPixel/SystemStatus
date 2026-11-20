@@ -588,6 +588,45 @@ def _df_partitions() -> List[Dict]:
     return out
 
 
+def get_all_temperatures() -> List[Dict]:
+    """
+    获取全部硬件温度传感器（跨平台）。
+    数据源：psutil.sensors_temperatures()。相比实时采集里的 cpu_temperature
+    只取 coretemp/acpitz/k10temp 的第一个值，这里保留全部芯片与测点，
+    覆盖 CPU 各核心、主板、NVMe 等，并附带 high/critical 阈值供前端着色。
+    返回: [{"chip": 芯片名, "entries": [{"label", "current", "high", "critical"}]}]；
+    无传感器时返回空列表。
+    """
+    result: List[Dict] = []
+
+    def valid_threshold(v):
+        """过滤驱动的无效阈值（如 nvme 驱动常给出 65261.8°C）。"""
+        try:
+            f = float(v)
+            return round(f, 1) if 0 < f <= 150 else None
+        except (TypeError, ValueError):
+            return None
+
+    try:
+        if not hasattr(psutil, "sensors_temperatures"):
+            return result
+        for chip, entries in (psutil.sensors_temperatures() or {}).items():
+            items = []
+            for e in entries:
+                cur = getattr(e, "current", None)
+                items.append({
+                    "label": getattr(e, "label", "") or "",
+                    "current": round(float(cur), 1) if cur is not None else None,
+                    "high": valid_threshold(getattr(e, "high", None)),
+                    "critical": valid_threshold(getattr(e, "critical", None)),
+                })
+            if items:
+                result.append({"chip": chip, "entries": items})
+    except Exception:
+        pass
+    return result
+
+
 def get_fan_speeds() -> List[Dict]:
     """
     获取风扇转速（跨平台）。
@@ -795,5 +834,6 @@ def get_hardware_info() -> Dict:
         "gpu_details": gpu_details,
         "network": net_ifaces,
         "fans": get_fan_speeds(),
+        "temperatures": get_all_temperatures(),
         "system": get_system_info()
     }

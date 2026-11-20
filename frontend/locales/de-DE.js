@@ -84,4 +84,5 @@ window.LANGUAGE_DATA['de-DE'] = {
         navSensors: "Sensoren", fans: "Lüftergeschwindigkeit",
         fansNone: "Keine Lüftersensoren erkannt (Linux benötigt lm-sensors)",
         inodes: "Inode-Auslastung", inodesNone: "Inode-Statistik nicht verfügbar",
+        tempSensors: "Temperatursensoren", tempSensorsNone: "Keine Temperatursensoren erkannt (Linux benötigt lm-sensors oder höhere Rechte)",
 };

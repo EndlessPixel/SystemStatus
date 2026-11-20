@@ -83,4 +83,5 @@ window.LANGUAGE_DATA['ru-RU'] = {
         navSensors: "Датчики", fans: "Скорость вентиляторов",
         fansNone: "Датчики вентиляторов не обнаружены (для Linux требуется lm-sensors)",
         inodes: "Использование inode", inodesNone: "Статистика inode недоступна",
+        tempSensors: "Датчики температуры", tempSensorsNone: "Датчики температуры не обнаружены (для Linux нужны lm-sensors или права root)",
 };

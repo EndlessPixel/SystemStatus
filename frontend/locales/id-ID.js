@@ -83,4 +83,5 @@ window.LANGUAGE_DATA['id-ID'] = {
         navSensors: "Sensor", fans: "Kecepatan Kipas",
         fansNone: "Tidak ada sensor kipas terdeteksi (Linux memerlukan lm-sensors)",
         inodes: "Penggunaan inode", inodesNone: "Statistik inode tidak tersedia",
+        tempSensors: "Sensor Suhu", tempSensorsNone: "Tidak ada sensor suhu terdeteksi (Linux memerlukan lm-sensors atau hak lebih tinggi)",
 };

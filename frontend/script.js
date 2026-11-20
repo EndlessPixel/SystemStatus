@@ -343,6 +343,10 @@
         refs.fanList = el("div", "flex flex-col gap-1");
         fans.appendChild(refs.fanList);
         grid.appendChild(fans);
+        const temps = card("tempSensors");
+        refs.tempList = el("div", "flex flex-col gap-1");
+        temps.appendChild(refs.tempList);
+        grid.appendChild(temps);
         sec.appendChild(grid);
     }
 
@@ -373,6 +377,56 @@
             if (!row) return;
             row.querySelector(".fan-name").textContent = [f.chip, f.label].filter(Boolean).join(" · ") || "—";
             row.querySelector(".fan-rpm").textContent = f.rpm != null ? f.rpm : "—";
+        });
+
+        // 温度：按芯片分组展示全部测点，含 high/critical 阈值着色
+        const temps = (snap.hardware_info || {}).temperatures || [];
+        if (!refs.tempList) return;
+        if (!temps.length) {
+            refs.tempList.innerHTML = `<div class="text-[13px] text-[var(--color-faint)]">${t("tempSensorsNone", "未检测到温度传感器（Linux 需 lm-sensors 或更高权限）")}</div>`;
+            refs.tempList.dataset.count = "0";
+            return;
+        }
+        const rows = [];
+        temps.forEach((group) => {
+            rows.push({ chip: group.chip });
+            (group.entries || []).forEach((e) => rows.push({ chip: group.chip, entry: e }));
+        });
+        if (refs.tempList.dataset.count !== String(rows.length)) {
+            refs.tempList.innerHTML = "";
+            refs.tempRows = [];
+            rows.forEach((r) => {
+                if (!r.entry) {
+                    const head = el("div", "text-[12px] font-medium text-[var(--color-subtle)] mt-2 first:mt-0");
+                    refs.tempList.appendChild(head);
+                    refs.tempRows.push({ head });
+                } else {
+                    const row = el("div", "flex items-center justify-between py-1 px-2 rounded-lg");
+                    row.style.background = "var(--color-hover)";
+                    const name = el("span", "text-[13px]");
+                    const right = el("span");
+                    const val = el("span", "metric-value");
+                    val.style.fontSize = "16px";
+                    right.appendChild(val);
+                    right.appendChild(el("span", "metric-unit", " °C"));
+                    row.appendChild(name); row.appendChild(right);
+                    refs.tempList.appendChild(row);
+                    refs.tempRows.push({ name, val });
+                }
+            });
+            refs.tempList.dataset.count = String(rows.length);
+        }
+        rows.forEach((r, i) => {
+            const ref = refs.tempRows[i];
+            if (!ref) return;
+            if (ref.head) { ref.head.textContent = r.chip; return; }
+            ref.name.textContent = r.entry.label || r.chip;
+            ref.val.textContent = r.entry.current != null ? r.entry.current : "—";
+            const cur = r.entry.current;
+            ref.val.style.color = (cur != null && r.entry.critical != null && cur >= r.entry.critical)
+                ? "var(--color-red)"
+                : (cur != null && r.entry.high != null && cur >= r.entry.high)
+                    ? "var(--color-orange)" : "";
         });
     }
 

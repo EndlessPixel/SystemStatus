@@ -83,4 +83,5 @@ window.LANGUAGE_DATA['ko-KR'] = {
         navSensors: "센서", fans: "팬 속도",
         fansNone: "팬 속도 센서가 감지되지 않았습니다 (Linux는 lm-sensors 필요)",
         inodes: "inode 사용률", inodesNone: "inode 통계를 사용할 수 없습니다",
+        tempSensors: "온도 센서", tempSensorsNone: "온도 센서가 감지되지 않았습니다 (Linux는 lm-sensors 또는 권한 필요)",
 };

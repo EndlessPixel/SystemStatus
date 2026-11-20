@@ -83,4 +83,5 @@ window.LANGUAGE_DATA['th-TH'] = {
         navSensors: "เซ็นเซอร์", fans: "ความเร็วพัดลม",
         fansNone: "ไม่พบเซ็นเซอร์พัดลม (Linux ต้องติดตั้ง lm-sensors)",
         inodes: "การใช้งาน inode", inodesNone: "ไม่พร้อมใช้งานสถิติ inode",
+        tempSensors: "เซ็นเซอร์อุณหภูมิ", tempSensorsNone: "ไม่พบเซ็นเซอร์อุณหภูมิ (Linux ต้องใช้ lm-sensors หรือสิทธิ์สูงกว่า)",
 };
