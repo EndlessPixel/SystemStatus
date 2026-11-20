@@ -11,7 +11,7 @@ jobs:
     steps:
       # 1. 拉取代码
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v7
 
       # 2. 登录 Docker Hub (使用刚才配置的密钥)
       - name: Login to Docker Hub
