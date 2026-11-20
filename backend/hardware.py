@@ -725,6 +725,18 @@ def get_hardware_info() -> Dict:
             used = total - free
             if total <= 0:
                 continue
+            # inode 使用率：口径与 df -i 一致（used = f_files - f_ffree，
+            # 可用 = f_favail，即预留给非特权用户的部分也算作「不可用」）。
+            # 某些文件系统（如部分网络/虚拟 FS）不上报 inode，f_files 为 0。
+            if st.f_files > 0:
+                inode_used = st.f_files - st.f_ffree
+                inode_avail = st.f_favail
+                inode_total = st.f_files
+                inode_denom = inode_used + inode_avail
+                inode_percent = round(inode_used / inode_denom * 100, 1) if inode_denom > 0 else None
+            else:
+                inode_total = inode_used = None
+                inode_percent = None
             disks.append({
                 "device": part["device"],
                 "physical_disk": map_physical_disk(part["device"]),
@@ -732,7 +744,10 @@ def get_hardware_info() -> Dict:
                 "fstype": part["fstype"],
                 "total": round(total / (1024**3), 2),
                 "used": round(used / (1024**3), 2),
-                "usage_percent": round(used / total * 100, 1)
+                "usage_percent": round(used / total * 100, 1),
+                "inode_total": inode_total,
+                "inode_used": inode_used,
+                "inode_percent": inode_percent
             })
         except Exception:
             continue

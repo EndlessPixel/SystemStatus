@@ -82,4 +82,5 @@ window.LANGUAGE_DATA['id-ID'] = {
         interfaces: "Antarmuka",
         navSensors: "Sensor", fans: "Kecepatan Kipas",
         fansNone: "Tidak ada sensor kipas terdeteksi (Linux memerlukan lm-sensors)",
+        inodes: "Penggunaan inode", inodesNone: "Statistik inode tidak tersedia",
 };

@@ -82,4 +82,5 @@ window.LANGUAGE_DATA['fr-FR'] = {
         interfaces: "Interfaces",
         navSensors: "Capteurs", fans: "Vitesse des ventilateurs",
         fansNone: "Aucun capteur de ventilation détecté (Linux nécessite lm-sensors)",
+        inodes: "Utilisation des inodes", inodesNone: "Statistiques des inodes indisponibles",
 };

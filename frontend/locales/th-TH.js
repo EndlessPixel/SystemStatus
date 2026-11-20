@@ -82,4 +82,5 @@ window.LANGUAGE_DATA['th-TH'] = {
         interfaces: "อินเทอร์เฟซเครือข่าย",
         navSensors: "เซ็นเซอร์", fans: "ความเร็วพัดลม",
         fansNone: "ไม่พบเซ็นเซอร์พัดลม (Linux ต้องติดตั้ง lm-sensors)",
+        inodes: "การใช้งาน inode", inodesNone: "ไม่พร้อมใช้งานสถิติ inode",
 };

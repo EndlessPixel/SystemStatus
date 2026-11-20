@@ -675,8 +675,10 @@
                         <span class="disk-pct font-medium ml-2" style="min-width:42px;text-align:right">0%</span></div>`;
                     const track = el("div", "bar-track"); const fill = el("div", "bar-fill"); track.appendChild(fill);
                     row.appendChild(track);
+                    const inodeLine = el("div", "text-[11px] text-[var(--color-faint)] mt-1 disk-inode");
+                    row.appendChild(inodeLine);
                     plist.appendChild(row);
-                    fills.push({ fill, pct: row.querySelector(".disk-pct"), data: p });
+                    fills.push({ fill, pct: row.querySelector(".disk-pct"), inode: inodeLine, data: p });
                 });
                 c.appendChild(plist);
                 // IO 图表（读写 + 等待）
@@ -692,10 +694,23 @@
             const ref = refs.diskCards[pd];
             if (!ref) return;
             ref.fills.forEach((f) => {
-                const pct = f.data.usage_percent ?? 0;
+                // 卡片只在磁盘集合变化时重建，因此这里按设备+挂载点取最新数据，
+                // 否则容量与 inode 会一直停留在构建卡片那一刻的数值。
+                const fresh = disks.find((d) => d.device === f.data.device
+                    && d.mountpoint === f.data.mountpoint) || f.data;
+                const pct = fresh.usage_percent ?? 0;
                 setBar(f.fill, pct);
                 f.pct.textContent = pct + "%";
                 f.pct.style.color = colorByPct(pct);
+                if (f.inode) {
+                    if (fresh.inode_percent == null) {
+                        f.inode.textContent = t("inodesNone", "不支持 inode 统计");
+                        f.inode.style.color = "";
+                    } else {
+                        f.inode.textContent = `${t("inodes", "inode 使用率")} ${fresh.inode_used}/${fresh.inode_total} (${fresh.inode_percent}%)`;
+                        f.inode.style.color = colorByPct(fresh.inode_percent);
+                    }
+                }
             });
         });
         renderDiskCharts(snap);

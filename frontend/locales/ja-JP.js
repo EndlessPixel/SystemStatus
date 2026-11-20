@@ -82,4 +82,5 @@ window.LANGUAGE_DATA['ja-JP'] = {
         interfaces: "ネットワークインターフェース",
         navSensors: "ハードウェアセンサー", fans: "ファン回転数",
         fansNone: "ファン回転数センサーが検出されませんでした（Linux では lm-sensors が必要です）",
+        inodes: "inode 使用率", inodesNone: "inode 統計を利用できません",
 };
